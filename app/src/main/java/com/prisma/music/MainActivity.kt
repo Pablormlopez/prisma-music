@@ -43,6 +43,8 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -123,7 +125,7 @@ fun PrismaApp() {
     val dark=when(mode) { LightMode.DARK->true; LightMode.LIGHT->false; LightMode.SYSTEM->isSystemInDarkTheme() }
     val baseAccent=when(theme) { VisualTheme.CHROMATIC->Color(details?.color ?: 0xffb0a2ff.toInt()); VisualTheme.GLASS->if(dark) Color(0xff8bd6f8) else Color(0xff126185); VisualTheme.MINIMAL->if(dark) Color(0xffc6c5ce) else Color(0xff494650); VisualTheme.NIGHT->if(dark) Color(0xff66e2ac) else Color(0xff006c43) }
     // Keep readable controls even when a cover produces a very dark/light swatch.
-    val accent by animateColorAsState(if(theme==VisualTheme.CHROMATIC) androidx.compose.ui.graphics.lerp(baseAccent,if(dark) Color.White else Color.Black,.28f) else baseAccent,label="cover")
+    val accent by animateColorAsState(if(theme==VisualTheme.CHROMATIC) androidx.compose.ui.graphics.lerp(baseAccent,if(dark) Color.White else Color.Black,if(dark) .55f else .6f) else baseAccent,label="cover")
     val bg=if(dark) { if(theme==VisualTheme.NIGHT) Color(0xff060a09) else Color(0xff101018) } else Color(0xfff6f5fa)
     val colors=if(dark) darkColorScheme(primary=accent,background=bg,surface=Color(0xff1c1c27),onPrimary=Color(0xff101018),onBackground=Color(0xfff0eef7),onSurface=Color(0xfff0eef7)) else lightColorScheme(primary=accent,background=bg,surface=Color.White,onPrimary=Color.White)
     fun play(queue:List<Song>,song:Song) {
@@ -135,7 +137,7 @@ fun PrismaApp() {
         Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(if(theme==VisualTheme.CHROMATIC || theme==VisualTheme.GLASS) androidx.compose.ui.graphics.lerp(bg,accent,if(dark) .16f else .08f) else bg,bg)))) {
             Scaffold(containerColor=Color.Transparent,bottomBar={
                 Column {
-                    current?.let { song -> Surface(onClick={page="Reproduciendo"},modifier=Modifier.padding(horizontal=14.dp,vertical=5.dp).fillMaxWidth(),shape=RoundedCornerShape(22.dp),color=colors.surface.copy(alpha=if(theme==VisualTheme.GLASS) .7f else 1f),border=BorderStroke(1.dp,accent.copy(alpha=.15f))) {
+                    current?.let { song -> Surface(onClick={page="Reproduciendo"},modifier=Modifier.padding(horizontal=14.dp,vertical=5.dp).fillMaxWidth().semantics {contentDescription="Abrir reproductor"},shape=RoundedCornerShape(22.dp),color=colors.surface.copy(alpha=if(theme==VisualTheme.GLASS) .7f else 1f),border=BorderStroke(1.dp,accent.copy(alpha=.15f))) {
                         Row(Modifier.padding(10.dp),verticalAlignment=Alignment.CenterVertically) {
                             Cover(song,Modifier.size(44.dp)); Spacer(Modifier.width(12.dp)); Column(Modifier.weight(1f)) { Text(song.title,maxLines=1,overflow=TextOverflow.Ellipsis,fontWeight=FontWeight.SemiBold); Text(song.artist,style=MaterialTheme.typography.labelMedium,color=colors.onSurfaceVariant,maxLines=1,overflow=TextOverflow.Ellipsis) }
                             IconButton(onClick={ controller?.let { if(it.isPlaying) it.pause() else it.play() } }) { Icon(if(playing) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,if(playing) "Pausar" else "Reproducir") }
