@@ -24,8 +24,26 @@ class PrismaSmokeTest {
     @get:Rule(order=1) val compose = createAndroidComposeRule<MainActivity>()
     private fun nav(text:String) {compose.onNode(hasText(text) and hasClickAction()).performClick();compose.waitForIdle()}
     private fun shot(name:String) {
-        val folder=File(compose.activity.getExternalFilesDir(null),"screenshots").apply {mkdirs()}
-        File(folder,"$name.png").outputStream().use {compose.onRoot().captureToImage().asAndroidBitmap().compress(Bitmap.CompressFormat.PNG,100,it)}
+        // Public test output survives Gradle uninstalling the app after tests.
+        val resolver=compose.activity.contentResolver
+        val values=ContentValues().apply {put(MediaStore.Downloads.DISPLAY_NAME,"$name.png");put(MediaStore.Downloads.MIME_TYPE,"image/png");put(MediaStore.Downloads.RELATIVE_PATH,"Download/PrismaTest/");put(MediaStore.Downloads.IS_PENDING,1)}
+        val uri=resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI,values)!!
+        resolver.openOutputStream(uri)!!.use {compose.onRoot().captureToImage().asAndroidBitmap().compress(Bitmap.CompressFormat.PNG,100,it)}
+        resolver.update(uri,ContentValues().apply {put(MediaStore.Downloads.IS_PENDING,0)},null,null)
+    }
+    @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
+    @Test fun emptyAudioBlocksAreSafeAndBypassPreservesPcm() {
+        val eq=EqProcessor()
+        eq.configure(androidx.media3.common.audio.AudioProcessor.AudioFormat(44100,2,androidx.media3.common.C.ENCODING_PCM_16BIT))
+        eq.flush()
+        eq.queueInput(androidx.media3.common.audio.AudioProcessor.EMPTY_BUFFER)
+        assertEquals(0,eq.output.remaining())
+        val input=ByteBuffer.allocateDirect(4).order(ByteOrder.LITTLE_ENDIAN).putShort(1000).putShort(-1000)
+        input.flip();eq.queueInput(input)
+        val output=eq.output.order(ByteOrder.LITTLE_ENDIAN)
+        assertEquals(1000,output.short.toInt());assertEquals(-1000,output.short.toInt())
+        eq.queueInput(androidx.media3.common.audio.AudioProcessor.EMPTY_BUFFER)
+        eq.queueEndOfStream();assertTrue(eq.isEnded);eq.reset()
     }
     @Test fun libraryPlaybackThemesAndDspControls() {
         val context=compose.activity

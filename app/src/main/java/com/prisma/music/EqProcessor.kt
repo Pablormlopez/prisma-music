@@ -23,6 +23,9 @@ class EqProcessor : BaseAudioProcessor() {
         applied = null
     }
     override fun queueInput(inputBuffer: ByteBuffer) {
+        // Media3 also queues EMPTY_BUFFER while draining its pipeline. Never copy
+        // it into BaseAudioProcessor's initial EMPTY_BUFFER (the same instance).
+        if (!inputBuffer.hasRemaining()) return
         val size = inputBuffer.remaining()
         val output = replaceOutputBuffer(size).order(ByteOrder.LITTLE_ENDIAN)
         val config = settings
