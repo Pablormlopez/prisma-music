@@ -1,0 +1,228 @@
+@file:OptIn(androidx.media3.common.util.UnstableApi::class, androidx.compose.material3.ExperimentalMaterial3Api::class)
+package com.prisma.music
+
+import android.Manifest
+import android.content.ComponentName
+import android.content.pm.PackageManager
+import android.os.Build
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.media3.common.Player
+import androidx.media3.session.MediaController
+import androidx.media3.session.SessionCommand
+import androidx.media3.session.SessionToken
+import coil.compose.AsyncImage
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+
+class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) { super.onCreate(savedInstanceState); enableEdgeToEdge(); setContent { PrismaApp() } }
+}
+
+@Composable
+fun PrismaApp() {
+    val context=LocalContext.current
+    val prefs=remember { Preferences(context) }
+    var theme by remember { mutableStateOf(prefs.theme) }
+    var mode by remember { mutableStateOf(prefs.mode) }
+    var songs by remember { mutableStateOf<List<Song>>(emptyList()) }
+    var libraryVersion by remember { mutableIntStateOf(0) }
+    var busy by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+    var controller by remember { mutableStateOf<MediaController?>(null) }
+    var currentId by remember { mutableStateOf("") }
+    var position by remember { mutableLongStateOf(0) }
+    var duration by remember { mutableLongStateOf(0) }
+    var playing by remember { mutableStateOf(false) }
+    var shuffled by remember { mutableStateOf(false) }
+    var repeat by remember { mutableIntStateOf(Player.REPEAT_MODE_OFF) }
+    var page by rememberSaveable { mutableStateOf("Biblioteca") }
+    var details by remember { mutableStateOf<Library.Details?>(null) }
+    var lists by remember { mutableStateOf(prefs.playlists()) }
+    var addToList by remember { mutableStateOf<Song?>(null) }
+    var newListDialog by remember { mutableStateOf(false) }
+    val scope=rememberCoroutineScope()
+    val permission=if(Build.VERSION.SDK_INT>=33) Manifest.permission.READ_MEDIA_AUDIO else Manifest.permission.READ_EXTERNAL_STORAGE
+    var granted by remember { mutableStateOf(ContextCompat.checkSelfPermission(context,permission)==PackageManager.PERMISSION_GRANTED) }
+    val requestPermission=rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted=it; if(it) libraryVersion++ }
+    val notifications=rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
+    val lifecycle=LocalLifecycleOwner.current
+    DisposableEffect(lifecycle) {
+        val observer=LifecycleEventObserver { _, event -> if(event==Lifecycle.Event.ON_RESUME) { granted=ContextCompat.checkSelfPermission(context,permission)==PackageManager.PERMISSION_GRANTED; libraryVersion++ } }
+        lifecycle.lifecycle.addObserver(observer)
+        onDispose { lifecycle.lifecycle.removeObserver(observer) }
+    }
+    DisposableEffect(Unit) {
+        val future=MediaController.Builder(context,SessionToken(context,ComponentName(context,PlaybackService::class.java))).buildAsync()
+        var disposed=false
+        val listener=object : Player.Listener {
+            override fun onPlayerError(e: androidx.media3.common.PlaybackException) { error="No se pudo reproducir este archivo. ${e.errorCodeName}" }
+        }
+        future.addListener({ if(!disposed) runCatching { future.get() }.onSuccess { controller=it; it.addListener(listener) }.onFailure { error="No se pudo iniciar el reproductor." } },ContextCompat.getMainExecutor(context))
+        onDispose { disposed=true; controller?.removeListener(listener); controller=null; MediaController.releaseFuture(future) }
+    }
+    LaunchedEffect(controller) {
+        while(controller!=null) {
+            controller?.let { currentId=it.currentMediaItem?.mediaId ?: ""; position=it.currentPosition.coerceAtLeast(0); duration=it.duration.coerceAtLeast(0); playing=it.isPlaying; shuffled=it.shuffleModeEnabled; repeat=it.repeatMode }
+            delay(250)
+        }
+    }
+    LaunchedEffect(granted,libraryVersion) {
+        if(granted) { busy=true; runCatching { withContext(Dispatchers.IO) { Library.scan(context) } }.onSuccess { songs=it }.onFailure { error="No se pudo leer la biblioteca. Revisa el permiso de música." }; busy=false }
+        else songs=emptyList()
+    }
+    val visible=remember(songs,libraryVersion) { Library.visible(songs,prefs) }
+    val current=songs.find { it.id==currentId }
+    LaunchedEffect(currentId) { details=null; current?.let { s -> details=withContext(Dispatchers.IO) { Library.details(context,s) } } }
+    val dark=when(mode) { LightMode.DARK->true; LightMode.LIGHT->false; LightMode.SYSTEM->isSystemInDarkTheme() }
+    val baseAccent=when(theme) { VisualTheme.CHROMATIC->Color(details?.color ?: 0xffb0a2ff.toInt()); VisualTheme.GLASS->if(dark) Color(0xff8bd6f8) else Color(0xff126185); VisualTheme.MINIMAL->if(dark) Color(0xffc6c5ce) else Color(0xff494650); VisualTheme.NIGHT->if(dark) Color(0xff66e2ac) else Color(0xff006c43) }
+    // Keep readable controls even when a cover produces a very dark/light swatch.
+    val accent by animateColorAsState(if(theme==VisualTheme.CHROMATIC) androidx.compose.ui.graphics.lerp(baseAccent,if(dark) Color.White else Color.Black,.28f) else baseAccent,label="cover")
+    val bg=if(dark) { if(theme==VisualTheme.NIGHT) Color(0xff060a09) else Color(0xff101018) } else Color(0xfff6f5fa)
+    val colors=if(dark) darkColorScheme(primary=accent,background=bg,surface=Color(0xff1c1c27),onPrimary=Color(0xff101018),onBackground=Color(0xfff0eef7),onSurface=Color(0xfff0eef7)) else lightColorScheme(primary=accent,background=bg,surface=Color.White,onPrimary=Color.White)
+    fun play(queue:List<Song>,song:Song) {
+        if(controller==null) { error="El reproductor se está iniciando. Intenta de nuevo."; return }
+        if(Build.VERSION.SDK_INT>=33 && ContextCompat.checkSelfPermission(context,Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED) notifications.launch(Manifest.permission.POST_NOTIFICATIONS)
+        controller?.run { setMediaItems(queue.map { it.mediaItem() },queue.indexOf(song).coerceAtLeast(0),0); prepare(); play() }
+    }
+    MaterialTheme(colorScheme=colors) {
+        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(if(theme==VisualTheme.CHROMATIC || theme==VisualTheme.GLASS) androidx.compose.ui.graphics.lerp(bg,accent,if(dark) .16f else .08f) else bg,bg)))) {
+            Scaffold(containerColor=Color.Transparent,bottomBar={
+                Column {
+                    current?.let { song -> Surface(onClick={page="Reproduciendo"},modifier=Modifier.padding(horizontal=14.dp,vertical=5.dp).fillMaxWidth(),shape=RoundedCornerShape(22.dp),color=colors.surface.copy(alpha=if(theme==VisualTheme.GLASS) .7f else 1f),border=BorderStroke(1.dp,accent.copy(alpha=.15f))) {
+                        Row(Modifier.padding(10.dp),verticalAlignment=Alignment.CenterVertically) {
+                            Cover(song,Modifier.size(44.dp)); Spacer(Modifier.width(12.dp)); Column(Modifier.weight(1f)) { Text(song.title,maxLines=1,overflow=TextOverflow.Ellipsis,fontWeight=FontWeight.SemiBold); Text(song.artist,style=MaterialTheme.typography.labelMedium,color=colors.onSurfaceVariant,maxLines=1,overflow=TextOverflow.Ellipsis) }
+                            IconButton(onClick={ controller?.let { if(it.isPlaying) it.pause() else it.play() } }) { Icon(if(playing) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,if(playing) "Pausar" else "Reproducir") }
+                            IconButton(onClick={controller?.seekToNextMediaItem()}) { Icon(Icons.Rounded.SkipNext,"Siguiente") }
+                        }
+                    } }
+                    NavigationBar(containerColor=bg.copy(alpha=.96f)) {
+                        listOf(Triple("Biblioteca",Icons.Rounded.LibraryMusic,"Música"),Triple("Listas",Icons.Rounded.QueueMusic,"Listas"),Triple("Sonido",Icons.Rounded.Equalizer,"Sonido"),Triple("Ajustes",Icons.Rounded.Tune,"Ajustes")).forEach { (route,icon,title) -> NavigationBarItem(selected=page==route,onClick={page=route},icon={Icon(icon,title)},label={Text(title)},alwaysShowLabel=true) }
+                    }
+                }
+            }) { padding ->
+                Column(Modifier.fillMaxSize().padding(padding)) {
+                    Row(Modifier.fillMaxWidth().padding(horizontal=22.dp,vertical=14.dp),verticalAlignment=Alignment.CenterVertically) {
+                        if(page=="Reproduciendo") IconButton(onClick={page="Biblioteca"}) { Icon(Icons.Rounded.KeyboardArrowDown,"Volver a la biblioteca") }
+                        Column(Modifier.weight(1f)) { Text("PRISMA",fontSize=12.sp,letterSpacing=4.sp,fontWeight=FontWeight.Bold,color=accent); Text(if(page=="Biblioteca") "Tu música, a tu manera." else page,fontSize=23.sp,fontWeight=FontWeight.Bold) }
+                        if(page=="Biblioteca") IconButton(onClick={libraryVersion++}) { Icon(Icons.Rounded.Refresh,"Actualizar biblioteca") }
+                    }
+                    error?.let { message -> Surface(color=colors.errorContainer,shape=RoundedCornerShape(16.dp),modifier=Modifier.padding(horizontal=16.dp)) { Row(Modifier.padding(12.dp),verticalAlignment=Alignment.CenterVertically) { Text(message,Modifier.weight(1f),color=colors.onErrorContainer,style=MaterialTheme.typography.bodySmall); IconButton(onClick={error=null}) { Icon(Icons.Rounded.Close,"Cerrar mensaje") } } } }
+                    Crossfade(targetState=page,label="page",modifier=Modifier.weight(1f)) { route -> when(route) {
+                        "Biblioteca"->if(!granted) PermissionCard { requestPermission.launch(permission) } else LibraryScreen(visible,busy,currentId,onPlay=::play,onAdd={addToList=it})
+                        "Listas"->PlaylistScreen(lists,visible,currentId,onCreate={newListDialog=true},onDelete={key->lists=lists-key; prefs.savePlaylists(lists)},onRemove={key,id->lists=lists+(key to lists.getValue(key).filterNot { it==id }); prefs.savePlaylists(lists)},onPlay=::play)
+                        "Sonido"->EqScreen(prefs) { config->prefs.eq=config; controller?.sendCustomCommand(SessionCommand("prisma.eq",Bundle.EMPTY),Bundle.EMPTY) }
+                        "Ajustes"->SettingsScreen(theme,mode,prefs,songs,{theme=it;prefs.theme=it},{mode=it;prefs.mode=it},{libraryVersion++})
+                        "Reproduciendo"->if(current!=null) PlayerScreen(current,details,theme,prefs,position,duration,playing,shuffled,repeat,controller) else EmptyCard("Selecciona una canción","Tu música local aparecerá aquí.",Icons.Rounded.MusicNote)
+                    } }
+                }
+            }
+        }
+        if(newListDialog) NameDialog(onDismiss={newListDialog=false},onSave={name->if(name !in lists) { lists=lists+(name to emptyList()); prefs.savePlaylists(lists); newListDialog=false }},exists={it in lists})
+        addToList?.let { song -> AlertDialog(onDismissRequest={addToList=null},title={Text("Añadir a una lista")},text={ Column(Modifier.verticalScroll(rememberScrollState())) { if(lists.isEmpty()) Text("Crea tu primera lista en la pestaña Listas."); lists.keys.forEach { name-> TextButton(onClick={lists=lists+(name to (lists.getValue(name)+song.id).distinct());prefs.savePlaylists(lists);addToList=null},modifier=Modifier.fillMaxWidth()) {Text(name)} } } },confirmButton={TextButton(onClick={addToList=null}){Text("Cerrar")}}) }
+    }
+}
+
+@Composable fun Cover(song:Song?,modifier:Modifier=Modifier) {
+    Box(modifier.clip(RoundedCornerShape(14.dp)).background(Brush.linearGradient(listOf(MaterialTheme.colorScheme.primary.copy(alpha=.25f),MaterialTheme.colorScheme.surface))),contentAlignment=Alignment.Center) {
+        Icon(Icons.Rounded.MusicNote,null,tint=MaterialTheme.colorScheme.primary,modifier=Modifier.fillMaxSize(.4f))
+        if(song!=null) AsyncImage(model=song.art,contentDescription="Carátula de ${song.album}",modifier=Modifier.fillMaxSize(),contentScale=ContentScale.Crop)
+    }
+}
+@Composable fun EmptyCard(title:String,subtitle:String,icon:ImageVector) {
+    Column(Modifier.fillMaxSize().padding(28.dp),verticalArrangement=Arrangement.Center,horizontalAlignment=Alignment.CenterHorizontally) { Icon(icon,null,Modifier.size(64.dp),tint=MaterialTheme.colorScheme.primary); Spacer(Modifier.height(18.dp)); Text(title,fontSize=21.sp,fontWeight=FontWeight.Bold); Spacer(Modifier.height(8.dp)); Text(subtitle,color=MaterialTheme.colorScheme.onSurfaceVariant) }
+}
+@Composable fun PermissionCard(onGrant:()->Unit) {
+    Column(Modifier.fillMaxSize().padding(28.dp),verticalArrangement=Arrangement.Center,horizontalAlignment=Alignment.CenterHorizontally) { Cover(null,Modifier.size(130.dp)); Spacer(Modifier.height(24.dp)); Text("Tu colección empieza aquí",fontSize=23.sp,fontWeight=FontWeight.Bold); Spacer(Modifier.height(10.dp)); Text("Permite leer la música de tu teléfono. Prisma funciona sin conexión y excluye los audios de WhatsApp de forma predeterminada."); Spacer(Modifier.height(20.dp)); Button(onClick=onGrant){Text("Permitir acceso a mi música")} }
+}
+@Composable fun SongRow(song:Song,currentId:String,onPlay:()->Unit,onAdd:(()->Unit)?=null) {
+    Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).clickable(onClick=onPlay).padding(horizontal=8.dp,vertical=9.dp),verticalAlignment=Alignment.CenterVertically) {
+        Cover(song,Modifier.size(52.dp)); Spacer(Modifier.width(14.dp)); Column(Modifier.weight(1f)) { Text(song.title,maxLines=1,overflow=TextOverflow.Ellipsis,fontWeight=FontWeight.SemiBold,color=if(currentId==song.id) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface); Text(song.artist,maxLines=1,overflow=TextOverflow.Ellipsis,color=MaterialTheme.colorScheme.onSurfaceVariant,style=MaterialTheme.typography.bodySmall) }
+        Text(time(song.duration),style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+        if(onAdd!=null) IconButton(onClick=onAdd) { Icon(Icons.Rounded.PlaylistAdd,"Añadir ${song.title} a una lista") }
+    }
+}
+@Composable fun LibraryScreen(songs:List<Song>,busy:Boolean,currentId:String,onPlay:(List<Song>,Song)->Unit,onAdd:(Song)->Unit) {
+    var search by rememberSaveable { mutableStateOf("") }; var category by rememberSaveable { mutableStateOf("Canciones") }; var selected by rememberSaveable { mutableStateOf<String?>(null) }
+    val filtered=remember(songs,search) { songs.filter { search.isBlank() || "${it.title} ${it.artist} ${it.album} ${it.genre}".contains(search,true) } }
+    fun key(s:Song) = when(category) { "Artistas"->s.artist; "Álbumes"->"${s.album} · ${s.artist}"; "Géneros"->s.genre; else->s.folder.ifBlank { "Sin carpeta" } }
+    val queue=if(category=="Canciones" || selected==null) filtered else filtered.filter { key(it)==selected }
+    Column(Modifier.fillMaxSize().padding(horizontal=16.dp)) {
+        OutlinedTextField(search,{search=it},modifier=Modifier.fillMaxWidth(),placeholder={Text("Busca en tu colección")},leadingIcon={Icon(Icons.Rounded.Search,null)},singleLine=true,shape=RoundedCornerShape(22.dp))
+        Row(Modifier.horizontalScroll(rememberScrollState()).padding(vertical=10.dp),horizontalArrangement=Arrangement.spacedBy(7.dp)) { listOf("Canciones","Artistas","Álbumes","Géneros","Carpetas").forEach { title->FilterChip(selected=category==title,onClick={category=title;selected=null},label={Text(title)}) } }
+        if(busy) LinearProgressIndicator(Modifier.fillMaxWidth())
+        if(selected!=null) TextButton(onClick={selected=null}) { Icon(Icons.Rounded.ArrowBack,null); Text(selected!!,maxLines=1,overflow=TextOverflow.Ellipsis) }
+        if(filtered.isEmpty()) EmptyCard(if(busy) "Buscando música…" else "No hay canciones",if(search.isNotBlank()) "Prueba otra búsqueda." else "Copia música al teléfono y pulsa Actualizar. Puedes revisar las carpetas excluidas en Ajustes.",Icons.Rounded.LibraryMusic)
+        else LazyColumn(Modifier.fillMaxSize(),contentPadding=PaddingValues(bottom=16.dp)) {
+            if(category!="Canciones" && selected==null) items(filtered.groupBy(::key).toSortedMap().entries.toList(),key={it.key}) { group -> Surface(onClick={selected=group.key},shape=RoundedCornerShape(20.dp),color=MaterialTheme.colorScheme.surface.copy(alpha=.75f),modifier=Modifier.padding(vertical=5.dp).fillMaxWidth()) { Row(Modifier.padding(16.dp),verticalAlignment=Alignment.CenterVertically) { Cover(group.value.first(),Modifier.size(54.dp)); Spacer(Modifier.width(14.dp)); Column(Modifier.weight(1f)) { Text(group.key,maxLines=2,overflow=TextOverflow.Ellipsis,fontWeight=FontWeight.SemiBold); Text("${group.value.size} canciones",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant) }; Icon(Icons.Rounded.ChevronRight,null) } } }
+            else items(queue,key={it.id}) { song->SongRow(song,currentId,{onPlay(queue,song)},{onAdd(song)}) }
+        }
+    }
+}
+@Composable fun NameDialog(onDismiss:()->Unit,onSave:(String)->Unit,exists:(String)->Boolean) {
+    var name by remember { mutableStateOf("") }
+    AlertDialog(onDismissRequest=onDismiss,title={Text("Nueva lista")},text={OutlinedTextField(name,{name=it},label={Text("Nombre")},singleLine=true,isError=exists(name.trim()),supportingText={if(exists(name.trim())) Text("Ya existe una lista con ese nombre.")})},confirmButton={TextButton(onClick={onSave(name.trim())},enabled=name.isNotBlank() && !exists(name.trim())) {Text("Crear")}},dismissButton={TextButton(onClick=onDismiss){Text("Cancelar")}})
+}
+@Composable fun PlaylistScreen(lists:Map<String,List<String>>,songs:List<Song>,currentId:String,onCreate:()->Unit,onDelete:(String)->Unit,onRemove:(String,String)->Unit,onPlay:(List<Song>,Song)->Unit) {
+    var selected by rememberSaveable { mutableStateOf<String?>(null) }; var delete by remember { mutableStateOf<String?>(null) }
+    Column(Modifier.fillMaxSize().padding(horizontal=16.dp)) {
+        if(selected==null) {
+            Button(onClick=onCreate,modifier=Modifier.fillMaxWidth(),shape=RoundedCornerShape(18.dp)){Icon(Icons.Rounded.Add,null);Text("Crear lista de reproducción",Modifier.padding(8.dp))}
+            if(lists.isEmpty()) EmptyCard("Una lista para cada momento","Crea una lista y añade canciones desde tu biblioteca.",Icons.Rounded.QueueMusic)
+            else LazyColumn { items(lists.entries.toList(),key={it.key}) { (name,ids)-> ListItem(headlineContent={Text(name,fontWeight=FontWeight.SemiBold)},supportingContent={Text("${ids.size} canciones")},leadingContent={Icon(Icons.Rounded.QueueMusic,null)},trailingContent={IconButton(onClick={delete=name}){Icon(Icons.Rounded.DeleteOutline,"Eliminar lista $name")}},modifier=Modifier.clip(RoundedCornerShape(16.dp)).clickable {selected=name},colors=ListItemDefaults.colors(containerColor=Color.Transparent)) } }
+        } else {
+            TextButton(onClick={selected=null}) {Icon(Icons.Rounded.ArrowBack,null);Text(selected!!)}
+            val queue=lists[selected].orEmpty().mapNotNull { id->songs.find {it.id==id} }
+            if(queue.isEmpty()) EmptyCard("Esta lista está vacía","Añade canciones desde la biblioteca. Las canciones de carpetas excluidas no se muestran.",Icons.Rounded.PlaylistAdd)
+            else LazyColumn { items(queue,key={it.id}) {song-> Row(verticalAlignment=Alignment.CenterVertically) { Box(Modifier.weight(1f)){SongRow(song,currentId,{onPlay(queue,song)})}; IconButton(onClick={onRemove(selected!!,song.id)}){Icon(Icons.Rounded.RemoveCircleOutline,"Quitar de la lista")} } } }
+        }
+    }
+    delete?.let { name->AlertDialog(onDismissRequest={delete=null},title={Text("Eliminar lista")},text={Text("Se eliminará «$name». Los archivos de música se conservarán.")},confirmButton={TextButton(onClick={onDelete(name);delete=null}){Text("Eliminar")}},dismissButton={TextButton(onClick={delete=null}){Text("Cancelar")}}) }
+}
+fun time(ms:Long):String { val s=ms.coerceAtLeast(0)/1000;return "%d:%02d".format(s/60,s%60) }
