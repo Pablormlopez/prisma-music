@@ -66,6 +66,10 @@ class PrismaSmokeTest {
             assertEquals(LightMode.SYSTEM,prefs.mode)
             assertEquals(VisualTheme.NIGHT,prefs.theme)
             assertTrue(prefs.eq.enabled)
+        } catch (t:Throwable) {
+            runCatching {shot("99-failure")}
+            compose.onRoot().printToLog("PrismaTest")
+            throw t
         } finally {resolver.delete(uri,null,null)}
     }
 }
