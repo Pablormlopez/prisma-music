@@ -5,6 +5,9 @@ on:
     branches: [main]
 permissions:
   contents: read
+concurrency:
+  group: interfaz-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   emulator:
     runs-on: ubuntu-latest

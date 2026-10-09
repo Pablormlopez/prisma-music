@@ -125,6 +125,7 @@ fun PrismaApp() {
     val current=songs.find { it.id==currentId }
     LaunchedEffect(currentId) { details=null; current?.let { s -> details=withContext(Dispatchers.IO) { Library.details(context,s) } } }
     val dark=when(mode) { LightMode.DARK->true; LightMode.LIGHT->false; LightMode.SYSTEM->isSystemInDarkTheme() }
+    SideEffect { (context as? ComponentActivity)?.window?.let { window -> androidx.core.view.WindowCompat.getInsetsController(window,window.decorView).apply {isAppearanceLightStatusBars=!dark;isAppearanceLightNavigationBars=!dark} } }
     val baseAccent=when(theme) { VisualTheme.CHROMATIC->Color(details?.color ?: 0xffb0a2ff.toInt()); VisualTheme.GLASS->if(dark) Color(0xff8bd6f8) else Color(0xff126185); VisualTheme.MINIMAL->if(dark) Color(0xffc6c5ce) else Color(0xff494650); VisualTheme.NIGHT->if(dark) Color(0xff66e2ac) else Color(0xff006c43) }
     // Keep readable controls even when a cover produces a very dark/light swatch.
     val accent by animateColorAsState(if(theme==VisualTheme.CHROMATIC) androidx.compose.ui.graphics.lerp(baseAccent,if(dark) Color.White else Color.Black,if(dark) .55f else .6f) else baseAccent,label="cover")
