@@ -142,13 +142,13 @@ class PrismaSmokeTest {
             compose.waitUntil(5000) {compose.runOnIdle {observer.mediaItemCount==2}}
             compose.runOnIdle {assertEquals(previousId,observer.currentMediaItem?.mediaId);assertEquals(2000L,observer.currentPosition)}
             // Shuffle order is read from the timeline; a manual move materializes that order.
-            var shuffledOrder:List<Any> = emptyList()
+            var shuffledOrder:List<String> = emptyList()
             compose.runOnIdle {observer.shuffleModeEnabled=true}
             compose.waitUntil(5000) {compose.runOnIdle {observer.shuffleModeEnabled}}
-            compose.runOnIdle {shuffledOrder=queueEntries(observer).map {it.uid}}
+            compose.runOnIdle {shuffledOrder=queueEntries(observer).map {it.mediaId}}
             compose.onNodeWithContentDescription("Subir canción 2").performScrollTo().performClick()
             compose.waitUntil(5000) {compose.runOnIdle {!observer.shuffleModeEnabled}}
-            compose.runOnIdle {assertEquals(shuffledOrder.reversed(),queueEntries(observer).map {it.uid});assertEquals(previousId,observer.currentMediaItem?.mediaId);assertEquals(2000L,observer.currentPosition)}
+            compose.runOnIdle {assertEquals(shuffledOrder.reversed(),queueEntries(observer).map {it.mediaId});assertEquals(previousId,observer.currentMediaItem?.mediaId);assertEquals(2000L,observer.currentPosition)}
             val screenshot=File(context.cacheDir,"queue.png")
             assertTrue(UiDevice.getInstance(InstrumentationRegistry.getInstrumentation()).takeScreenshot(screenshot))
             val shotValues=ContentValues().apply {put(MediaStore.Downloads.DISPLAY_NAME,"13-cola.png");put(MediaStore.Downloads.MIME_TYPE,"image/png");put(MediaStore.Downloads.RELATIVE_PATH,"Download/PrismaTest/")}

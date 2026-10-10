@@ -19,8 +19,8 @@ import androidx.media3.common.Player
 import androidx.media3.common.Timeline
 import androidx.media3.session.MediaController
 
-// Timeline UIDs distinguish duplicate songs and remain stable when an item moves.
-internal data class QueueEntry(val uid:Any,val title:String,val artist:String,val current:Boolean)
+// Use playlist positions: remote timeline UIDs are not stable across session updates.
+internal data class QueueEntry(val index:Int,val mediaId:String,val title:String,val artist:String,val current:Boolean)
 internal fun queueEntries(player:Player):List<QueueEntry> {
     val timeline=player.currentTimeline
     val window=Timeline.Window()
@@ -29,37 +29,39 @@ internal fun queueEntries(player:Player):List<QueueEntry> {
     while(index!=androidx.media3.common.C.INDEX_UNSET && result.size<timeline.windowCount) {
         timeline.getWindow(index,window)
         val metadata=window.mediaItem.mediaMetadata
-        result+=QueueEntry(window.uid,metadata.title?.toString() ?: "Canción",metadata.artist?.toString().orEmpty(),index==player.currentMediaItemIndex)
+        result+=QueueEntry(index,window.mediaItem.mediaId,metadata.title?.toString() ?: "Canción",metadata.artist?.toString().orEmpty(),index==player.currentMediaItemIndex)
         index=timeline.getNextWindowIndex(index,Player.REPEAT_MODE_OFF,player.shuffleModeEnabled)
     }
     return result
 }
-private fun queueIndex(player:Player,uid:Any):Int {
-    val window=Timeline.Window()
-    return (0 until player.currentTimeline.windowCount).firstOrNull {player.currentTimeline.getWindow(it,window).uid==uid} ?: -1
-}
-internal fun moveQueueEntry(player:Player,uid:Any,direction:Int) {
-    val ordered=queueEntries(player).map {it.uid}.toMutableList()
-    val from=ordered.indexOf(uid)
+internal fun moveQueueEntry(player:Player,index:Int,direction:Int) {
+    val ordered=queueEntries(player).map {it.index}.toMutableList()
+    val from=ordered.indexOf(index)
     val to=from+direction
     if(from<0 || to !in ordered.indices) return
     ordered.add(to,ordered.removeAt(from))
-    // Keep the heard shuffle order, then apply the edit without resetting playback.
+    // Materialize the heard shuffle order and its edit using a local permutation.
+    // Native moveMediaItem preserves the playing item, position and play/pause state.
+    val positions=(0 until player.mediaItemCount).toMutableList()
     player.shuffleModeEnabled=false
-    ordered.forEachIndexed {destination,itemUid ->
-        val source=queueIndex(player,itemUid)
-        if(source>=0 && source!=destination) player.moveMediaItem(source,destination)
+    ordered.forEachIndexed {destination,originalIndex ->
+        val source=positions.indexOf(originalIndex)
+        if(source!=destination) {
+            player.moveMediaItem(source,destination)
+            positions.add(destination,positions.removeAt(source))
+        }
     }
 }
 
 @Composable fun PlaybackQueue(controller:MediaController,onDismiss:()->Unit) {
+    var snapshot by remember(controller) {mutableStateOf(controller.currentTimeline)}
     var entries by remember(controller) {mutableStateOf(queueEntries(controller))}
     var shuffled by remember(controller) {mutableStateOf(controller.shuffleModeEnabled)}
     var repeat by remember(controller) {mutableIntStateOf(controller.repeatMode)}
     DisposableEffect(controller) {
         val listener=object:Player.Listener {
             override fun onEvents(player:Player,events:Player.Events) {
-                entries=queueEntries(player);shuffled=player.shuffleModeEnabled;repeat=player.repeatMode
+                snapshot=player.currentTimeline;entries=queueEntries(player);shuffled=player.shuffleModeEnabled;repeat=player.repeatMode
             }
         }
         controller.addListener(listener)
@@ -82,15 +84,15 @@ internal fun moveQueueEntry(player:Player,uid:Any,direction:Int) {
             val current=entries.indexOfFirst {it.current}
             val next=if(repeat==Player.REPEAT_MODE_ONE) current else if(current+1<entries.size) current+1 else if(repeat==Player.REPEAT_MODE_ALL && entries.isNotEmpty()) 0 else -1
             LazyColumn(state=state,modifier=Modifier.fillMaxWidth().heightIn(max=520.dp),contentPadding=PaddingValues(bottom=24.dp)) {
-                itemsIndexed(entries,key={_,entry->entry.uid}) {index,entry ->
+                itemsIndexed(entries,key={_,entry->entry.index}) {index,entry ->
                     Column(Modifier.fillMaxWidth().background(if(entry.current) MaterialTheme.colorScheme.primaryContainer.copy(alpha=.5f) else MaterialTheme.colorScheme.surface,MaterialTheme.shapes.medium).padding(start=12.dp,top=8.dp,end=4.dp,bottom=4.dp)) {
                         Text(if(entry.current) "Sonando ahora" else if(index==next) "A continuación" else "${index+1}",style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.primary)
                         Text(entry.title,maxLines=1,overflow=TextOverflow.Ellipsis,fontWeight=FontWeight.SemiBold)
                         Text(entry.artist,maxLines=1,overflow=TextOverflow.Ellipsis,style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
                         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.End) {
-                            IconButton(enabled=index>0,onClick={moveQueueEntry(controller,entry.uid,-1)}) {Icon(Icons.Rounded.ArrowUpward,"Subir canción ${index+1}")}
-                            IconButton(enabled=index<entries.lastIndex,onClick={moveQueueEntry(controller,entry.uid,1)}) {Icon(Icons.Rounded.ArrowDownward,"Bajar canción ${index+1}")}
-                            IconButton(onClick={val actual=queueIndex(controller,entry.uid);if(actual>=0) controller.removeMediaItem(actual)}) {Icon(Icons.Rounded.RemoveCircleOutline,"Quitar canción ${index+1} de la cola")}
+                            IconButton(enabled=index>0,onClick={if(controller.currentTimeline===snapshot) moveQueueEntry(controller,entry.index,-1)}) {Icon(Icons.Rounded.ArrowUpward,"Subir canción ${index+1}")}
+                            IconButton(enabled=index<entries.lastIndex,onClick={if(controller.currentTimeline===snapshot) moveQueueEntry(controller,entry.index,1)}) {Icon(Icons.Rounded.ArrowDownward,"Bajar canción ${index+1}")}
+                            IconButton(onClick={if(controller.currentTimeline===snapshot && entry.index<controller.mediaItemCount) controller.removeMediaItem(entry.index)}) {Icon(Icons.Rounded.RemoveCircleOutline,"Quitar canción ${index+1} de la cola")}
                         }
                     }
                     Spacer(Modifier.height(6.dp))
