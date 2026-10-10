@@ -54,7 +54,7 @@ internal fun moveQueueEntry(player:Player,index:Int,direction:Int) {
 }
 
 @Composable fun PlaybackQueue(controller:MediaController,onDismiss:()->Unit) {
-    var snapshot by remember(controller) {mutableStateOf(controller.currentTimeline)}
+    var snapshot by remember(controller) {mutableStateOf(controller.currentTimeline,referentialEqualityPolicy())}
     var entries by remember(controller) {mutableStateOf(queueEntries(controller))}
     var shuffled by remember(controller) {mutableStateOf(controller.shuffleModeEnabled)}
     var repeat by remember(controller) {mutableIntStateOf(controller.repeatMode)}
@@ -67,6 +67,7 @@ internal fun moveQueueEntry(player:Player,index:Int,direction:Int) {
         controller.addListener(listener)
         onDispose {controller.removeListener(listener)}
     }
+    val expectedTimeline=snapshot
     val state=rememberLazyListState()
     LaunchedEffect(controller) {val current=entries.indexOfFirst {it.current};if(current>=0) state.scrollToItem(current)}
     ModalBottomSheet(onDismissRequest=onDismiss,sheetState=rememberModalBottomSheetState(skipPartiallyExpanded=true)) {
@@ -90,9 +91,9 @@ internal fun moveQueueEntry(player:Player,index:Int,direction:Int) {
                         Text(entry.title,maxLines=1,overflow=TextOverflow.Ellipsis,fontWeight=FontWeight.SemiBold)
                         Text(entry.artist,maxLines=1,overflow=TextOverflow.Ellipsis,style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
                         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.End) {
-                            IconButton(enabled=index>0,onClick={if(controller.currentTimeline===snapshot) moveQueueEntry(controller,entry.index,-1)}) {Icon(Icons.Rounded.ArrowUpward,"Subir canción ${index+1}")}
-                            IconButton(enabled=index<entries.lastIndex,onClick={if(controller.currentTimeline===snapshot) moveQueueEntry(controller,entry.index,1)}) {Icon(Icons.Rounded.ArrowDownward,"Bajar canción ${index+1}")}
-                            IconButton(onClick={if(controller.currentTimeline===snapshot && entry.index<controller.mediaItemCount) controller.removeMediaItem(entry.index)}) {Icon(Icons.Rounded.RemoveCircleOutline,"Quitar canción ${index+1} de la cola")}
+                            IconButton(enabled=index>0,onClick={if(controller.currentTimeline===expectedTimeline) moveQueueEntry(controller,entry.index,-1)}) {Icon(Icons.Rounded.ArrowUpward,"Subir canción ${index+1}")}
+                            IconButton(enabled=index<entries.lastIndex,onClick={if(controller.currentTimeline===expectedTimeline) moveQueueEntry(controller,entry.index,1)}) {Icon(Icons.Rounded.ArrowDownward,"Bajar canción ${index+1}")}
+                            IconButton(onClick={if(controller.currentTimeline===expectedTimeline && entry.index<controller.mediaItemCount) controller.removeMediaItem(entry.index)}) {Icon(Icons.Rounded.RemoveCircleOutline,"Quitar canción ${index+1} de la cola")}
                         }
                     }
                     Spacer(Modifier.height(6.dp))
