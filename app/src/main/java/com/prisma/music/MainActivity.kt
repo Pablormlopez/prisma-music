@@ -118,9 +118,11 @@ fun PrismaApp() {
         onDispose { disposed=true; controller?.removeListener(listener); controller=null; MediaController.releaseFuture(future) }
     }
     LaunchedEffect(controller) {
+        withContext(Dispatchers.Main.immediate) {
         while(controller!=null) {
             controller?.let { currentId=it.currentMediaItem?.mediaId ?: ""; position=it.currentPosition.coerceAtLeast(0); duration=it.duration.coerceAtLeast(0); playing=it.isPlaying; shuffled=it.shuffleModeEnabled; repeat=it.repeatMode }
             delay(250)
+        }
         }
     }
     LaunchedEffect(granted,libraryVersion) {
