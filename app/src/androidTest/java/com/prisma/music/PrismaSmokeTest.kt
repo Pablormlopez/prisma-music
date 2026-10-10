@@ -212,15 +212,16 @@ class PrismaSmokeTest {
             compose.onNodeWithText("Eliminar del teléfono").performScrollTo().performClick()
             compose.onNodeWithText("Eliminar archivo",substring=false).performClick()
             val device=UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
-            val deleteButton=device.wait(Until.findObject(By.res("android","button1")),5000) ?: device.findObject(By.text(Pattern.compile("(?i)delete|eliminar|allow|permitir")))
-            deleteButton?.click()
+            val deleteButton=device.wait(Until.findObject(By.text(Pattern.compile("(?i)delete|eliminar|allow|permitir"))),10000)
+            assertNotNull("Android debe mostrar el consentimiento de eliminación",deleteButton)
+            deleteButton!!.click()
             compose.waitUntil(10000) {resolver.query(second,arrayOf("_id"),null,null,null)?.use {it.count==0} ?: true}
-            compose.waitUntil(5000) {compose.onAllNodesWithContentDescription("Opciones de Prisma segunda").fetchSemanticsNodes().isEmpty()}
+            compose.waitUntil(10000) {runCatching {compose.onAllNodes(isRoot()).fetchSemanticsNodes().isNotEmpty() && compose.onAllNodesWithContentDescription("Opciones de Prisma segunda").fetchSemanticsNodes().isEmpty()}.getOrDefault(false)}
             compose.runOnIdle {for(i in 0 until observer.mediaItemCount) assertNotEquals(second.lastPathSegment,observer.getMediaItemAt(i).mediaId);observer.release()}
             shot("12-eliminacion-completada")
         } catch (t:Throwable) {
             runCatching {shot("99-failure")}
-            compose.onAllNodes(isRoot()).onLast().printToLog("PrismaTest")
+            runCatching {compose.onAllNodes(isRoot()).onLast().printToLog("PrismaTest")}
             throw t
         } finally {runCatching {resolver.delete(uri,null,null)};runCatching {resolver.delete(second,null,null)}}
     }
