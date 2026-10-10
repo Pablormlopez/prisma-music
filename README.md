@@ -16,9 +16,13 @@ Reproductor de música local para Android, gratuito y de código abierto. Primer
 
 ## Instalar
 
-Descarga `Prisma-Music-beta.apk` si se ha adjuntado a la entrega. También se puede obtener la APK desde **Actions → Compilar APK → ejecución correcta → Prisma-Music-beta** (GitHub entrega un ZIP). Al instalar un APK descargado Android puede pedir permitir instalaciones desde esa aplicación.
+**[⬇ Descargar Prisma Music para Android (APK)](https://github.com/Pablormlopez/prisma-music/releases/download/v0.1.1-beta/Prisma-Music-0.1.1-beta.apk)**
 
-La APK de esta beta es una compilación debug. Las compilaciones de CI usan claves debug temporales; no garantizan actualización sobre una APK firmada en otro entorno. Antes de publicar versiones estables se configurará una clave de firma duradera y privada. No se debe incluir una clave privada en este repositorio.
+Android 8.0 o posterior. Abre el enlace desde el teléfono, espera a que termine la descarga y abre el archivo `.apk`. Android puede pedir permitir instalaciones desde el navegador o gestor de archivos usado. No necesitas descargar el código ni entrar en Actions.
+
+[Ver versiones y notas de publicación](https://github.com/Pablormlopez/prisma-music/releases).
+
+La versión 0.1.1 es una compilación release sin depuración, firmada con una clave temporal de beta. Todavía no se garantiza actualizar encima de otra beta con una firma diferente. Si ya instalaste una beta anterior y la actualización falla por firma, conserva tus archivos de música y ten presente que desinstalar elimina listas y preferencias locales. Antes de la versión estable se configurará una clave privada duradera.
 
 ## Compilar y verificar
 
