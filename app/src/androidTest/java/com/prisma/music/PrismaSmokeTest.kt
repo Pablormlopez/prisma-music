@@ -177,7 +177,7 @@ class PrismaSmokeTest {
             compose.onNodeWithText("Eliminar del teléfono").performScrollTo().performClick()
             compose.onNodeWithText("Eliminar archivo",substring=false).performClick()
             val device=UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
-            val deleteButton=device.wait(Until.findObject(By.text(Pattern.compile("(?i)delete|eliminar"))),5000)
+            val deleteButton=device.wait(Until.findObject(By.res("android","button1")),5000) ?: device.findObject(By.text(Pattern.compile("(?i)delete|eliminar|allow|permitir")))
             deleteButton?.click()
             compose.waitUntil(10000) {resolver.query(second,arrayOf("_id"),null,null,null)?.use {it.count==0} ?: true}
             compose.waitUntil(5000) {compose.onAllNodesWithContentDescription("Opciones de Prisma segunda").fetchSemanticsNodes().isEmpty()}
