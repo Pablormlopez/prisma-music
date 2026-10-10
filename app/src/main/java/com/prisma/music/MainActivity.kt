@@ -161,7 +161,7 @@ fun PrismaApp() {
                     Row(Modifier.fillMaxWidth().padding(horizontal=22.dp,vertical=14.dp),verticalAlignment=Alignment.CenterVertically) {
                         if(page=="Reproduciendo") IconButton(onClick={page="Biblioteca"}) { Icon(Icons.Rounded.KeyboardArrowDown,"Volver a la biblioteca") }
                         Column(Modifier.weight(1f)) { Text("PRISMA",fontSize=12.sp,letterSpacing=4.sp,fontWeight=FontWeight.Bold,color=accent); Text(if(page=="Biblioteca") "Tu música, a tu manera." else page,fontSize=if(theme==VisualTheme.MINIMAL) 30.sp else 23.sp,fontWeight=if(theme==VisualTheme.MINIMAL) FontWeight.Light else FontWeight.Bold) }
-                        if(page=="Biblioteca") IconButton(onClick={libraryVersion++}, { controller?.sendCustomCommand(SessionCommand("prisma.settings",Bundle.EMPTY),Bundle.EMPTY) }) { Icon(Icons.Rounded.Refresh,"Actualizar biblioteca") }
+                        if(page=="Biblioteca") IconButton(onClick={libraryVersion++}) { Icon(Icons.Rounded.Refresh,"Actualizar biblioteca") }
                     }
                     error?.let { message -> Surface(color=colors.errorContainer,shape=RoundedCornerShape(16.dp),modifier=Modifier.padding(horizontal=16.dp)) { Row(Modifier.padding(12.dp),verticalAlignment=Alignment.CenterVertically) { Text(message,Modifier.weight(1f),color=colors.onErrorContainer,style=MaterialTheme.typography.bodySmall); IconButton(onClick={error=null}) { Icon(Icons.Rounded.Close,"Cerrar mensaje") } } } }
                     Crossfade(targetState=page,label="page",modifier=Modifier.weight(1f)) { route -> when(route) {
