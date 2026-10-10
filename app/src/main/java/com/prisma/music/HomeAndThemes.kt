@@ -34,7 +34,7 @@ import androidx.compose.ui.unit.sp
     Surface(shape=RoundedCornerShape(38.dp),color=c.surface.copy(alpha=if(glass) .78f else .97f),border=BorderStroke(1.dp,c.outlineVariant.copy(alpha=.4f)),shadowElevation=if(glass) 12.dp else 5.dp,modifier=Modifier.navigationBarsPadding().padding(horizontal=14.dp,vertical=8.dp).fillMaxWidth().then(if(glass) Modifier.crystal() else Modifier)) {
         Row(Modifier.padding(6.dp),verticalAlignment=Alignment.CenterVertically) {
             listOf("Inicio" to Icons.Rounded.Home,"Biblioteca" to Icons.Rounded.LibraryMusic,"Listas" to Icons.Rounded.QueueMusic,"Sonido" to Icons.Rounded.Equalizer,"Ajustes" to Icons.Rounded.Tune).forEach { (route,icon)->
-                val active=page==route || page=="Temas" && route=="Ajustes"
+                val active=page==route || page=="Artista" && route=="Biblioteca" || (page=="Temas" || page=="Personalización") && route=="Ajustes"
                 val tint=if(active)c.primary else c.onSurfaceVariant
                 Column(Modifier.weight(1f).clip(RoundedCornerShape(30.dp)).background(if(active)c.primary.copy(alpha=.13f) else Color.Transparent).semantics {selected=active}.clickable(role=Role.Tab) {onPage(route)}.padding(vertical=9.dp),horizontalAlignment=Alignment.CenterHorizontally) {
                     Icon(icon,null,Modifier.size(25.dp),tint=tint)
@@ -45,11 +45,12 @@ import androidx.compose.ui.unit.sp
     }
 }
 
-@Composable fun HomeScreen(songs:List<Song>,busy:Boolean,current:Song?,recentIds:List<String>,onPlay:(List<Song>,Song)->Unit,onLibrary:()->Unit,onOptions:(Song)->Unit) {
+@Composable fun HomeScreen(songs:List<Song>,busy:Boolean,current:Song?,recentIds:List<String>,onPlay:(List<Song>,Song)->Unit,onLibrary:()->Unit,onRecent:()->Unit,onOptions:(Song)->Unit) {
     val c=MaterialTheme.colorScheme
     if(songs.isEmpty()) {EmptyCard(if(busy) "Buscando tu música…" else "Tu música merece un lugar aquí","Añade canciones al teléfono y actualiza tu colección.",Icons.Rounded.LibraryMusic);return}
     val recent=recentIds.mapNotNull {id->songs.find {it.id==id}}
     val featured=(listOfNotNull(current?.takeIf {it in songs})+recent+songs).distinctBy {it.id}.take(8)
+    val added=recentlyAdded(songs)
     val albums=songs.distinctBy {it.album to it.artist}.take(12)
     LazyColumn(Modifier.fillMaxSize(),contentPadding=PaddingValues(bottom=24.dp),verticalArrangement=Arrangement.spacedBy(24.dp)) {
         item {
@@ -79,9 +80,12 @@ import androidx.compose.ui.unit.sp
             }
         }
         item {
-            Text("Canciones de tu biblioteca",fontSize=20.sp,fontWeight=FontWeight.Bold,modifier=Modifier.padding(start=24.dp,end=24.dp,bottom=14.dp))
+            Row(Modifier.fillMaxWidth().padding(horizontal=24.dp),verticalAlignment=Alignment.CenterVertically) {
+                Text("Recién añadidas",fontSize=20.sp,fontWeight=FontWeight.Bold,modifier=Modifier.weight(1f))
+                TextButton(onClick=onRecent) {Text("Ver todas")}
+            }
             LazyRow(contentPadding=PaddingValues(horizontal=24.dp),horizontalArrangement=Arrangement.spacedBy(16.dp)) {
-                items(songs.take(16),key={it.id}) {song->HomeSongCard(song,{onPlay(songs,song)},{onOptions(song)})}
+                items(added.take(16),key={it.id}) {song->HomeSongCard(song,{onPlay(added,song)},{onOptions(song)})}
             }
         }
         item {

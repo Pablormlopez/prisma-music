@@ -14,7 +14,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.palette.graphics.Palette
 
-data class Song(val id: String, val uri: Uri, val title: String, val artist: String, val album: String, val genre: String, val folder: String, val name: String, val duration: Long, val size: Long, val mime: String, val art: Uri) {
+data class Song(val id: String, val uri: Uri, val title: String, val artist: String, val album: String, val genre: String, val folder: String, val name: String, val duration: Long, val size: Long, val mime: String, val art: Uri, val dateAdded: Long = 0) {
     fun mediaItem() = MediaItem.Builder().setMediaId(id).setUri(uri).setMediaMetadata(MediaMetadata.Builder().setTitle(title).setArtist(artist).setAlbumTitle(album).setArtworkUri(art).build()).build()
 }
 
@@ -24,7 +24,7 @@ object Library {
     fun scan(context: Context): List<Song> {
         val base = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
         val folderColumn = if(Build.VERSION.SDK_INT >= 29) MediaStore.MediaColumns.RELATIVE_PATH else MediaStore.MediaColumns.DATA
-        val columns = mutableListOf("_id","title","artist","album","album_id","duration","_size","mime_type","_display_name",folderColumn)
+        val columns = mutableListOf("_id","title","artist","album","album_id","duration","_size","mime_type","_display_name",MediaStore.MediaColumns.DATE_ADDED,folderColumn)
         if(Build.VERSION.SDK_INT >= 30) columns.add("genre")
         val result = mutableListOf<Song>()
         context.contentResolver.query(base, columns.toTypedArray(), null, null, "title COLLATE NOCASE ASC")?.use { c ->
@@ -33,7 +33,7 @@ object Library {
             while(c.moveToNext()) {
                 val id=number("_id"); val name=str("_display_name")
                 val folder = str(folderColumn).let { if(Build.VERSION.SDK_INT < 29) it.substringBeforeLast('/',"") else it }.trimEnd('/')
-                result.add(Song(id.toString(),ContentUris.withAppendedId(base,id),str("title").ifBlank { name.substringBeforeLast('.') },str("artist").takeUnless { it=="<unknown>" || it.isBlank() } ?: "Artista desconocido",str("album").takeUnless { it=="<unknown>" || it.isBlank() } ?: "Sin álbum",str("genre").ifBlank { "Sin género" },folder,name,number("duration"),number("_size"),str("mime_type"),ContentUris.withAppendedId(Uri.parse("content://media/external/audio/albumart"),number("album_id"))))
+                result.add(Song(id.toString(),ContentUris.withAppendedId(base,id),str("title").ifBlank { name.substringBeforeLast('.') },str("artist").takeUnless { it=="<unknown>" || it.isBlank() } ?: "Artista desconocido",str("album").takeUnless { it=="<unknown>" || it.isBlank() } ?: "Sin álbum",str("genre").ifBlank { "Sin género" },folder,name,number("duration"),number("_size"),str("mime_type"),ContentUris.withAppendedId(Uri.parse("content://media/external/audio/albumart"),number("album_id")),number(MediaStore.MediaColumns.DATE_ADDED)))
             }
         }
         return result

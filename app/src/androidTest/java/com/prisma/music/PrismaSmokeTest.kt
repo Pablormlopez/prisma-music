@@ -107,7 +107,33 @@ class PrismaSmokeTest {
             compose.runOnIdle {observer.pause()}
             compose.waitUntil(5000) { compose.onAllNodesWithContentDescription("Reproducir").fetchSemanticsNodes().isNotEmpty() }
             compose.onNodeWithContentDescription("Reproducir").assertExists()
+            // Artist and album browsing never changes the paused session or queue.
+            val scanned=Library.scan(context)
+            val fixture=scanned.first {it.id==uri.lastPathSegment}
+            assertTrue(fixture.dateAdded>0)
+            val dates=scanned.mapIndexed {index,song->song.copy(dateAdded=(100-index).toLong())}
+            assertEquals(dates.map {it.id},recentlyAdded(dates.reversed()).map {it.id})
+            val beforeArtist=compose.runOnIdle {Triple(observer.currentMediaItem?.mediaId,observer.currentPosition,observer.mediaItemCount)}
+            compose.onNodeWithContentDescription("Ver artista ${fixture.artist}").performClick()
+            compose.onNodeWithText("Álbumes",substring=false).performClick()
+            compose.onNodeWithContentDescription("Ver canciones del álbum ${fixture.album}").performClick()
+            shot("17-artista-album")
+            compose.runOnIdle {assertEquals(beforeArtist,Triple(observer.currentMediaItem?.mediaId,observer.currentPosition,observer.mediaItemCount));assertFalse(observer.playWhenReady)}
+            compose.onNodeWithContentDescription("Volver al reproductor").performClick()
+            compose.onNodeWithContentDescription("Ver álbum ${fixture.album}").assertDoesNotExist()
             compose.onNodeWithContentDescription("Volver a la biblioteca").performClick()
+            nav("Ajustes")
+            compose.onNodeWithContentDescription("Mostrar nombre del álbum").performScrollTo().performClick()
+            assertTrue(Preferences(context).showPlayerAlbum)
+            compose.onNodeWithContentDescription("Abrir reproductor").performClick()
+            compose.onNodeWithContentDescription("Ver álbum ${fixture.album}").assertExists().performClick()
+            compose.onNodeWithText("Todos los álbumes",substring=false).assertExists()
+            compose.onNodeWithContentDescription("Volver al reproductor").performClick()
+            compose.onNodeWithContentDescription("Cerrar reproductor").performClick()
+            nav("Ajustes")
+            compose.onNodeWithContentDescription("Mostrar nombre del álbum").performScrollTo().performClick()
+            assertFalse(Preferences(context).showPlayerAlbum)
+            nav("Biblioteca")
             compose.onNodeWithContentDescription("Abrir reproductor").assertExists()
             // A long press opens actions without replacing playback; deletion can be canceled.
             compose.onNode(hasText("Prisma prueba") and SemanticsMatcher.keyIsDefined(SemanticsActions.OnLongClick)).performTouchInput {longClick()}
@@ -160,6 +186,10 @@ class PrismaSmokeTest {
             compose.waitUntil(5000) {compose.onAllNodesWithContentDescription("Abrir reproductor").fetchSemanticsNodes().isNotEmpty()}
             nav("Ajustes")
             compose.onNode(hasText("Personalización",substring=false) and hasClickAction()).performScrollTo().performClick()
+            compose.onNodeWithText("MODO DE COLOR",substring=false).performScrollTo().assertExists()
+            compose.onNodeWithText("Oscuro",substring=false).performScrollTo().performClick()
+            assertEquals(LightMode.DARK,Preferences(context).mode)
+            compose.onNodeWithText("Según el sistema",substring=false).performScrollTo().performClick()
             compose.onNodeWithText("Elegir un color personalizado").performScrollTo().performClick()
             compose.onNodeWithText("Usar este color").performClick()
             assertEquals("#9D87E8",Preferences(context).personalization.accent)
@@ -184,6 +214,43 @@ class PrismaSmokeTest {
             compose.onNodeWithContentDescription("Duración de salida").performScrollTo().performSemanticsAction(SemanticsActions.SetProgress) {it(0f)}
             compose.waitUntil(10000) {compose.runOnIdle {observer.volume==1f}}
 
+            // Add directly from an empty playlist; cancel has no write, existing songs are omitted.
+            nav("Listas")
+            compose.onNodeWithText("Crear lista de reproducción").performClick()
+            compose.onNodeWithText("Nombre",substring=false).performTextInput("Prisma selección")
+            compose.onNodeWithText("Crear",substring=false).performClick()
+            compose.onNodeWithText("Prisma selección",substring=false).performClick()
+            compose.onNodeWithText("Añadir canciones",substring=false).performClick()
+            compose.onNodeWithContentDescription("Seleccionar Prisma prueba para Prisma selección").performClick()
+            compose.onNodeWithText("Cancelar",substring=false).performClick()
+            assertTrue(Preferences(context).playlists().getValue("Prisma selección").isEmpty())
+            compose.onNodeWithText("Añadir canciones",substring=false).performClick()
+            compose.onNodeWithContentDescription("Seleccionar Prisma prueba para Prisma selección").performClick()
+            compose.onNodeWithText("Añadir 1 canciones",substring=false).performClick()
+            assertEquals(listOf(uri.lastPathSegment),Preferences(context).playlists().getValue("Prisma selección"))
+            compose.onNodeWithText("Añadir canciones",substring=false).performClick()
+            compose.onNodeWithContentDescription("Seleccionar Prisma prueba para Prisma selección").assertDoesNotExist()
+            compose.onNodeWithText("Buscar canciones para añadir").performTextInput("sin coincidencias")
+            compose.onNodeWithText("No hay coincidencias.").assertExists()
+            compose.onNodeWithText("Buscar canciones para añadir").performTextClearance()
+            compose.onNodeWithContentDescription("Seleccionar Prisma segunda para Prisma selección").performClick()
+            shot("18-anadir-playlist")
+            compose.onNodeWithText("Añadir 1 canciones",substring=false).performClick()
+            assertEquals(setOf(uri.lastPathSegment,second.lastPathSegment),Preferences(context).playlists().getValue("Prisma selección").toSet())
+            nav("Biblioteca")
+            compose.onNodeWithText("Seleccionar varias",substring=false).performClick()
+            compose.onNodeWithContentDescription("Seleccionar Prisma prueba").performClick()
+            compose.onNodeWithContentDescription("Seleccionar Prisma segunda").performClick()
+            shot("19-multiseleccion")
+            compose.onNodeWithContentDescription("Añadir selección a una playlist").performClick()
+            compose.onNodeWithText("Prisma selección",substring=false).performClick()
+            assertEquals(2,Preferences(context).playlists().getValue("Prisma selección").size)
+            compose.onNodeWithText("Cancelar",substring=false).performClick()
+            nav("Inicio")
+            compose.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Recién añadidas"))
+            compose.onNodeWithText("Canciones de tu biblioteca").assertDoesNotExist()
+            compose.onNodeWithText("Ver todas",substring=false).performClick()
+            compose.onNodeWithText("Últimas incorporadas al teléfono, primero las más nuevas").assertExists()
             nav("Biblioteca")
             compose.onNode(hasText("Prisma prueba") and SemanticsMatcher.keyIsDefined(SemanticsActions.OnLongClick)).assertExists()
             shot("11-lista-compacta")
