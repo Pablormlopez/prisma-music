@@ -1,4 +1,13 @@
-## Beta 1.0.4 · Cola de reproducción
+## Beta 2.0.1 · Una nueva forma de escuchar
+
+- Inicio independiente con carátulas protagonistas, canciones y álbumes de la colección local e historial reciente.
+- Navegación flotante de cinco accesos y reproductor completo con más espacio para la portada.
+- Ajustes → **Temas**: Chromatic Flow, Liquid Glass, Pure Minimal y Black Night renovados; nuevos **Studio** y **Sunset**. Modos claro, oscuro y sistema.
+- Liquid Glass se inspira en superficies claras, cápsulas flotantes y bordes de cristal; el fondo difuminado se calcula una vez por carátula y funciona desde Android 8.
+- Se conservan la personalización manual, cola editable, gestos, letras, metadatos y ecualizador.
+- Historial y preferencias se guardan en el teléfono. No requiere cuentas ni servicios de música en línea.
+
+## Beta 2.0.1 · Cola de reproducción
 
 - Botón de cola en el reproductor: muestra la canción actual y cuál sigue, con el orden real incluso en aleatorio.
 - Mueve entradas hacia arriba o abajo, o quítalas solo de la cola. Las canciones repetidas se editan individualmente. Mover conserva la posición y estado de reproducción; en aleatorio mantiene la secuencia visible y aplica tu cambio como orden manual.
@@ -14,7 +23,7 @@
 
 # Prisma Music
 
-Reproductor de música local para Android, gratuito y de código abierto. Beta actual: **1.0.4**. Android 8.0 o posterior.
+Reproductor de música local para Android, gratuito y de código abierto. Beta actual: **2.0.1**. Android 8.0 o posterior.
 
 ## Beta 1.0.2 — experiencia visual
 
@@ -45,7 +54,7 @@ Reproductor de música local para Android, gratuito y de código abierto. Beta a
 
 ## Instalar
 
-**[⬇ Descargar Prisma Music para Android (APK)](https://github.com/nexlibre/prisma-music/releases/download/v1.0.4-beta/Prisma-Music-1.0.4-beta.apk)**
+**[⬇ Descargar Prisma Music para Android (APK)](https://github.com/nexlibre/prisma-music/releases/download/v2.0.1-beta/Prisma-Music-2.0.1-beta.apk)**
 
 Android 8.0 o posterior. Abre el enlace desde el teléfono, espera a que termine la descarga y abre el archivo `.apk`. Android puede pedir permitir instalaciones desde el navegador o gestor de archivos usado. No necesitas descargar el código ni entrar en Actions.
 

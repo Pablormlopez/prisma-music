@@ -63,7 +63,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-@Composable fun SettingsScreen(theme:VisualTheme,mode:LightMode,prefs:Preferences,songs:List<Song>,personal:Personalization,onPersonal:(Personalization)->Unit,onTheme:(VisualTheme)->Unit,onMode:(LightMode)->Unit,onLibraryChanged:()->Unit,onPlaybackChanged:()->Unit) {
+@Composable fun SettingsScreen(theme:VisualTheme,mode:LightMode,prefs:Preferences,songs:List<Song>,personal:Personalization,onPersonal:(Personalization)->Unit,onTheme:(VisualTheme)->Unit,onMode:(LightMode)->Unit,onLibraryChanged:()->Unit,onPlaybackChanged:()->Unit,onThemes:()->Unit) {
     var hide by remember { mutableStateOf(prefs.hideWhatsApp) }
     var excluded by remember { mutableStateOf(prefs.excluded) }
     var metadata by remember { mutableStateOf(prefs.showMetadata) }
@@ -76,14 +76,11 @@ import kotlinx.coroutines.withContext
     var foldersDialog by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal=20.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
         SectionTitle("APARIENCIA","Elige tu ambiente")
-        VisualTheme.entries.forEach { v ->
-            val swatches=when(v) { VisualTheme.CHROMATIC->listOf(Color(0xff9580df),Color(0xffe990a4),Color(0xff65b8ce));VisualTheme.GLASS->listOf(Color(0xffc5dfeb),Color(0xff8296da),Color(0xffe5f2ff));VisualTheme.MINIMAL->listOf(Color(0xffeae8e4),Color(0xff92919a),Color(0xff535058));VisualTheme.NIGHT->listOf(Color(0xff121f1b),Color(0xff334c42),Color(0xff66e2ac)) }
-            Surface(onClick={onTheme(v)},shape=RoundedCornerShape(22.dp),color=MaterialTheme.colorScheme.surface.copy(alpha=if(v==VisualTheme.GLASS) .6f else 1f),border=BorderStroke(if(theme==v) 2.dp else 1.dp,if(theme==v) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha=.5f))) {
-                Row(Modifier.fillMaxWidth().padding(16.dp),verticalAlignment=Alignment.CenterVertically) {
-                    Box(Modifier.size(57.dp).clip(RoundedCornerShape(17.dp)).background(Brush.linearGradient(swatches)),contentAlignment=Alignment.Center) {Icon(Icons.Rounded.MusicNote,null,tint=Color.White)}
-                    Column(Modifier.padding(horizontal=14.dp).weight(1f)) {Text(v.title,fontWeight=FontWeight.SemiBold);Text(when(v) {VisualTheme.CHROMATIC->"Colores de tu carátula";VisualTheme.GLASS->"Cristal, luz y transparencias";VisualTheme.MINIMAL->"Simple, limpio y sereno";VisualTheme.NIGHT->"Contraste y acentos verdes"},style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)}
-                    RadioButton(selected=theme==v,onClick=null)
-                }
+        Surface(onClick=onThemes,shape=RoundedCornerShape(24.dp),color=MaterialTheme.colorScheme.surface,modifier=Modifier.fillMaxWidth()) {
+            Row(Modifier.padding(18.dp),verticalAlignment=Alignment.CenterVertically) {
+                Icon(Icons.Rounded.Palette,null,Modifier.size(36.dp),tint=MaterialTheme.colorScheme.primary)
+                Column(Modifier.weight(1f).padding(horizontal=16.dp)) {Text("Temas",fontSize=20.sp,fontWeight=FontWeight.Bold);Text("${theme.title} · 6 diseños para explorar",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)}
+                Icon(Icons.Rounded.ChevronRight,null)
             }
         }
         PersonalizationSettings(personal,onPersonal)
@@ -109,7 +106,7 @@ import kotlinx.coroutines.withContext
         Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {Column(Modifier.weight(1f)) {Text("Excluir audios de WhatsApp",fontWeight=FontWeight.SemiBold);Text("También notas de voz y WhatsApp Business",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)};Switch(checked=hide,onCheckedChange={hide=it;prefs.hideWhatsApp=it;onLibraryChanged()})}
         OutlinedButton(onClick={foldersDialog=true},modifier=Modifier.fillMaxWidth(),shape=RoundedCornerShape(16.dp)) {Icon(Icons.Rounded.FolderOpen,null);Text("Elegir carpetas · ${excluded.size} excluidas",Modifier.padding(8.dp))}
         Text("Se muestran las carpetas que Android ha registrado con archivos de audio. Las carpetas privadas de otras apps pueden no ser accesibles.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
-        SectionTitle("PRISMA MUSIC","1.0.3 · Beta de código abierto")
+        SectionTitle("PRISMA MUSIC","2.0.1 · Beta de código abierto")
         Text("Sin anuncios, sin cuenta y sin subir tu música. Las letras incrustadas se leen automáticamente. Puedes importar LRC o TXT si el archivo no contiene letra. El motor usa PCM de 16 bits para aplicar el ecualizador; los datos mostrados describen el archivo original.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(24.dp))
     }
@@ -196,7 +193,7 @@ import kotlinx.coroutines.withContext
     val end=if(duration>0) duration else song.duration
     var seeking by remember(song.id) {mutableStateOf<Float?>(null)}
     Column(Modifier.fillMaxSize().graphicsLayer {translationY=offset;alpha=1f-(offset/screenHeight).coerceIn(0f,.7f)}.padding(horizontal=24.dp)) {
-        Box(Modifier.fillMaxWidth().height(32.dp).semantics {contentDescription="Deslizar hacia abajo para cerrar"}.pointerInput(Unit) {
+        Box(Modifier.fillMaxWidth().height(20.dp).semantics {contentDescription="Deslizar hacia abajo para cerrar"}.pointerInput(Unit) {
             detectVerticalDragGestures(onDragStart={verticalDrag=0f},onDragCancel={verticalDrag=0f},onDragEnd={if(verticalDrag>closeThreshold) closing=true;verticalDrag=0f}) {change,amount->change.consume();verticalDrag=(verticalDrag+amount).coerceAtLeast(0f)}
         },contentAlignment=Alignment.Center) {Box(Modifier.width(40.dp).height(4.dp).clip(RoundedCornerShape(8.dp)).background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha=.45f)))}
         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.Center,verticalAlignment=Alignment.CenterVertically) {FilterChip(!lyricsVisible,{lyricsVisible=false},label={Text("Carátula")});Spacer(Modifier.width(8.dp));FilterChip(lyricsVisible,{lyricsVisible=true},label={Text("Letra")});IconButton(onClick={metadataVisible=!metadataVisible;prefs.showMetadata=metadataVisible}) {Icon(Icons.Rounded.Info,if(metadataVisible) "Ocultar metadatos" else "Mostrar metadatos",tint=if(metadataVisible) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)};IconButton(enabled=controller!=null,onClick={queueVisible=true}) {Icon(Icons.Rounded.QueueMusic,"Ver cola de reproducción")}}
@@ -225,7 +222,7 @@ import kotlinx.coroutines.withContext
 
             }
         }
-        Text(song.title,fontSize=if(theme==VisualTheme.MINIMAL) 30.sp else 23.sp,fontWeight=FontWeight.Bold,maxLines=2,overflow=TextOverflow.Ellipsis,modifier=Modifier.padding(top=18.dp))
+        Text(song.title,fontSize=if(theme==VisualTheme.MINIMAL) 30.sp else 27.sp,fontWeight=FontWeight.Bold,maxLines=2,overflow=TextOverflow.Ellipsis,modifier=Modifier.padding(top=16.dp))
         Text(song.artist,color=MaterialTheme.colorScheme.onSurfaceVariant,maxLines=1,overflow=TextOverflow.Ellipsis)
         AnimatedVisibility(metadataVisible,enter=fadeIn(tween(220))+expandVertically(tween(280)),exit=fadeOut(tween(150))+shrinkVertically(tween(280))) {
             Text(details?.text ?: "Leyendo información del archivo…",fontSize=10.sp,maxLines=2,overflow=TextOverflow.Ellipsis,color=MaterialTheme.colorScheme.primary,modifier=Modifier.padding(top=7.dp).semantics {contentDescription="Información técnica de la canción"})
@@ -236,10 +233,10 @@ import kotlinx.coroutines.withContext
         }
         ThemeTimeline(theme,seeking ?: smoothPosition,end.toFloat().coerceAtLeast(1f),end>0,onChange={seeking=it},onFinished={seeking?.let {controller?.seekTo(it.toLong())};seeking=null})
         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) {Text(time((seeking?.toLong() ?: position)),fontSize=11.sp,color=MaterialTheme.colorScheme.onSurfaceVariant);Text(time(end),fontSize=11.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)}
-        Row(Modifier.fillMaxWidth().padding(vertical=12.dp).then(if(theme==VisualTheme.GLASS) Modifier.crystal().padding(vertical=8.dp) else Modifier),horizontalArrangement=Arrangement.SpaceEvenly,verticalAlignment=Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth().padding(vertical=12.dp).then(if(theme==VisualTheme.GLASS) Modifier.crystal().background(MaterialTheme.colorScheme.surface.copy(alpha=.55f)).padding(vertical=8.dp) else Modifier),horizontalArrangement=Arrangement.SpaceEvenly,verticalAlignment=Alignment.CenterVertically) {
             IconButton(onClick={controller?.shuffleModeEnabled=!shuffle}) {Icon(Icons.Rounded.Shuffle,if(shuffle) "Desactivar aleatorio" else "Activar aleatorio",tint=if(shuffle) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)}
             IconButton(onClick={controller?.seekToPrevious()}) {Icon(Icons.Rounded.SkipPrevious,"Anterior",Modifier.size(34.dp))}
-            FilledIconButton(onClick={controller?.let {if(it.isPlaying) it.pause() else it.play()}},modifier=Modifier.size(64.dp),shape=CircleShape) {Icon(if(playing) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,if(playing) "Pausar" else "Reproducir",Modifier.size(38.dp))}
+            FilledIconButton(onClick={controller?.let {if(it.isPlaying) it.pause() else it.play()}},modifier=Modifier.size(72.dp),shape=if(theme==VisualTheme.STUDIO) RoundedCornerShape(20.dp) else CircleShape) {Icon(if(playing) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,if(playing) "Pausar" else "Reproducir",Modifier.size(38.dp))}
             IconButton(onClick={controller?.seekToNextMediaItem()}) {Icon(Icons.Rounded.SkipNext,"Siguiente",Modifier.size(34.dp))}
             IconButton(onClick={controller?.repeatMode=when(repeat){Player.REPEAT_MODE_OFF->Player.REPEAT_MODE_ALL;Player.REPEAT_MODE_ALL->Player.REPEAT_MODE_ONE;else->Player.REPEAT_MODE_OFF}}) {Icon(if(repeat==Player.REPEAT_MODE_ONE) Icons.Rounded.RepeatOne else Icons.Rounded.Repeat,"Cambiar repetición",tint=if(repeat!=Player.REPEAT_MODE_OFF) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)}
         }

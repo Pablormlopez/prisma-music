@@ -94,12 +94,15 @@ fun PrismaApp() {
     var playing by remember { mutableStateOf(false) }
     var shuffled by remember { mutableStateOf(false) }
     var repeat by remember { mutableIntStateOf(Player.REPEAT_MODE_OFF) }
-    var page by rememberSaveable { mutableStateOf("Biblioteca") }
+    var page by rememberSaveable { mutableStateOf("Inicio") }
     var details by remember { mutableStateOf<Library.Details?>(null) }
     var lists by remember { mutableStateOf(prefs.playlists()) }
     var addToList by remember { mutableStateOf<Song?>(null) }
     var newListDialog by remember { mutableStateOf(false) }
-    androidx.activity.compose.BackHandler(enabled=page=="Reproduciendo") { page="Biblioteca" }
+    var playerReturn by rememberSaveable {mutableStateOf("Inicio")}
+    var recentIds by remember {mutableStateOf(prefs.recentIds())}
+    fun openPlayer() {playerReturn=page;page="Reproduciendo"}
+    androidx.activity.compose.BackHandler(enabled=page=="Reproduciendo" || page=="Temas") { page=if(page=="Temas") "Ajustes" else playerReturn }
     val scope=rememberCoroutineScope()
     val permission=if(Build.VERSION.SDK_INT>=33) Manifest.permission.READ_MEDIA_AUDIO else Manifest.permission.READ_EXTERNAL_STORAGE
     var granted by remember { mutableStateOf(ContextCompat.checkSelfPermission(context,permission)==PackageManager.PERMISSION_GRANTED) }
@@ -134,14 +137,14 @@ fun PrismaApp() {
     }
     val visible=remember(songs,libraryVersion) { Library.visible(songs,prefs) }
     val current=songs.find { it.id==currentId }
-    LaunchedEffect(currentId) { details=null; current?.let { s -> details=withContext(Dispatchers.IO) { Library.details(context,s) } } }
+    LaunchedEffect(currentId) { if(currentId.isNotBlank()) {prefs.rememberSong(currentId);recentIds=prefs.recentIds()}; details=null; current?.let { s -> details=withContext(Dispatchers.IO) { Library.details(context,s) } } }
     val dark=when(mode) { LightMode.DARK->true; LightMode.LIGHT->false; LightMode.SYSTEM->isSystemInDarkTheme() }
     SideEffect { (context as? ComponentActivity)?.window?.let { window -> androidx.core.view.WindowCompat.getInsetsController(window,window.decorView).apply {isAppearanceLightStatusBars=!dark;isAppearanceLightNavigationBars=!dark} } }
-    val baseAccent=accentColor(personal.accent) ?: when(theme) { VisualTheme.CHROMATIC->Color(details?.color ?: 0xffb0a2ff.toInt()); VisualTheme.GLASS->if(dark) Color(0xff8bd6f8) else Color(0xff126185); VisualTheme.MINIMAL->if(dark) Color(0xffc6c5ce) else Color(0xff494650); VisualTheme.NIGHT->if(dark) Color(0xff66e2ac) else Color(0xff006c43) }
+    val baseAccent=accentColor(personal.accent) ?: when(theme) { VisualTheme.CHROMATIC->Color(details?.color ?: 0xffb0a2ff.toInt()); VisualTheme.GLASS->if(dark) Color(0xff8bd6f8) else Color(0xff1455bd); VisualTheme.MINIMAL->if(dark) Color(0xffc6c5ce) else Color(0xff494650); VisualTheme.NIGHT->if(dark) Color(0xff66e2ac) else Color(0xff006c43); VisualTheme.STUDIO->if(dark) Color(0xffc8b5ff) else Color(0xff6446a6); VisualTheme.SUNSET->if(dark) Color(0xffffbd91) else Color(0xff9b3d14) }
     // Keep readable controls even when a cover produces a very dark/light swatch.
     val accent by animateColorAsState(if(theme==VisualTheme.CHROMATIC || personal.accent.isNotEmpty()) androidx.compose.ui.graphics.lerp(baseAccent,if(dark) Color.White else Color.Black,if(dark) .55f else .6f) else baseAccent,animationSpec=tween(450),label="cover")
-    val bg=if(dark) { if(theme==VisualTheme.NIGHT) Color(0xff060a09) else when(theme) {VisualTheme.GLASS->Color(0xff102535);VisualTheme.MINIMAL->Color(0xff161616);else->Color(0xff101018)} } else when(theme) {VisualTheme.GLASS->Color(0xffe1eef4);VisualTheme.MINIMAL->Color(0xfffffdf8);VisualTheme.NIGHT->Color(0xffeaf5ee);else->Color(0xfff6f5fa)}
-    val colors=if(dark) darkColorScheme(primary=accent,secondary=accent,secondaryContainer=androidx.compose.ui.graphics.lerp(bg,accent,.22f),onSecondaryContainer=Color(0xfff0eef7),onSecondary=Color(0xff101018),background=bg,surface=Color(0xff1c1c27),onPrimary=Color(0xff101018),onBackground=Color(0xfff0eef7),onSurface=Color(0xfff0eef7),onSurfaceVariant=Color(0xffd5d8e4),surfaceVariant=Color(0xff323341),outline=Color(0xff9399ac)) else lightColorScheme(primary=accent,secondary=accent,secondaryContainer=androidx.compose.ui.graphics.lerp(bg,accent,.16f),onSecondaryContainer=Color(0xff101018),onSecondary=Color.White,background=bg,surface=Color.White,onPrimary=Color.White)
+    val bg=if(dark) { if(theme==VisualTheme.NIGHT) Color(0xff060a09) else when(theme) {VisualTheme.GLASS->Color(0xff11161e);VisualTheme.MINIMAL->Color(0xff161616);VisualTheme.SUNSET->Color(0xff261910);else->Color(0xff101018)} } else when(theme) {VisualTheme.GLASS->Color(0xfffafbfe);VisualTheme.STUDIO->Color(0xfff3f0f9);VisualTheme.SUNSET->Color(0xfffff1e6);VisualTheme.MINIMAL->Color(0xfffffdf8);VisualTheme.NIGHT->Color(0xffeaf5ee);else->Color(0xfff6f5fa)}
+    val colors=if(dark) darkColorScheme(primary=accent,secondary=accent,primaryContainer=androidx.compose.ui.graphics.lerp(bg,accent,.22f),onPrimaryContainer=Color(0xfff0eef7),secondaryContainer=androidx.compose.ui.graphics.lerp(bg,accent,.22f),onSecondaryContainer=Color(0xfff0eef7),onSecondary=Color(0xff101018),background=bg,surface=Color(0xff1c1c27),onPrimary=Color(0xff101018),onBackground=Color(0xfff0eef7),onSurface=Color(0xfff0eef7),onSurfaceVariant=Color(0xffd5d8e4),surfaceVariant=Color(0xff323341),outline=Color(0xff9399ac)) else lightColorScheme(primary=accent,secondary=accent,primaryContainer=androidx.compose.ui.graphics.lerp(bg,accent,.16f),onPrimaryContainer=Color(0xff101018),secondaryContainer=androidx.compose.ui.graphics.lerp(bg,accent,.16f),onSecondaryContainer=Color(0xff101018),onSecondary=Color.White,background=bg,surface=Color.White,onPrimary=Color.White)
     fun play(queue:List<Song>,song:Song) {
         if(controller==null) { error="El reproductor se está iniciando. Intenta de nuevo."; return }
         if(Build.VERSION.SDK_INT>=33 && ContextCompat.checkSelfPermission(context,Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED) notifications.launch(Manifest.permission.POST_NOTIFICATIONS)
@@ -153,31 +156,36 @@ fun PrismaApp() {
             if(theme==VisualTheme.GLASS) GlassBackdrop(details?.glassBackdrop,bg)
             Scaffold(containerColor=Color.Transparent,contentColor=colors.onBackground,bottomBar={
                 Column {
-                    current?.takeIf { page!="Reproduciendo" }?.let { song -> Surface(onClick={page="Reproduciendo"},modifier=Modifier.padding(horizontal=14.dp,vertical=5.dp).fillMaxWidth().then(if(theme==VisualTheme.GLASS) Modifier.crystal() else Modifier).semantics {contentDescription="Abrir reproductor"},shape=RoundedCornerShape(22.dp),color=colors.surface.copy(alpha=if(theme==VisualTheme.GLASS) .45f else 1f),border=BorderStroke(1.dp,accent.copy(alpha=.15f))) {
+                    current?.takeIf { page!="Reproduciendo" }?.let { song -> Surface(onClick={openPlayer()},modifier=Modifier.padding(horizontal=14.dp,vertical=5.dp).fillMaxWidth().then(if(theme==VisualTheme.GLASS) Modifier.crystal() else Modifier).semantics {contentDescription="Abrir reproductor"},shape=RoundedCornerShape(22.dp),color=colors.surface.copy(alpha=if(theme==VisualTheme.GLASS) .45f else 1f),border=BorderStroke(1.dp,accent.copy(alpha=.15f))) {
                         Row(Modifier.padding(10.dp),verticalAlignment=Alignment.CenterVertically) {
                             Cover(song,Modifier.size(44.dp)); Spacer(Modifier.width(12.dp)); Column(Modifier.weight(1f)) { Text(song.title,maxLines=1,overflow=TextOverflow.Ellipsis,fontWeight=FontWeight.SemiBold); Text(song.artist,style=MaterialTheme.typography.labelMedium,color=colors.onSurfaceVariant,maxLines=1,overflow=TextOverflow.Ellipsis) }
                             IconButton(onClick={ controller?.let { if(it.isPlaying) it.pause() else it.play() } }) { Icon(if(playing) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,if(playing) "Pausar" else "Reproducir") }
                             IconButton(onClick={controller?.seekToNextMediaItem()}) { Icon(Icons.Rounded.SkipNext,"Siguiente") }
                         }
                     } }
-                    NavigationBar(containerColor=bg.copy(alpha=if(theme==VisualTheme.GLASS) .72f else .96f)) {
-                        listOf(Triple("Biblioteca",Icons.Rounded.LibraryMusic,"Música"),Triple("Listas",Icons.Rounded.QueueMusic,"Listas"),Triple("Sonido",Icons.Rounded.Equalizer,"Sonido"),Triple("Ajustes",Icons.Rounded.Tune,"Ajustes")).forEach { (route,icon,title) -> NavigationBarItem(selected=page==route,onClick={page=route},icon={Icon(icon,title)},label={Text(title)},alwaysShowLabel=true) }
-                    }
+                    if(page!="Reproduciendo") FloatingNavigation(page) {page=it}
                 }
             }) { padding ->
                 Column(Modifier.fillMaxSize().padding(padding)) {
-                    Row(Modifier.fillMaxWidth().padding(horizontal=22.dp,vertical=14.dp),verticalAlignment=Alignment.CenterVertically) {
-                        if(page=="Reproduciendo") IconButton(onClick={page="Biblioteca"}) { Icon(Icons.Rounded.KeyboardArrowDown,"Volver a la biblioteca") }
-                        Column(Modifier.weight(1f)) { Text("PRISMA",fontSize=12.sp,letterSpacing=4.sp,fontWeight=FontWeight.Bold,color=accent); Text(if(page=="Biblioteca") "Tu música, a tu manera." else page,fontSize=if(theme==VisualTheme.MINIMAL) 30.sp else 23.sp,fontWeight=if(theme==VisualTheme.MINIMAL) FontWeight.Light else FontWeight.Bold) }
-                        if(page=="Biblioteca") IconButton(onClick={libraryVersion++}) { Icon(Icons.Rounded.Refresh,"Actualizar biblioteca") }
+                    Row(Modifier.fillMaxWidth().padding(horizontal=22.dp,vertical=if(page=="Reproduciendo") 4.dp else 14.dp),verticalAlignment=Alignment.CenterVertically) {
+                        if(page=="Reproduciendo") IconButton(onClick={page=playerReturn}) { Icon(Icons.Rounded.KeyboardArrowDown,if(playerReturn=="Biblioteca") "Volver a la biblioteca" else "Cerrar reproductor") }
+                        if(page=="Temas") IconButton(onClick={page="Ajustes"}) {Icon(Icons.Rounded.ArrowBack,"Volver a ajustes")}
+                        Column(Modifier.weight(1f)) {
+                            if(page!="Reproduciendo") Text("PRISMA MUSIC",fontSize=10.sp,letterSpacing=2.sp,fontWeight=FontWeight.Bold,color=accent)
+                            Text(page,fontSize=if(page=="Reproduciendo") 14.sp else 32.sp,fontWeight=FontWeight.Bold)
+                        }
+                        if(page=="Inicio") IconButton(onClick={page="Temas"}) {Icon(Icons.Rounded.Palette,"Abrir temas")}
+                        if(page=="Biblioteca" || page=="Inicio") IconButton(onClick={libraryVersion++}) { Icon(Icons.Rounded.Refresh,"Actualizar biblioteca") }
                     }
                     error?.let { message -> Surface(color=colors.errorContainer,shape=RoundedCornerShape(16.dp),modifier=Modifier.padding(horizontal=16.dp)) { Row(Modifier.padding(12.dp),verticalAlignment=Alignment.CenterVertically) { Text(message,Modifier.weight(1f),color=colors.onErrorContainer,style=MaterialTheme.typography.bodySmall); IconButton(onClick={error=null}) { Icon(Icons.Rounded.Close,"Cerrar mensaje") } } } }
                     Crossfade(targetState=page,animationSpec=tween(300, easing=FastOutSlowInEasing),label="page",modifier=Modifier.weight(1f)) { route -> when(route) {
+                        "Inicio"->if(!granted) PermissionCard {requestPermission.launch(permission)} else HomeScreen(visible,busy,current,recentIds,onPlay={queue,song->play(queue,song);openPlayer()},onLibrary={page="Biblioteca"},onOptions={actionSong=it})
+                        "Temas"->ThemesScreen(theme,mode,{theme=it;prefs.theme=it},{mode=it;prefs.mode=it})
                         "Biblioteca"->if(!granted) PermissionCard { requestPermission.launch(permission) } else LibraryScreen(visible,busy,currentId,onPlay=::play,onAdd={addToList=it},onOptions={actionSong=it})
                         "Listas"->PlaylistScreen(lists,visible,currentId,onCreate={newListDialog=true},onDelete={key->lists=lists-key; prefs.savePlaylists(lists)},onRemove={key,id->lists=lists+(key to lists.getValue(key).filterNot { it==id }); prefs.savePlaylists(lists)},onPlay=::play,onOptions={actionSong=it})
                         "Sonido"->EqScreen(prefs) { config->prefs.eq=config; controller?.sendCustomCommand(SessionCommand("prisma.eq",Bundle.EMPTY),Bundle.EMPTY) }
-                        "Ajustes"->SettingsScreen(theme,mode,prefs,songs,personal,{personal=it;prefs.personalization=it},{theme=it;prefs.theme=it},{mode=it;prefs.mode=it},{libraryVersion++}, { controller?.sendCustomCommand(SessionCommand("prisma.settings",Bundle.EMPTY),Bundle.EMPTY) })
-                        "Reproduciendo"->if(current!=null) PlayerScreen(current,details,theme,prefs,position,duration,playing,shuffled,repeat,controller,onDismiss={page="Biblioteca"}) else EmptyCard("Selecciona una canción","Tu música local aparecerá aquí.",Icons.Rounded.MusicNote)
+                        "Ajustes"->SettingsScreen(theme,mode,prefs,songs,personal,{personal=it;prefs.personalization=it},{theme=it;prefs.theme=it},{mode=it;prefs.mode=it},{libraryVersion++}, { controller?.sendCustomCommand(SessionCommand("prisma.settings",Bundle.EMPTY),Bundle.EMPTY) },onThemes={page="Temas"})
+                        "Reproduciendo"->if(current!=null) PlayerScreen(current,details,theme,prefs,position,duration,playing,shuffled,repeat,controller,onDismiss={page=playerReturn}) else EmptyCard("Selecciona una canción","Tu música local aparecerá aquí.",Icons.Rounded.MusicNote)
                     } }
                 }
             }

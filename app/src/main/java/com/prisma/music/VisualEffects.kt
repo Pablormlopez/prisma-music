@@ -51,7 +51,7 @@ object FrostedArtwork {
 @Composable fun GlassBackdrop(bitmap:Bitmap?,background:Color) {
     Box(Modifier.fillMaxSize()) {
         if(bitmap!=null) Image(bitmap.asImageBitmap(),null,Modifier.fillMaxSize(),contentScale=ContentScale.Crop)
-        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(background.copy(alpha=.72f),background.copy(alpha=.55f),background.copy(alpha=.88f)))))
+        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(background.copy(alpha=.93f),background.copy(alpha=.87f),background.copy(alpha=.96f)))))
     }
 }
 
@@ -97,6 +97,18 @@ fun Modifier.crystal() = clip(RoundedCornerShape(28.dp)).drawWithCache {
                 VisualTheme.MINIMAL->{
                     drawLine(inactive,Offset(0f,mid),Offset(size.width,mid),1.dp.toPx())
                     drawLine(primary,Offset(0f,mid),Offset(size.width*progress,mid),2.dp.toPx())
+                }
+                VisualTheme.STUDIO->{
+                    val step=size.width/48
+                    for(i in 0 until 48) {
+                        val h=(5f+15f*kotlin.math.abs(sin(i*1.7f)))*density
+                        drawRoundRect(if((i+.5f)/48<=progress) primary else inactive,Offset(i*step,mid-h/2),Size((step-2.dp.toPx()).coerceAtLeast(1f),h),CornerRadius(2.dp.toPx()))
+                    }
+                }
+                VisualTheme.SUNSET->{
+                    drawLine(inactive,Offset(0f,mid),Offset(size.width,mid),5.dp.toPx(),StrokeCap.Round)
+                    drawLine(Brush.horizontalGradient(listOf(Color(0xffeaa070),primary)),Offset(0f,mid),Offset(size.width*progress,mid),7.dp.toPx(),StrokeCap.Round)
+                    for(i in 1..9) drawCircle(colors.surface.copy(alpha=.65f),1.5.dp.toPx(),Offset(size.width*i/10,mid))
                 }
                 VisualTheme.NIGHT->{
                     val step=size.width/40

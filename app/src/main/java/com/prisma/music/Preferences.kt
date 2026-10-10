@@ -4,7 +4,7 @@ import android.content.Context
 import org.json.JSONArray
 import org.json.JSONObject
 
-enum class VisualTheme(val title: String) { CHROMATIC("Chromatic Flow"), GLASS("Liquid Glass"), MINIMAL("Pure Minimal"), NIGHT("Black Night") }
+enum class VisualTheme(val title: String) { CHROMATIC("Chromatic Flow"), GLASS("Liquid Glass"), MINIMAL("Pure Minimal"), NIGHT("Black Night"), STUDIO("Studio"), SUNSET("Sunset") }
 enum class LightMode(val title: String) { SYSTEM("Según el sistema"), DARK("Oscuro"), LIGHT("Claro") }
 
 enum class LibraryLayout(val title:String) { THEME("Según el tema"), LIST("Lista"), GRID("Cuadrícula"), COMPACT("Lista compacta") }
@@ -59,6 +59,11 @@ class Preferences(context: Context) {
         j.keys().asSequence().associateWith { key -> val a=j.getJSONArray(key); List(a.length()) { a.getString(it) } }
     }.getOrDefault(emptyMap())
     fun savePlaylists(lists: Map<String,List<String>>) { val j=JSONObject(); lists.forEach { (k,v)-> j.put(k,JSONArray(v)) }; prefs.edit().putString("playlists",j.toString()).apply() }
+    fun recentIds(): List<String> = runCatching {
+        val a=JSONArray(prefs.getString("recentSongs","[]")!!)
+        List(a.length()) {a.getString(it)}
+    }.getOrDefault(emptyList())
+    fun rememberSong(id:String) { if(id.isNotBlank()) prefs.edit().putString("recentSongs",JSONArray((listOf(id)+recentIds()).distinct().take(24)).toString()).apply() }
     fun lyrics(id: String): String = prefs.getString("lyrics:$id", "")!!
     fun saveLyrics(id: String, text: String) { prefs.edit().putString("lyrics:$id", text).apply() }
 }
