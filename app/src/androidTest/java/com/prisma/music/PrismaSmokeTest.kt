@@ -79,7 +79,12 @@ class PrismaSmokeTest {
             compose.onNodeWithText("Carátula",substring=false).performClick()
             compose.onNodeWithContentDescription("Diseño Chromatic Flow").performTouchInput {swipeRight()}
             compose.waitUntil(10000) {compose.onAllNodesWithText("Prisma prueba").fetchSemanticsNodes().isNotEmpty()}
-            compose.onAllNodesWithContentDescription("Pausar").onFirst().performClick()
+            // The short FLAC fixture can finish while lyrics/screenshots are checked.
+            // Both playing and naturally ended playback are valid here.
+            if (compose.onAllNodesWithContentDescription("Pausar").fetchSemanticsNodes().isNotEmpty()) {
+                compose.onNodeWithContentDescription("Pausar").performClick()
+            }
+            compose.onNodeWithContentDescription("Reproducir").assertExists()
             compose.onNodeWithContentDescription("Volver a la biblioteca").performClick()
             compose.onNodeWithContentDescription("Abrir reproductor").assertExists()
             nav("Sonido")
