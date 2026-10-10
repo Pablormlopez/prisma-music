@@ -84,6 +84,7 @@ class PrismaSmokeTest {
             if (compose.onAllNodesWithContentDescription("Pausar").fetchSemanticsNodes().isNotEmpty()) {
                 compose.onNodeWithContentDescription("Pausar").performClick()
             }
+            compose.waitUntil(5000) { compose.onAllNodesWithContentDescription("Reproducir").fetchSemanticsNodes().isNotEmpty() }
             compose.onNodeWithContentDescription("Reproducir").assertExists()
             compose.onNodeWithContentDescription("Volver a la biblioteca").performClick()
             compose.onNodeWithContentDescription("Abrir reproductor").assertExists()
