@@ -39,7 +39,7 @@ fun contentMotion(style:MotionStyle,duration:Int,direction:Int=1):ContentTransfo
         MotionStyle.SOFT->fadeOut(tween(ms,easing=FastOutSlowInEasing))
         MotionStyle.NONE->fadeOut(tween(0))
     }
-    return (enter togetherWith exit).apply {sizeTransform=null}
+    return enter togetherWith exit
 }
 internal fun encodeEq(v:DspEngine.Config):JSONObject=JSONObject().put("enabled",v.enabled).put("gains",JSONArray(v.gains.toList())).put("q",v.q).put("preamp",v.preamp).put("bass",v.bass).put("mids",v.mids).put("treble",v.treble).put("voice",v.voice)
 internal fun decodeEq(j:JSONObject):DspEngine.Config {
