@@ -38,7 +38,7 @@ class PrismaSmokeTest {
         val resolver=compose.activity.contentResolver
         val values=ContentValues().apply {put(MediaStore.Downloads.DISPLAY_NAME,"$name.png");put(MediaStore.Downloads.MIME_TYPE,"image/png");put(MediaStore.Downloads.RELATIVE_PATH,"Download/PrismaTest/");put(MediaStore.Downloads.IS_PENDING,1)}
         val uri=resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI,values)!!
-        resolver.openOutputStream(uri)!!.use {compose.onRoot().captureToImage().asAndroidBitmap().compress(Bitmap.CompressFormat.PNG,100,it)}
+        resolver.openOutputStream(uri)!!.use {compose.onAllNodes(isRoot()).onLast().captureToImage().asAndroidBitmap().compress(Bitmap.CompressFormat.PNG,100,it)}
         resolver.update(uri,ContentValues().apply {put(MediaStore.Downloads.IS_PENDING,0)},null,null)
     }
     @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
@@ -185,7 +185,7 @@ class PrismaSmokeTest {
             shot("12-eliminacion-completada")
         } catch (t:Throwable) {
             runCatching {shot("99-failure")}
-            compose.onRoot().printToLog("PrismaTest")
+            compose.onAllNodes(isRoot()).onLast().printToLog("PrismaTest")
             throw t
         } finally {resolver.delete(uri,null,null);resolver.delete(second,null,null)}
     }
