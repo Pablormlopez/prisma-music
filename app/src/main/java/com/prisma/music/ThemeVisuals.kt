@@ -34,7 +34,7 @@ val LocalVisualTheme=staticCompositionLocalOf { VisualTheme.CHROMATIC }
 }
 @Composable fun ThemeArtwork(song:Song,details:Library.Details?,theme:VisualTheme) {
     val c=MaterialTheme.colorScheme
-    val corner=when(theme) {VisualTheme.MINIMAL->4.dp;VisualTheme.NIGHT->12.dp;VisualTheme.STUDIO->20.dp;VisualTheme.SUNSET->40.dp;else->28.dp}
+    val corner=when(theme) {VisualTheme.MINIMAL->4.dp;VisualTheme.NIGHT->12.dp;VisualTheme.STUDIO->32.dp;VisualTheme.SUNSET->40.dp;else->28.dp}
     BoxWithConstraints(Modifier.fillMaxSize().semantics {contentDescription="Diseño ${theme.title}"},contentAlignment=Alignment.Center) {
         // Both dimensions constrain the cover: controls remain usable on short displays.
         val edge=minOf(maxWidth,maxHeight)-if(theme==VisualTheme.GLASS) 12.dp else 4.dp
@@ -42,6 +42,12 @@ val LocalVisualTheme=staticCompositionLocalOf { VisualTheme.CHROMATIC }
             ActualArtwork(song,details,Modifier.fillMaxSize())
             if(theme==VisualTheme.CHROMATIC || theme==VisualTheme.SUNSET) Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent,c.primary.copy(alpha=.16f)))))
             if(theme==VisualTheme.GLASS) Box(Modifier.fillMaxSize().crystal())
+            if(theme==VisualTheme.STUDIO) Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent,Color.Black.copy(alpha=.7f))))) {
+                Column(Modifier.align(Alignment.BottomStart).padding(20.dp)) {
+                    Text("EN TU COLECCIÓN",color=Color.White.copy(alpha=.8f),fontSize=10.sp,letterSpacing=2.sp)
+                    Text(song.album,color=Color.White,fontWeight=FontWeight.Bold,maxLines=2,overflow=TextOverflow.Ellipsis)
+                }
+            }
             if(theme==VisualTheme.NIGHT) Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent,Color.Black.copy(alpha=.22f)))))
         }
     }

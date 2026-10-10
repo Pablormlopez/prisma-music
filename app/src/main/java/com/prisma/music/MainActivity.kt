@@ -97,7 +97,7 @@ fun PrismaApp() {
     var page by rememberSaveable { mutableStateOf("Inicio") }
     var details by remember { mutableStateOf<Library.Details?>(null) }
     var lists by remember { mutableStateOf(prefs.playlists()) }
-    var addToList by remember { mutableStateOf<Song?>(null) }
+    var addToList by remember { mutableStateOf<List<Song>?>(null) }
     var newListDialog by remember { mutableStateOf(false) }
     var playerReturn by rememberSaveable {mutableStateOf("Inicio")}
     var recentIds by remember {mutableStateOf(prefs.recentIds())}
@@ -192,13 +192,13 @@ fun PrismaApp() {
         }
         actionSong?.let { song -> SongActions(song,onDismiss={actionSong=null},onPlay={play(visible,song)},onNext={
             controller?.let { c -> if(c.mediaItemCount==0) play(listOf(song),song) else { c.addMediaItem(c.currentMediaItemIndex+1,song.mediaItem()); c.shuffleModeEnabled=false } } ?: run {error="El reproductor se está iniciando."}
-        },onQueue={controller?.let { c -> if(c.mediaItemCount==0) play(listOf(song),song) else c.addMediaItem(song.mediaItem()) } ?: run {error="El reproductor se está iniciando."}},onList={addToList=song},onDeleted={ deleted ->
+        },onQueue={controller?.let { c -> if(c.mediaItemCount==0) play(listOf(song),song) else c.addMediaItem(song.mediaItem()) } ?: run {error="El reproductor se está iniciando."}},onList={addToList=listOf(song)},onDeleted={ deleted ->
             controller?.let { c -> for(i in c.mediaItemCount-1 downTo 0) {if(c.getMediaItemAt(i).mediaId==deleted.id) c.removeMediaItem(i)} }
             lists=lists.mapValues { (_,ids)->ids.filterNot {it==deleted.id} };prefs.savePlaylists(lists)
             songs=songs.filterNot {it.id==deleted.id};libraryVersion++;if(currentId==deleted.id) page="Biblioteca"
         },onError={error=it}) }
         if(newListDialog) NameDialog(onDismiss={newListDialog=false},onSave={name->if(name !in lists) { lists=lists+(name to emptyList()); prefs.savePlaylists(lists); newListDialog=false }},exists={it in lists})
-        addToList?.let { song -> AlertDialog(onDismissRequest={addToList=null},title={Text("Añadir a una lista")},text={ Column(Modifier.verticalScroll(rememberScrollState())) { if(lists.isEmpty()) Text("Crea tu primera lista en la pestaña Listas."); lists.keys.forEach { name-> TextButton(onClick={lists=lists+(name to (lists.getValue(name)+song.id).distinct());prefs.savePlaylists(lists);addToList=null},modifier=Modifier.fillMaxWidth()) {Text(name)} } } },confirmButton={TextButton(onClick={addToList=null}){Text("Cerrar")}}) }
+        addToList?.let { selection -> AlertDialog(onDismissRequest={addToList=null},title={Text("Añadir ${selection.size} canciones a una lista")},text={ Column(Modifier.verticalScroll(rememberScrollState())) { if(lists.isEmpty()) Text("Crea tu primera lista en la pestaña Listas."); lists.keys.forEach { name-> TextButton(onClick={lists=lists+(name to (lists.getValue(name)+selection.map {it.id}).distinct());prefs.savePlaylists(lists);addToList=null},modifier=Modifier.fillMaxWidth()) {Text(name)} } } },confirmButton={TextButton(onClick={addToList=null}){Text("Cerrar")}}) }
         }
     }
 }
@@ -226,24 +226,55 @@ fun PrismaApp() {
         else if(onAdd!=null) IconButton(onClick=onAdd) { Icon(Icons.Rounded.PlaylistAdd,"Añadir ${song.title} a una lista") }
     }
 }
-@Composable fun LibraryScreen(songs:List<Song>,busy:Boolean,currentId:String,onPlay:(List<Song>,Song)->Unit,onAdd:(Song)->Unit,onOptions:(Song)->Unit) {
+@Composable fun LibraryScreen(songs:List<Song>,busy:Boolean,currentId:String,onPlay:(List<Song>,Song)->Unit,onAdd:(List<Song>)->Unit,onOptions:(Song)->Unit) {
     val visualTheme=LocalVisualTheme.current
     val personal=LocalPersonalization.current
-    val grid=personal.layout==LibraryLayout.GRID || (personal.layout==LibraryLayout.THEME && (visualTheme==VisualTheme.CHROMATIC || visualTheme==VisualTheme.GLASS))
-    var search by rememberSaveable { mutableStateOf("") }; var category by rememberSaveable { mutableStateOf("Canciones") }; var selected by rememberSaveable { mutableStateOf<String?>(null) }
-    val filtered=remember(songs,search) { songs.filter { search.isBlank() || "${it.title} ${it.artist} ${it.album} ${it.genre}".contains(search,true) } }
-    fun key(s:Song) = when(category) { "Artistas"->s.artist; "Álbumes"->"${s.album} · ${s.artist}"; "Géneros"->s.genre; else->s.folder.ifBlank { "Sin carpeta" } }
-    val queue=if(category=="Canciones" || selected==null) filtered else filtered.filter { key(it)==selected }
+    var choosing by rememberSaveable {mutableStateOf(false)}
+    var chosen by remember {mutableStateOf(setOf<String>())}
+    var search by rememberSaveable {mutableStateOf("")}
+    var category by rememberSaveable {mutableStateOf("Canciones")}
+    var selected by rememberSaveable {mutableStateOf<String?>(null)}
+    val filtered=remember(songs,search) {songs.filter {search.isBlank() || "${it.title} ${it.artist} ${it.album} ${it.genre}".contains(search,true)}}
+    fun key(s:Song)=when(category) {"Artistas"->s.artist; "Álbumes"->"${s.album} · ${s.artist}"; "Géneros"->s.genre; else->s.folder.ifBlank {"Sin carpeta"}}
+    val queue=if(category=="Canciones" || selected==null) filtered else filtered.filter {key(it)==selected}
+    val selection=songs.filter {it.id in chosen}
+    fun toggle(group:List<Song>) {val ids=group.map {it.id}.toSet();chosen=if(chosen.containsAll(ids)) chosen-ids else chosen+ids}
+    androidx.activity.compose.BackHandler(choosing) {choosing=false;chosen=emptySet()}
+    LaunchedEffect(songs) {chosen=chosen.intersect(songs.map {it.id}.toSet())}
     Column(Modifier.fillMaxSize().padding(horizontal=16.dp)) {
         OutlinedTextField(search,{search=it},modifier=Modifier.fillMaxWidth(),placeholder={Text("Busca en tu colección")},leadingIcon={Icon(Icons.Rounded.Search,null)},singleLine=true,shape=RoundedCornerShape(22.dp))
-        Row(Modifier.horizontalScroll(rememberScrollState()).padding(vertical=10.dp),horizontalArrangement=Arrangement.spacedBy(7.dp)) { listOf("Canciones","Artistas","Álbumes","Géneros","Carpetas").forEach { title->FilterChip(selected=category==title,onClick={category=title;selected=null},label={Text(title)}) } }
+        Row(Modifier.horizontalScroll(rememberScrollState()).padding(vertical=10.dp),horizontalArrangement=Arrangement.spacedBy(7.dp)) {listOf("Canciones","Artistas","Álbumes","Géneros","Carpetas").forEach {title->FilterChip(category==title,{category=title;selected=null},label={Text(title)})}}
+        Surface(shape=RoundedCornerShape(24.dp),color=MaterialTheme.colorScheme.surfaceContainerHigh) {
+            Row(Modifier.fillMaxWidth().padding(horizontal=8.dp),verticalAlignment=Alignment.CenterVertically) {
+                TextButton(onClick={choosing=!choosing;chosen=emptySet()}) {Text(if(choosing) "Cancelar" else "Seleccionar")}
+                if(choosing) {
+                    Text("${selection.size}",Modifier.weight(1f),fontWeight=FontWeight.Bold)
+                    IconButton(onClick={toggle(queue)}) {Icon(Icons.Rounded.SelectAll,"Seleccionar o desmarcar las canciones visibles")}
+                    IconButton(enabled=selection.isNotEmpty(),onClick={onAdd(selection)}) {Icon(Icons.Rounded.PlaylistAdd,"Añadir selección a una playlist")}
+                } else {Spacer(Modifier.weight(1f)); Text("${queue.size} canciones",style=MaterialTheme.typography.labelMedium,modifier=Modifier.padding(end=12.dp))}
+            }
+        }
         if(busy) LinearProgressIndicator(Modifier.fillMaxWidth())
-        if(selected!=null) TextButton(onClick={selected=null}) { Icon(Icons.Rounded.ArrowBack,null); Text(selected!!,maxLines=1,overflow=TextOverflow.Ellipsis) }
-        if(filtered.isEmpty()) EmptyCard(if(busy) "Buscando música…" else "No hay canciones",if(search.isNotBlank()) "Prueba otra búsqueda." else "Copia música al teléfono y pulsa Actualizar. Puedes revisar las carpetas excluidas en Ajustes.",Icons.Rounded.LibraryMusic)
-        else if(grid && (category=="Canciones" || selected!=null)) LazyVerticalGrid(columns=GridCells.Fixed(2),modifier=Modifier.fillMaxSize(),contentPadding=PaddingValues(bottom=16.dp)) {items(queue,key={it.id}) {song->ThemeSongTile(song,{onPlay(queue,song)},{onOptions(song)})}}
-        else LazyColumn(Modifier.fillMaxSize(),contentPadding=PaddingValues(bottom=16.dp)) {
-            if(category!="Canciones" && selected==null) items(filtered.groupBy(::key).toSortedMap().entries.toList(),key={it.key}) { group -> Surface(onClick={selected=group.key},shape=RoundedCornerShape(20.dp),color=MaterialTheme.colorScheme.surface.copy(alpha=.75f),modifier=Modifier.padding(vertical=5.dp).fillMaxWidth()) { Row(Modifier.padding(16.dp),verticalAlignment=Alignment.CenterVertically) { Cover(group.value.first(),Modifier.size(54.dp)); Spacer(Modifier.width(14.dp)); Column(Modifier.weight(1f)) { Text(group.key,maxLines=2,overflow=TextOverflow.Ellipsis,fontWeight=FontWeight.SemiBold); Text("${group.value.size} canciones",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant) }; Icon(Icons.Rounded.ChevronRight,null) } } }
-            else items(queue,key={it.id}) { song->SongRow(song,currentId,{onPlay(queue,song)},{onAdd(song)},{onOptions(song)}) }
+        if(selected!=null) Row(verticalAlignment=Alignment.CenterVertically) {TextButton(onClick={selected=null},modifier=Modifier.weight(1f)) {Icon(Icons.Rounded.ArrowBack,null);Text(selected!!,maxLines=1,overflow=TextOverflow.Ellipsis)};IconButton(onClick={onAdd(queue)}) {Icon(Icons.Rounded.PlaylistAdd,"Añadir todas las canciones de este grupo a una playlist")}}
+        val grid=!choosing && (personal.layout==LibraryLayout.GRID || (personal.layout==LibraryLayout.THEME && (visualTheme==VisualTheme.CHROMATIC || visualTheme==VisualTheme.GLASS)))
+        if(filtered.isEmpty()) EmptyCard(if(busy) "Buscando música…" else "No hay canciones",if(search.isNotBlank()) "Prueba otra búsqueda." else "Copia música al teléfono y pulsa Actualizar.",Icons.Rounded.LibraryMusic)
+        else if(grid && (category=="Canciones" || selected!=null)) LazyVerticalGrid(columns=GridCells.Fixed(2),contentPadding=PaddingValues(bottom=16.dp)) {items(queue,key={it.id}) {song->ThemeSongTile(song,{onPlay(queue,song)},{onOptions(song)})}}
+        else LazyColumn(contentPadding=PaddingValues(bottom=16.dp)) {
+            if(category!="Canciones" && selected==null) items(filtered.groupBy(::key).toSortedMap().entries.toList(),key={it.key}) {group->
+                Surface(onClick={if(choosing) toggle(group.value) else selected=group.key},shape=RoundedCornerShape(20.dp),color=MaterialTheme.colorScheme.surface.copy(alpha=.75f),modifier=Modifier.padding(vertical=5.dp).fillMaxWidth()) {
+                    Row(Modifier.padding(12.dp),verticalAlignment=Alignment.CenterVertically) {
+                        if(choosing) Checkbox(group.value.all {it.id in chosen},{toggle(group.value)})
+                        Cover(group.value.first(),Modifier.size(54.dp));Spacer(Modifier.width(14.dp))
+                        Column(Modifier.weight(1f)) {Text(group.key,maxLines=2,overflow=TextOverflow.Ellipsis,fontWeight=FontWeight.SemiBold);Text("${group.value.size} canciones",style=MaterialTheme.typography.bodySmall)}
+                        if(!choosing) IconButton(onClick={onAdd(group.value)}) {Icon(Icons.Rounded.PlaylistAdd,"Añadir ${group.key} a una playlist")}
+                    }
+                }
+            } else items(queue,key={it.id}) {song->
+                Row(verticalAlignment=Alignment.CenterVertically) {
+                    if(choosing) Checkbox(song.id in chosen,{toggle(listOf(song))})
+                    Box(Modifier.weight(1f)) {SongRow(song,currentId,{if(choosing) toggle(listOf(song)) else onPlay(queue,song)},onOptions=if(choosing) null else {{onOptions(song)}})}
+                }
+            }
         }
     }
 }

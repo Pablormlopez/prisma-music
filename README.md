@@ -1,3 +1,9 @@
+## Beta 2.0.2 · Colección y cola a tu medida
+
+- Cola con tirador ≡: mantener pulsado y arrastrar hacia arriba o abajo, con desplazamiento al acercarse a los bordes, tarjeta elevada y destino resaltado. Se conservan los botones accesibles. Un cambio externo en la cola cancela la aplicación del movimiento.
+- Biblioteca → Seleccionar: marcar varias canciones, álbumes o artistas; seleccionar todos los resultados visibles y añadirlos juntos a una playlist. Las canciones repetidas no se duplican en la lista. La selección se conserva al buscar o cambiar de categoría y Atrás la cancela.
+- Acceso directo para añadir un álbum, artista o grupo completo a una playlist; barra de selección redondeada y cola con superficies destacadas, inspiradas en las referencias visuales.
+
 ## Beta 2.0.1 · Una nueva forma de escuchar
 
 - Inicio independiente con carátulas protagonistas, canciones y álbumes de la colección local e historial reciente.
@@ -23,7 +29,7 @@
 
 # Prisma Music
 
-Reproductor de música local para Android, gratuito y de código abierto. Beta actual: **2.0.1**. Android 8.0 o posterior.
+Reproductor de música local para Android, gratuito y de código abierto. Beta actual: **2.0.2**. Android 8.0 o posterior.
 
 ## Beta 1.0.2 — experiencia visual
 
