@@ -63,10 +63,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-@Composable fun SettingsScreen(theme:VisualTheme,mode:LightMode,prefs:Preferences,songs:List<Song>,personal:Personalization,onPersonal:(Personalization)->Unit,onTheme:(VisualTheme)->Unit,onMode:(LightMode)->Unit,onLibraryChanged:()->Unit,onPlaybackChanged:()->Unit,onThemes:()->Unit) {
+@Composable fun SettingsScreen(prefs:Preferences,songs:List<Song>,onLibraryChanged:()->Unit,onPlaybackChanged:()->Unit,onThemes:()->Unit) {
     var hide by remember { mutableStateOf(prefs.hideWhatsApp) }
     var excluded by remember { mutableStateOf(prefs.excluded) }
     var metadata by remember { mutableStateOf(prefs.showMetadata) }
+    var showAlbum by remember { mutableStateOf(prefs.showPlayerAlbum) }
     var screenOn by remember { mutableStateOf(prefs.keepScreenOn) }
     var silence by remember { mutableStateOf(prefs.skipSilence) }
     var speed by remember { mutableFloatStateOf(prefs.playbackSpeed) }
@@ -85,9 +86,8 @@ import kotlinx.coroutines.withContext
                 Icon(Icons.Rounded.ChevronRight,null)
             }
         }
-        SectionTitle("MODO DE COLOR","La luz cambia. Tu música sigue.")
-        LightMode.entries.forEach { v -> Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).clickable {onMode(v)}.padding(8.dp),verticalAlignment=Alignment.CenterVertically) {RadioButton(selected=mode==v,onClick={onMode(v)});Text(v.title)} }
         SectionTitle("REPRODUCTOR","Personaliza la escucha")
+        SettingSwitch("Mostrar nombre del álbum", "Debajo del artista en la pantalla de reproducción", showAlbum) { showAlbum=it; prefs.showPlayerAlbum=it }
         SettingSwitch("Mostrar información del archivo", "Calidad técnica: formato, bitrate, frecuencia y canales", metadata) { metadata=it; prefs.showMetadata=it }
         SettingSwitch("Mantener pantalla encendida", "Solo mientras el reproductor completo esté abierto", screenOn) { screenOn=it; prefs.keepScreenOn=it }
         SettingSwitch("Omitir silencios", "Salta tramos silenciosos; puede alterar pausas musicales", silence) { silence=it; prefs.skipSilence=it; onPlaybackChanged() }
@@ -125,7 +125,7 @@ import kotlinx.coroutines.withContext
 @Composable fun SettingSwitch(title:String,description:String,checked:Boolean,onChange:(Boolean)->Unit) {
     Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {
         Column(Modifier.weight(1f).padding(end=12.dp)) {Text(title,fontWeight=FontWeight.SemiBold);Text(description,style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)}
-        Switch(checked=checked,onCheckedChange=onChange)
+        Switch(checked=checked,onCheckedChange=onChange,modifier=Modifier.semantics {contentDescription=title})
     }
 }
 @Composable fun SectionTitle(label:String,title:String) {Column(Modifier.padding(top=12.dp,bottom=4.dp)) {Text(label,fontSize=10.sp,letterSpacing=2.sp,color=MaterialTheme.colorScheme.primary,fontWeight=FontWeight.Bold);Text(title,style=MaterialTheme.typography.titleMedium,fontWeight=FontWeight.SemiBold,modifier=Modifier.padding(top=5.dp))}}
@@ -183,7 +183,7 @@ import kotlinx.coroutines.withContext
 }
 @Composable fun SoundSlider(label:String,value:Double,unit:String,enabled:Boolean,onChange:(Double)->Unit) {Column {Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) {Text(label,style=MaterialTheme.typography.bodyMedium);Text("%+.1f %s".format(value,unit),style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.primary)};Slider(value=value.toFloat(),onValueChange={onChange(it.toDouble())},valueRange=-12f..12f,enabled=enabled,modifier=Modifier.height(38.dp))}}
 
-@Composable fun PlayerScreen(song:Song,details:Library.Details?,theme:VisualTheme,prefs:Preferences,position:Long,duration:Long,playing:Boolean,shuffle:Boolean,repeat:Int,controller:MediaController?,onDismiss:()->Unit) {
+@Composable fun PlayerScreen(song:Song,details:Library.Details?,theme:VisualTheme,prefs:Preferences,position:Long,duration:Long,playing:Boolean,shuffle:Boolean,repeat:Int,controller:MediaController?,onDismiss:()->Unit,onArtist:(Song)->Unit,onAlbum:(Song)->Unit) {
     val view=androidx.compose.ui.platform.LocalView.current
     DisposableEffect(view,prefs.keepScreenOn) {
         val previous=view.keepScreenOn
@@ -265,7 +265,11 @@ import kotlinx.coroutines.withContext
         AnimatedContent(targetState=song,contentKey={it.id},transitionSpec={contentMotion(motion.motion,motion.motionDuration,swipeDirection).using(null)},label="songCaption") {caption->
             Column {
                 Text(caption.title,fontSize=if(theme==VisualTheme.MINIMAL) 30.sp else 27.sp,fontWeight=FontWeight.Bold,maxLines=2,overflow=TextOverflow.Ellipsis,modifier=Modifier.padding(top=16.dp))
-                Text(caption.artist,color=MaterialTheme.colorScheme.onSurfaceVariant,maxLines=1,overflow=TextOverflow.Ellipsis)
+                Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable(onClickLabel="Ver artista",onClick={onArtist(caption)}).semantics {contentDescription="Ver artista ${caption.artist}"}.padding(vertical=10.dp),verticalAlignment=Alignment.CenterVertically) {
+                    Text(caption.artist,color=MaterialTheme.colorScheme.primary,maxLines=1,overflow=TextOverflow.Ellipsis,modifier=Modifier.weight(1f))
+                    Icon(Icons.Rounded.ChevronRight,null,Modifier.size(20.dp),tint=MaterialTheme.colorScheme.primary)
+                }
+                if(prefs.showPlayerAlbum) Text(caption.album,color=MaterialTheme.colorScheme.onSurfaceVariant,maxLines=1,overflow=TextOverflow.Ellipsis,modifier=Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).clickable(onClickLabel="Ver álbum",onClick={onAlbum(caption)}).semantics {contentDescription="Ver álbum ${caption.album}"}.padding(bottom=8.dp))
             }
         }
         AnimatedVisibility(metadataVisible,enter=fadeIn(tween(220))+expandVertically(tween(280)),exit=fadeOut(tween(150))+shrinkVertically(tween(280))) {

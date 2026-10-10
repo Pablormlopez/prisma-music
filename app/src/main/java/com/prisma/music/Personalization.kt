@@ -56,11 +56,15 @@ fun accentColor(hex:String):Color? = hex.takeIf {it.matches(Regex("#[0-9a-fA-F]{
     }},confirmButton={TextButton(onClick={onSave("#%06X".format(color and 0xffffff))}){Text("Usar este color")}},dismissButton={TextButton(onClick=onDismiss){Text("Cancelar")}})
 }
 
-@Composable fun PersonalizationScreen(value:Personalization,onChange:(Personalization)->Unit,onThemes:()->Unit) {
+@Composable fun PersonalizationScreen(value:Personalization,mode:LightMode,onMode:(LightMode)->Unit,onChange:(Personalization)->Unit,onThemes:()->Unit) {
     var preview by remember {mutableStateOf(false)}
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
         SectionTitle("TEMAS","Elige tu ambiente")
         OutlinedButton(onClick=onThemes,modifier=Modifier.fillMaxWidth()) {Text("Temas")}
+        SectionTitle("MODO DE COLOR","La luz cambia. Tu música sigue.")
+        Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+            LightMode.entries.forEach {m->FilterChip(mode==m,{onMode(m)},label={Text(m.title)})}
+        }
         SectionTitle("ANIMACIONES","El movimiento también es tuyo")
         MotionStyle.entries.forEach {style->
             FilterChip(value.motion==style,{onChange(value.copy(motion=style))},label={Text(style.title)})

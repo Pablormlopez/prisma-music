@@ -31,6 +31,9 @@ class Preferences(context: Context) {
     var showMetadata: Boolean
         get() = prefs.getBoolean("showMetadata", true)
         set(v) { prefs.edit().putBoolean("showMetadata", v).apply() }
+    var showPlayerAlbum: Boolean
+        get() = prefs.getBoolean("showPlayerAlbum", false)
+        set(v) { prefs.edit().putBoolean("showPlayerAlbum", v).apply() }
     var keepScreenOn: Boolean
         get() = prefs.getBoolean("keepScreenOn", false)
         set(v) { prefs.edit().putBoolean("keepScreenOn", v).apply() }

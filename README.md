@@ -1,3 +1,12 @@
+## Beta 2.1.1 · Tu colección, conectada
+
+- Toca el artista del reproductor para ver sus canciones y álbumes locales sin cambiar la reproducción. Los álbumes abren su lista de canciones, con reproducción y añadir a playlist.
+- Ajustes → Reproductor permite mostrar u ocultar el nombre del álbum. Cuando está visible, también abre sus canciones.
+- Inicio → **Recién añadidas** sustituye «Canciones de tu biblioteca»: usa la fecha de incorporación de MediaStore, con las más nuevas primero. **Ver todas** abre la categoría correspondiente en Biblioteca. El historial de escucha permanece separado.
+- **Modo de color** está en Ajustes → Personalización, junto a temas, colores y animaciones.
+- Biblioteca → **Seleccionar varias** muestra casillas y un botón Añadir para incorporar canciones, álbumes o artistas en grupo.
+- Cada playlist, incluso vacía, tiene **Añadir canciones**: buscar, marcar varias, seleccionar visibles, cancelar o guardar. Las canciones ya incluidas no se repiten y las excluidas de Biblioteca respetan tus filtros.
+
 ## Beta 2.1.0 · Sonido y movimiento personales
 
 - Sonido → **Guardar preset** y **Mis presets**: guarda, carga, reemplaza y elimina ajustes propios. Se conservan las diez bandas, Q, preamplificador, graves, medios, agudos, voces y estado del ecualizador. Los cuatro presets incluidos siguen disponibles.
@@ -36,7 +45,7 @@
 
 # Prisma Music
 
-Reproductor de música local para Android, gratuito y de código abierto. Beta actual: **2.1.0**. Android 8.0 o posterior.
+Reproductor de música local para Android, gratuito y de código abierto. Beta actual: **2.1.1**. Android 8.0 o posterior.
 
 ## Beta 1.0.2 — experiencia visual
 
