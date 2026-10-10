@@ -22,6 +22,22 @@ import com.google.common.util.concurrent.ListenableFuture
 class PlaybackService : MediaSessionService() {
     private var session: MediaSession? = null
     private val eq = EqProcessor()
+    private val handler = android.os.Handler(android.os.Looper.getMainLooper())
+    private val sleepCheck = object : Runnable {
+        override fun run() {
+            val prefs = Preferences(this@PlaybackService)
+            if (prefs.sleepDeadline > 0 && System.currentTimeMillis() >= prefs.sleepDeadline) {
+                session?.player?.pause()
+                prefs.sleepDeadline = 0
+            }
+            handler.postDelayed(this, 1000)
+        }
+    }
+    private fun applySettings(player: ExoPlayer) {
+        val prefs = Preferences(this)
+        player.setPlaybackSpeed(prefs.playbackSpeed)
+        player.skipSilenceEnabled = prefs.skipSilence
+    }
     override fun onCreate() {
         super.onCreate()
         eq.settings = Preferences(this).eq
@@ -34,19 +50,22 @@ class PlaybackService : MediaSessionService() {
             setHandleAudioBecomingNoisy(true)
             setWakeMode(C.WAKE_MODE_LOCAL)
         }
+        applySettings(player)
+        handler.post(sleepCheck)
         val activity = PendingIntent.getActivity(this,0,Intent(this,MainActivity::class.java),PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         session = MediaSession.Builder(this, player).setSessionActivity(activity).setCallback(object : MediaSession.Callback {
             override fun onConnect(session: MediaSession, controller: MediaSession.ControllerInfo): MediaSession.ConnectionResult {
                 return MediaSession.ConnectionResult.AcceptedResultBuilder(session)
-                    .setAvailableSessionCommands(MediaSession.ConnectionResult.DEFAULT_SESSION_COMMANDS.buildUpon().add(SessionCommand("prisma.eq",Bundle.EMPTY)).build()).build()
+                    .setAvailableSessionCommands(MediaSession.ConnectionResult.DEFAULT_SESSION_COMMANDS.buildUpon().add(SessionCommand("prisma.eq",Bundle.EMPTY)).add(SessionCommand("prisma.settings",Bundle.EMPTY)).build()).build()
             }
             override fun onCustomCommand(session: MediaSession, controller: MediaSession.ControllerInfo, command: SessionCommand, args: Bundle): ListenableFuture<SessionResult> {
                 if(command.customAction == "prisma.eq") { eq.settings = Preferences(this@PlaybackService).eq; return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS)) }
+                if(command.customAction == "prisma.settings") { applySettings(player); return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS)) }
                 return Futures.immediateFuture(SessionResult(SessionError.ERROR_NOT_SUPPORTED))
             }
         }).build()
     }
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? = session
-    override fun onDestroy() { session?.run { player.release(); release() }; session=null; super.onDestroy() }
+    override fun onDestroy() { handler.removeCallbacks(sleepCheck); session?.run { player.release(); release() }; session=null; super.onDestroy() }
     override fun onTaskRemoved(rootIntent: Intent?) { if(session?.player?.playWhenReady != true) stopSelf() }
 }

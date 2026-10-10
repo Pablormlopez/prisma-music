@@ -20,7 +20,7 @@ data class Song(val id: String, val uri: Uri, val title: String, val artist: Str
 
 object Library {
     fun isWhatsApp(folder: String): Boolean = folder.split('/','\\').any { it.equals("WhatsApp",true) || it.equals("com.whatsapp",true) || it.equals("com.whatsapp.w4b",true) || it.startsWith("WhatsApp ",true) }
-    fun visible(songs: List<Song>, prefs: Preferences): List<Song> = songs.filter { (!prefs.hideWhatsApp || !isWhatsApp(it.folder)) && it.folder !in prefs.excluded }
+    fun visible(songs: List<Song>, prefs: Preferences): List<Song> = songs.filter { (!prefs.hideWhatsApp || !isWhatsApp(it.folder)) && it.folder !in prefs.excluded && it.duration >= prefs.minimumDuration * 1000L }
     fun scan(context: Context): List<Song> {
         val base = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
         val folderColumn = if(Build.VERSION.SDK_INT >= 29) MediaStore.MediaColumns.RELATIVE_PATH else MediaStore.MediaColumns.DATA

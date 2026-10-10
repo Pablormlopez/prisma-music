@@ -2,6 +2,13 @@
 
 Reproductor de música local para Android, gratuito y de código abierto. Primera beta: **0.2.0**. Android 8.0 o posterior.
 
+## Ajustes ampliados
+
+- El minirreproductor se oculta al abrir el reproductor completo y vuelve al salir; Atrás regresa a la biblioteca.
+- Velocidad de 0.5× a 2×, omisión opcional de silencios y temporizador de 15, 30, 60 o 90 minutos. El servicio pausa la música aunque la interfaz esté cerrada; cerrar el servicio termina la reproducción.
+- Información técnica y pantalla encendida configurables (esta última solo en el reproductor completo).
+- Duración mínima configurable de 0 a 120 segundos para ocultar audios cortos sin borrarlos. Las preferencias se conservan al cerrar la aplicación.
+
 ## Incluido
 
 - Reproducción local con Media3, servicio en segundo plano, sesión multimedia, controles de notificación y Bluetooth.
@@ -17,11 +24,11 @@ Reproductor de música local para Android, gratuito y de código abierto. Primer
 
 ## Instalar
 
-**[⬇ Descargar Prisma Music para Android (APK)](https://github.com/Pablormlopez/prisma-music/releases/download/v0.2.0-beta/Prisma-Music-0.2.0-beta.apk)**
+**[⬇ Descargar Prisma Music para Android (APK)](https://github.com/nexlibre/prisma-music/releases/download/v0.2.0-beta/Prisma-Music-0.2.0-beta.apk)**
 
 Android 8.0 o posterior. Abre el enlace desde el teléfono, espera a que termine la descarga y abre el archivo `.apk`. Android puede pedir permitir instalaciones desde el navegador o gestor de archivos usado. No necesitas descargar el código ni entrar en Actions.
 
-[Ver versiones y notas de publicación](https://github.com/Pablormlopez/prisma-music/releases).
+[Ver versiones y notas de publicación](https://github.com/nexlibre/prisma-music/releases).
 
 Desde 0.2.0 se usa una firma privada duradera, conservada fuera del repositorio. Las versiones 0.1.x tenían firmas temporales y no se pueden actualizar directamente con esta nueva firma. Si ya instalaste una beta anterior y la actualización falla por firma, conserva tus archivos de música y ten presente que desinstalar elimina listas y preferencias locales. Las siguientes actualizaciones conservarán esta identidad de firma.
 

@@ -68,6 +68,8 @@ class PrismaSmokeTest {
             compose.waitUntil(15000) {compose.onAllNodesWithContentDescription("Pausar").fetchSemanticsNodes().isNotEmpty()}
             compose.onNodeWithContentDescription("Abrir reproductor").performClick()
             compose.waitUntil(5000) {compose.onAllNodesWithText("Reproduciendo").fetchSemanticsNodes().isNotEmpty()}
+            compose.onNodeWithContentDescription("Abrir reproductor").assertDoesNotExist()
+            compose.onAllNodesWithContentDescription("Pausar").assertCountEquals(1)
             shot("02-reproductor")
             compose.onNodeWithContentDescription("Diseño Chromatic Flow").performTouchInput {swipeLeft()}
             compose.waitUntil(10000) {compose.onAllNodesWithText("Prisma segunda").fetchSemanticsNodes().isNotEmpty()}
@@ -79,6 +81,7 @@ class PrismaSmokeTest {
             compose.waitUntil(10000) {compose.onAllNodesWithText("Prisma prueba").fetchSemanticsNodes().isNotEmpty()}
             compose.onAllNodesWithContentDescription("Pausar").onFirst().performClick()
             compose.onNodeWithContentDescription("Volver a la biblioteca").performClick()
+            compose.onNodeWithContentDescription("Abrir reproductor").assertExists()
             nav("Sonido")
             compose.onNode(isToggleable()).performClick()
             compose.onNode(hasText("Graves") and hasClickAction()).performClick()

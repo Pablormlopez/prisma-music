@@ -47,9 +47,16 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-@Composable fun SettingsScreen(theme:VisualTheme,mode:LightMode,prefs:Preferences,songs:List<Song>,onTheme:(VisualTheme)->Unit,onMode:(LightMode)->Unit,onLibraryChanged:()->Unit) {
+@Composable fun SettingsScreen(theme:VisualTheme,mode:LightMode,prefs:Preferences,songs:List<Song>,onTheme:(VisualTheme)->Unit,onMode:(LightMode)->Unit,onLibraryChanged:()->Unit,onPlaybackChanged:()->Unit) {
     var hide by remember { mutableStateOf(prefs.hideWhatsApp) }
     var excluded by remember { mutableStateOf(prefs.excluded) }
+    var metadata by remember { mutableStateOf(prefs.showMetadata) }
+    var screenOn by remember { mutableStateOf(prefs.keepScreenOn) }
+    var silence by remember { mutableStateOf(prefs.skipSilence) }
+    var speed by remember { mutableFloatStateOf(prefs.playbackSpeed) }
+    var minimum by remember { mutableIntStateOf(prefs.minimumDuration) }
+    var deadline by remember { mutableLongStateOf(prefs.sleepDeadline) }
+    LaunchedEffect(Unit) { while(true) { deadline=prefs.sleepDeadline; kotlinx.coroutines.delay(1000) } }
     var foldersDialog by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal=20.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
         SectionTitle("APARIENCIA","Elige tu ambiente")
@@ -65,7 +72,23 @@ import kotlinx.coroutines.withContext
         }
         SectionTitle("MODO DE COLOR","La luz cambia. Tu música sigue.")
         LightMode.entries.forEach { v -> Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).clickable {onMode(v)}.padding(8.dp),verticalAlignment=Alignment.CenterVertically) {RadioButton(selected=mode==v,onClick={onMode(v)});Text(v.title)} }
+        SectionTitle("REPRODUCTOR","Personaliza la escucha")
+        SettingSwitch("Mostrar información del archivo", "Formato, bitrate y frecuencia bajo el artista", metadata) { metadata=it; prefs.showMetadata=it }
+        SettingSwitch("Mantener pantalla encendida", "Solo mientras el reproductor completo esté abierto", screenOn) { screenOn=it; prefs.keepScreenOn=it }
+        SettingSwitch("Omitir silencios", "Salta tramos silenciosos; puede alterar pausas musicales", silence) { silence=it; prefs.skipSilence=it; onPlaybackChanged() }
+        Text("Velocidad · %.2f×".format(speed),fontWeight=FontWeight.SemiBold)
+        Slider(value=speed,onValueChange={speed=it},onValueChangeFinished={prefs.playbackSpeed=speed;onPlaybackChanged()},valueRange=.5f..2f,steps=5)
+        TextButton(onClick={speed=1f;prefs.playbackSpeed=1f;onPlaybackChanged()}) {Text("Velocidad normal")}
+        SectionTitle("TEMPORIZADOR","Pausar automáticamente")
+        Text(if(deadline>0) "Se pausará en ${((deadline-System.currentTimeMillis()).coerceAtLeast(0)+59999)/60000} min" else "Desactivado",style=MaterialTheme.typography.bodySmall)
+        Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+            listOf(15,30,60,90).forEach { minutes -> OutlinedButton(onClick={deadline=System.currentTimeMillis()+minutes*60000L;prefs.sleepDeadline=deadline;onPlaybackChanged()}) {Text("$minutes min")} }
+        }
+        if(deadline>0) TextButton(onClick={deadline=0;prefs.sleepDeadline=0;onPlaybackChanged()}) {Text("Cancelar temporizador")}
         SectionTitle("BIBLIOTECA","Solo lo que quieres escuchar")
+        Text("Duración mínima · $minimum s",fontWeight=FontWeight.SemiBold)
+        Slider(value=minimum.toFloat(),onValueChange={minimum=it.toInt()},onValueChangeFinished={prefs.minimumDuration=minimum;onLibraryChanged()},valueRange=0f..120f,steps=7)
+        Text("Oculta audios cortos sin borrar archivos. 0 s incluye todas las duraciones.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
         Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {Column(Modifier.weight(1f)) {Text("Excluir audios de WhatsApp",fontWeight=FontWeight.SemiBold);Text("También notas de voz y WhatsApp Business",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)};Switch(checked=hide,onCheckedChange={hide=it;prefs.hideWhatsApp=it;onLibraryChanged()})}
         OutlinedButton(onClick={foldersDialog=true},modifier=Modifier.fillMaxWidth(),shape=RoundedCornerShape(16.dp)) {Icon(Icons.Rounded.FolderOpen,null);Text("Elegir carpetas · ${excluded.size} excluidas",Modifier.padding(8.dp))}
         Text("Se muestran las carpetas que Android ha registrado con archivos de audio. Las carpetas privadas de otras apps pueden no ser accesibles.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
@@ -77,6 +100,12 @@ import kotlinx.coroutines.withContext
         Text("Marca las carpetas que quieres incluir. La exclusión de WhatsApp tiene prioridad.",style=MaterialTheme.typography.bodySmall)
         LazyColumn(Modifier.heightIn(max=360.dp)) {items(songs.map {it.folder}.distinct().sorted()) {folder->Row(Modifier.fillMaxWidth().clickable {excluded=if(folder in excluded) excluded-folder else excluded+folder;prefs.excluded=excluded;onLibraryChanged()},verticalAlignment=Alignment.CenterVertically) {Checkbox(checked=folder !in excluded,onCheckedChange={included->excluded=if(included) excluded-folder else excluded+folder;prefs.excluded=excluded;onLibraryChanged()});Text(folder.ifBlank {"Sin carpeta"},maxLines=3,overflow=TextOverflow.Ellipsis,style=MaterialTheme.typography.bodySmall)}}}
     }},confirmButton={TextButton(onClick={foldersDialog=false}){Text("Listo")}})
+}
+@Composable fun SettingSwitch(title:String,description:String,checked:Boolean,onChange:(Boolean)->Unit) {
+    Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {
+        Column(Modifier.weight(1f).padding(end=12.dp)) {Text(title,fontWeight=FontWeight.SemiBold);Text(description,style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)}
+        Switch(checked=checked,onCheckedChange=onChange)
+    }
 }
 @Composable fun SectionTitle(label:String,title:String) {Column(Modifier.padding(top=12.dp,bottom=4.dp)) {Text(label,fontSize=10.sp,letterSpacing=2.sp,color=MaterialTheme.colorScheme.primary,fontWeight=FontWeight.Bold);Text(title,style=MaterialTheme.typography.titleMedium,fontWeight=FontWeight.SemiBold,modifier=Modifier.padding(top=5.dp))}}
 
@@ -106,6 +135,12 @@ import kotlinx.coroutines.withContext
 @Composable fun SoundSlider(label:String,value:Double,unit:String,enabled:Boolean,onChange:(Double)->Unit) {Column {Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) {Text(label,style=MaterialTheme.typography.bodyMedium);Text("%+.1f %s".format(value,unit),style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.primary)};Slider(value=value.toFloat(),onValueChange={onChange(it.toDouble())},valueRange=-12f..12f,enabled=enabled,modifier=Modifier.height(38.dp))}}
 
 @Composable fun PlayerScreen(song:Song,details:Library.Details?,theme:VisualTheme,prefs:Preferences,position:Long,duration:Long,playing:Boolean,shuffle:Boolean,repeat:Int,controller:MediaController?) {
+    val view=androidx.compose.ui.platform.LocalView.current
+    DisposableEffect(view,prefs.keepScreenOn) {
+        val previous=view.keepScreenOn
+        view.keepScreenOn=prefs.keepScreenOn
+        onDispose {view.keepScreenOn=previous}
+    }
     var lyricsVisible by rememberSaveable {mutableStateOf(false)}
     var importedText by remember(song.id) {mutableStateOf(prefs.lyrics(song.id))}
     val lyricText=details?.embeddedLyrics?.takeIf {it.isNotBlank()} ?: importedText
@@ -151,7 +186,7 @@ import kotlinx.coroutines.withContext
         Text("Desliza la carátula: ← siguiente · anterior →",fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant,modifier=Modifier.padding(top=6.dp))
         Text(song.title,fontSize=if(theme==VisualTheme.MINIMAL) 30.sp else 23.sp,fontWeight=FontWeight.Bold,maxLines=2,overflow=TextOverflow.Ellipsis,modifier=Modifier.padding(top=18.dp))
         Text(song.artist,color=MaterialTheme.colorScheme.onSurfaceVariant,maxLines=1,overflow=TextOverflow.Ellipsis)
-        Text(details?.text ?: "Leyendo información del archivo…",fontSize=10.sp,maxLines=2,overflow=TextOverflow.Ellipsis,color=MaterialTheme.colorScheme.primary,modifier=Modifier.padding(top=7.dp))
+        if(prefs.showMetadata) Text(details?.text ?: "Leyendo información del archivo…",fontSize=10.sp,maxLines=2,overflow=TextOverflow.Ellipsis,color=MaterialTheme.colorScheme.primary,modifier=Modifier.padding(top=7.dp))
         Slider(value=seeking ?: position.toFloat().coerceIn(0f,end.toFloat().coerceAtLeast(1f)),onValueChange={seeking=it},onValueChangeFinished={seeking?.let {controller?.seekTo(it.toLong())};seeking=null},valueRange=0f..end.toFloat().coerceAtLeast(1f),enabled=end>0,modifier=Modifier.height(36.dp))
         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) {Text(time((seeking?.toLong() ?: position)),fontSize=11.sp,color=MaterialTheme.colorScheme.onSurfaceVariant);Text(time(end),fontSize=11.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)}
         Row(Modifier.fillMaxWidth().padding(vertical=12.dp),horizontalArrangement=Arrangement.SpaceEvenly,verticalAlignment=Alignment.CenterVertically) {
