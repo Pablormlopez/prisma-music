@@ -5,7 +5,12 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.animation.core.spring
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalConfiguration
+import kotlin.math.abs
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.animation.AnimatedContent
@@ -58,7 +63,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-@Composable fun SettingsScreen(theme:VisualTheme,mode:LightMode,prefs:Preferences,songs:List<Song>,onTheme:(VisualTheme)->Unit,onMode:(LightMode)->Unit,onLibraryChanged:()->Unit,onPlaybackChanged:()->Unit) {
+@Composable fun SettingsScreen(theme:VisualTheme,mode:LightMode,prefs:Preferences,songs:List<Song>,personal:Personalization,onPersonal:(Personalization)->Unit,onTheme:(VisualTheme)->Unit,onMode:(LightMode)->Unit,onLibraryChanged:()->Unit,onPlaybackChanged:()->Unit) {
     var hide by remember { mutableStateOf(prefs.hideWhatsApp) }
     var excluded by remember { mutableStateOf(prefs.excluded) }
     var metadata by remember { mutableStateOf(prefs.showMetadata) }
@@ -81,6 +86,7 @@ import kotlinx.coroutines.withContext
                 }
             }
         }
+        PersonalizationSettings(personal,onPersonal)
         SectionTitle("MODO DE COLOR","La luz cambia. Tu música sigue.")
         LightMode.entries.forEach { v -> Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).clickable {onMode(v)}.padding(8.dp),verticalAlignment=Alignment.CenterVertically) {RadioButton(selected=mode==v,onClick={onMode(v)});Text(v.title)} }
         SectionTitle("REPRODUCTOR","Personaliza la escucha")
@@ -103,7 +109,7 @@ import kotlinx.coroutines.withContext
         Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {Column(Modifier.weight(1f)) {Text("Excluir audios de WhatsApp",fontWeight=FontWeight.SemiBold);Text("También notas de voz y WhatsApp Business",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)};Switch(checked=hide,onCheckedChange={hide=it;prefs.hideWhatsApp=it;onLibraryChanged()})}
         OutlinedButton(onClick={foldersDialog=true},modifier=Modifier.fillMaxWidth(),shape=RoundedCornerShape(16.dp)) {Icon(Icons.Rounded.FolderOpen,null);Text("Elegir carpetas · ${excluded.size} excluidas",Modifier.padding(8.dp))}
         Text("Se muestran las carpetas que Android ha registrado con archivos de audio. Las carpetas privadas de otras apps pueden no ser accesibles.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
-        SectionTitle("PRISMA MUSIC","1.0.2 · Beta de código abierto")
+        SectionTitle("PRISMA MUSIC","1.0.3 · Beta de código abierto")
         Text("Sin anuncios, sin cuenta y sin subir tu música. Las letras incrustadas se leen automáticamente. Puedes importar LRC o TXT si el archivo no contiene letra. El motor usa PCM de 16 bits para aplicar el ecualizador; los datos mostrados describen el archivo original.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(24.dp))
     }
@@ -145,7 +151,7 @@ import kotlinx.coroutines.withContext
 }
 @Composable fun SoundSlider(label:String,value:Double,unit:String,enabled:Boolean,onChange:(Double)->Unit) {Column {Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) {Text(label,style=MaterialTheme.typography.bodyMedium);Text("%+.1f %s".format(value,unit),style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.primary)};Slider(value=value.toFloat(),onValueChange={onChange(it.toDouble())},valueRange=-12f..12f,enabled=enabled,modifier=Modifier.height(38.dp))}}
 
-@Composable fun PlayerScreen(song:Song,details:Library.Details?,theme:VisualTheme,prefs:Preferences,position:Long,duration:Long,playing:Boolean,shuffle:Boolean,repeat:Int,controller:MediaController?) {
+@Composable fun PlayerScreen(song:Song,details:Library.Details?,theme:VisualTheme,prefs:Preferences,position:Long,duration:Long,playing:Boolean,shuffle:Boolean,repeat:Int,controller:MediaController?,onDismiss:()->Unit) {
     val view=androidx.compose.ui.platform.LocalView.current
     DisposableEffect(view,prefs.keepScreenOn) {
         val previous=view.keepScreenOn
@@ -159,7 +165,26 @@ import kotlinx.coroutines.withContext
     val embedded=details?.embeddedLyrics?.isNotBlank()==true
     val swipeThreshold=with(LocalDensity.current) {70.dp.toPx()}
     var drag by remember {mutableFloatStateOf(0f)}
+    var verticalDrag by remember {mutableFloatStateOf(0f)}
+    var closing by remember {mutableStateOf(false)}
+    val screenHeight=with(LocalDensity.current) {LocalConfiguration.current.screenHeightDp.dp.toPx()}
+    val closeThreshold=with(LocalDensity.current) {96.dp.toPx()}
+    val offset by animateFloatAsState(if(closing) screenHeight else verticalDrag,animationSpec=if(closing) tween(240, easing=FastOutSlowInEasing) else spring(stiffness=900f),label="dismissPlayer")
+    val latestDismiss by rememberUpdatedState(onDismiss)
+    LaunchedEffect(closing) {if(closing) {kotlinx.coroutines.delay(260);latestDismiss()}}
     val latestController by rememberUpdatedState(controller)
+    val swipe=Modifier.pointerInput(song.id,lyricsVisible) {
+        var axis=0
+        detectDragGestures(onDragStart={axis=0;drag=0f;verticalDrag=0f},onDragCancel={drag=0f;verticalDrag=0f},onDragEnd={
+            if(axis==2 && verticalDrag>closeThreshold) closing=true
+            else if(axis==1) {if(drag < -swipeThreshold) latestController?.seekToNextMediaItem() else if(drag > swipeThreshold) latestController?.seekToPreviousMediaItem()}
+            drag=0f;verticalDrag=0f
+        }) {change,amount->
+            if(axis==0) axis=if(abs(amount.x)>abs(amount.y)) 1 else 2
+            if(axis==1) {change.consume();drag+=amount.x}
+            else if(!lyricsVisible) {change.consume();verticalDrag=(verticalDrag+amount.y).coerceAtLeast(0f)}
+        }
+    }
     var lyricError by remember(song.id) {mutableStateOf<String?>(null)}
     var importId by remember {mutableStateOf(song.id)}
     val context=LocalContext.current; val scope=rememberCoroutineScope()
@@ -168,9 +193,12 @@ import kotlinx.coroutines.withContext
     }}
     val end=if(duration>0) duration else song.duration
     var seeking by remember(song.id) {mutableStateOf<Float?>(null)}
-    Column(Modifier.fillMaxSize().padding(horizontal=24.dp)) {
+    Column(Modifier.fillMaxSize().graphicsLayer {translationY=offset;alpha=1f-(offset/screenHeight).coerceIn(0f,.7f)}.padding(horizontal=24.dp)) {
+        Box(Modifier.fillMaxWidth().height(32.dp).semantics {contentDescription="Deslizar hacia abajo para cerrar"}.pointerInput(Unit) {
+            detectVerticalDragGestures(onDragStart={verticalDrag=0f},onDragCancel={verticalDrag=0f},onDragEnd={if(verticalDrag>closeThreshold) closing=true;verticalDrag=0f}) {change,amount->change.consume();verticalDrag=(verticalDrag+amount).coerceAtLeast(0f)}
+        },contentAlignment=Alignment.Center) {Box(Modifier.width(40.dp).height(4.dp).clip(RoundedCornerShape(8.dp)).background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha=.45f)))}
         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.Center,verticalAlignment=Alignment.CenterVertically) {FilterChip(!lyricsVisible,{lyricsVisible=false},label={Text("Carátula")});Spacer(Modifier.width(8.dp));FilterChip(lyricsVisible,{lyricsVisible=true},label={Text("Letra")});IconButton(onClick={metadataVisible=!metadataVisible;prefs.showMetadata=metadataVisible}) {Icon(Icons.Rounded.Info,if(metadataVisible) "Ocultar metadatos" else "Mostrar metadatos",tint=if(metadataVisible) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)}}
-        Box(Modifier.weight(1f).fillMaxWidth().pointerInput(song.id) {detectHorizontalDragGestures(onDragStart={drag=0f},onDragCancel={drag=0f},onDragEnd={if(drag < -swipeThreshold) latestController?.seekToNextMediaItem() else if(drag > swipeThreshold) latestController?.seekToPreviousMediaItem();drag=0f}) {change,amount->change.consume();drag+=amount}},contentAlignment=Alignment.Center) {
+        Box(Modifier.weight(1f).fillMaxWidth().then(if(lyricsVisible) Modifier else swipe),contentAlignment=Alignment.Center) {
             if(lyricsVisible) {
                 val lines=remember(lyricText) {Lyrics.parse(lyricText)}
                 if(lines.isEmpty()) Column(horizontalAlignment=Alignment.CenterHorizontally) {Icon(Icons.Rounded.Lyrics,null,Modifier.size(64.dp),tint=MaterialTheme.colorScheme.primary);Spacer(Modifier.height(16.dp));Text(if(details==null) "Leyendo letra incrustada…" else "No se encontró una letra incrustada",fontWeight=FontWeight.Bold);Text("También puedes importar un archivo LRC o TXT.",style=MaterialTheme.typography.bodySmall,modifier=Modifier.padding(vertical=10.dp));Button(onClick={importId=song.id;import.launch(arrayOf("text/*","application/octet-stream"))}){Text("Importar letra")}}
@@ -195,7 +223,7 @@ import kotlinx.coroutines.withContext
 
             }
         }
-        Text("Desliza la carátula: ← siguiente · anterior →",fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant,modifier=Modifier.padding(top=6.dp))
+        Text("Desliza: ← siguiente · anterior → · ↓ cerrar",fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant,modifier=Modifier.padding(top=6.dp))
         Text(song.title,fontSize=if(theme==VisualTheme.MINIMAL) 30.sp else 23.sp,fontWeight=FontWeight.Bold,maxLines=2,overflow=TextOverflow.Ellipsis,modifier=Modifier.padding(top=18.dp))
         Text(song.artist,color=MaterialTheme.colorScheme.onSurfaceVariant,maxLines=1,overflow=TextOverflow.Ellipsis)
         AnimatedVisibility(metadataVisible,enter=fadeIn(tween(220))+expandVertically(tween(280)),exit=fadeOut(tween(150))+shrinkVertically(tween(280))) {

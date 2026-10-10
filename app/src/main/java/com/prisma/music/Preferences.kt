@@ -7,8 +7,15 @@ import org.json.JSONObject
 enum class VisualTheme(val title: String) { CHROMATIC("Chromatic Flow"), GLASS("Liquid Glass"), MINIMAL("Pure Minimal"), NIGHT("Black Night") }
 enum class LightMode(val title: String) { SYSTEM("Según el sistema"), DARK("Oscuro"), LIGHT("Claro") }
 
+enum class LibraryLayout(val title:String) { THEME("Según el tema"), LIST("Lista"), GRID("Cuadrícula"), COMPACT("Lista compacta") }
+enum class SongInfoStyle(val title:String) { ARTIST("Artista"), ALBUM("Artista y álbum"), FILE("Nombre del archivo") }
+data class Personalization(val accent:String="",val layout:LibraryLayout=LibraryLayout.THEME,val info:SongInfoStyle=SongInfoStyle.ARTIST)
+
 class Preferences(context: Context) {
     private val prefs = context.getSharedPreferences("prisma", Context.MODE_PRIVATE)
+    var personalization: Personalization
+        get() = runCatching { val j=JSONObject(prefs.getString("personalization","{}")!!); Personalization(j.optString("accent"),LibraryLayout.valueOf(j.optString("layout","THEME")),SongInfoStyle.valueOf(j.optString("info","ARTIST"))) }.getOrDefault(Personalization())
+        set(v) { prefs.edit().putString("personalization",JSONObject().put("accent",v.accent).put("layout",v.layout.name).put("info",v.info.name).toString()).apply() }
     var theme: VisualTheme
         get() = runCatching { VisualTheme.valueOf(prefs.getString("theme", "CHROMATIC")!!) }.getOrDefault(VisualTheme.CHROMATIC)
         set(v) { prefs.edit().putString("theme", v.name).apply() }

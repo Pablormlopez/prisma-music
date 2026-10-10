@@ -1,3 +1,10 @@
+## Beta 1.0.3 · Personalización y acciones de canciones
+
+- Ajustes → Personalización: mini temas de color, código hexadecimal manual, lista/cuadrícula/lista compacta y subtítulo de artista, álbum o archivo. Las elecciones se guardan y se combinan con los cuatro temas. El color elegido se ajusta para mantener contraste.
+- Desliza la carátula hacia abajo para volver a la biblioteca sin detener la música. También hay un tirador superior, disponible al leer letras. Los gestos horizontales siguen cambiando de canción; los arrastres cortos vuelven a su posición.
+- Mantén pulsada una canción, o usa ⋮, para reproducir ahora, reproducir a continuación, añadir al final de la cola, añadir a listas, compartir, ver detalles o eliminar el archivo. Reproducir a continuación desactiva el orden aleatorio para respetar la posición elegida.
+- Eliminar del teléfono exige confirmación; Android 10+ gestiona el consentimiento del archivo. Android 8/9 solicita escritura solo al eliminar. Al completarse, se limpia la cola y las listas. Cancelar conserva el archivo.
+
 # Prisma Music
 
 Reproductor de música local para Android, gratuito y de código abierto. Beta actual: **1.0.2**. Android 8.0 o posterior.

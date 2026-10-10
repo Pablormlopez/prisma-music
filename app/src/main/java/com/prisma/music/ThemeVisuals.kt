@@ -1,9 +1,11 @@
+@file:OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 package com.prisma.music
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -56,12 +58,12 @@ val LocalVisualTheme=staticCompositionLocalOf { VisualTheme.CHROMATIC }
 }
 @Composable fun ThemeSongTile(song:Song,onPlay:()->Unit,onAdd:()->Unit) {
     val theme=LocalVisualTheme.current;val c=MaterialTheme.colorScheme
-    Surface(onClick=onPlay,shape=RoundedCornerShape(if(theme==VisualTheme.GLASS) 30.dp else 20.dp),color=if(theme==VisualTheme.GLASS)c.surface.copy(alpha=.4f) else c.surface,border=if(theme==VisualTheme.GLASS) BorderStroke(1.dp,c.primary.copy(alpha=.3f)) else null,modifier=Modifier.padding(4.dp).then(if(theme==VisualTheme.GLASS) Modifier.crystal() else Modifier)) {
+    Surface(shape=RoundedCornerShape(if(theme==VisualTheme.GLASS) 30.dp else 20.dp),color=if(theme==VisualTheme.GLASS)c.surface.copy(alpha=.4f) else c.surface,border=if(theme==VisualTheme.GLASS) BorderStroke(1.dp,c.primary.copy(alpha=.3f)) else null,modifier=Modifier.padding(4.dp).combinedClickable(onClick=onPlay,onLongClick=onAdd,onLongClickLabel="Opciones de canción").then(if(theme==VisualTheme.GLASS) Modifier.crystal() else Modifier)) {
         Column(Modifier.padding(if(theme==VisualTheme.GLASS)16.dp else 10.dp)) {
             Cover(song,Modifier.fillMaxWidth().aspectRatio(1f).clip(if(theme==VisualTheme.GLASS) CircleShape else RoundedCornerShape(14.dp)))
             Text(song.title,color=c.onSurface,fontWeight=FontWeight.Bold,maxLines=2,overflow=TextOverflow.Ellipsis,modifier=Modifier.padding(top=10.dp))
-            Text(song.artist,color=c.onSurfaceVariant,fontSize=11.sp,maxLines=1,overflow=TextOverflow.Ellipsis)
-            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=Alignment.CenterVertically) {Text(time(song.duration),fontSize=10.sp,color=c.onSurfaceVariant);IconButton(onClick=onAdd,modifier=Modifier.size(32.dp)) {Icon(Icons.Rounded.PlaylistAdd,"Añadir ${song.title} a una lista",Modifier.size(20.dp))}}
+            Text(song.subtitle(LocalPersonalization.current.info),color=c.onSurfaceVariant,fontSize=11.sp,maxLines=1,overflow=TextOverflow.Ellipsis)
+            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=Alignment.CenterVertically) {Text(time(song.duration),fontSize=10.sp,color=c.onSurfaceVariant);IconButton(onClick=onAdd,modifier=Modifier.size(32.dp)) {Icon(Icons.Rounded.MoreVert,"Opciones de ${song.title}",Modifier.size(20.dp))}}
         }
     }
 }

@@ -1,4 +1,4 @@
-@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
 package com.prisma.music
 
 import android.Manifest
@@ -22,6 +22,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
@@ -78,6 +79,8 @@ class MainActivity : ComponentActivity() {
 fun PrismaApp() {
     val context=LocalContext.current
     val prefs=remember { Preferences(context) }
+    var personal by remember { mutableStateOf(prefs.personalization) }
+    var actionSong by remember { mutableStateOf<Song?>(null) }
     var theme by remember { mutableStateOf(prefs.theme) }
     var mode by remember { mutableStateOf(prefs.mode) }
     var songs by remember { mutableStateOf<List<Song>>(emptyList()) }
@@ -134,9 +137,9 @@ fun PrismaApp() {
     LaunchedEffect(currentId) { details=null; current?.let { s -> details=withContext(Dispatchers.IO) { Library.details(context,s) } } }
     val dark=when(mode) { LightMode.DARK->true; LightMode.LIGHT->false; LightMode.SYSTEM->isSystemInDarkTheme() }
     SideEffect { (context as? ComponentActivity)?.window?.let { window -> androidx.core.view.WindowCompat.getInsetsController(window,window.decorView).apply {isAppearanceLightStatusBars=!dark;isAppearanceLightNavigationBars=!dark} } }
-    val baseAccent=when(theme) { VisualTheme.CHROMATIC->Color(details?.color ?: 0xffb0a2ff.toInt()); VisualTheme.GLASS->if(dark) Color(0xff8bd6f8) else Color(0xff126185); VisualTheme.MINIMAL->if(dark) Color(0xffc6c5ce) else Color(0xff494650); VisualTheme.NIGHT->if(dark) Color(0xff66e2ac) else Color(0xff006c43) }
+    val baseAccent=accentColor(personal.accent) ?: when(theme) { VisualTheme.CHROMATIC->Color(details?.color ?: 0xffb0a2ff.toInt()); VisualTheme.GLASS->if(dark) Color(0xff8bd6f8) else Color(0xff126185); VisualTheme.MINIMAL->if(dark) Color(0xffc6c5ce) else Color(0xff494650); VisualTheme.NIGHT->if(dark) Color(0xff66e2ac) else Color(0xff006c43) }
     // Keep readable controls even when a cover produces a very dark/light swatch.
-    val accent by animateColorAsState(if(theme==VisualTheme.CHROMATIC) androidx.compose.ui.graphics.lerp(baseAccent,if(dark) Color.White else Color.Black,if(dark) .55f else .6f) else baseAccent,animationSpec=tween(450),label="cover")
+    val accent by animateColorAsState(if(theme==VisualTheme.CHROMATIC || personal.accent.isNotEmpty()) androidx.compose.ui.graphics.lerp(baseAccent,if(dark) Color.White else Color.Black,if(dark) .55f else .6f) else baseAccent,animationSpec=tween(450),label="cover")
     val bg=if(dark) { if(theme==VisualTheme.NIGHT) Color(0xff060a09) else when(theme) {VisualTheme.GLASS->Color(0xff102535);VisualTheme.MINIMAL->Color(0xff161616);else->Color(0xff101018)} } else when(theme) {VisualTheme.GLASS->Color(0xffe1eef4);VisualTheme.MINIMAL->Color(0xfffffdf8);VisualTheme.NIGHT->Color(0xffeaf5ee);else->Color(0xfff6f5fa)}
     val colors=if(dark) darkColorScheme(primary=accent,background=bg,surface=Color(0xff1c1c27),onPrimary=Color(0xff101018),onBackground=Color(0xfff0eef7),onSurface=Color(0xfff0eef7),onSurfaceVariant=Color(0xffd5d8e4),surfaceVariant=Color(0xff323341),outline=Color(0xff9399ac)) else lightColorScheme(primary=accent,background=bg,surface=Color.White,onPrimary=Color.White)
     fun play(queue:List<Song>,song:Song) {
@@ -145,7 +148,7 @@ fun PrismaApp() {
         controller?.run { setMediaItems(queue.map { it.mediaItem() },queue.indexOf(song).coerceAtLeast(0),0); prepare(); play() }
     }
     MaterialTheme(colorScheme=colors) {
-        CompositionLocalProvider(LocalVisualTheme provides theme) {
+        CompositionLocalProvider(LocalVisualTheme provides theme, LocalPersonalization provides personal) {
         Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(if(theme==VisualTheme.CHROMATIC || theme==VisualTheme.GLASS) androidx.compose.ui.graphics.lerp(bg,accent,if(dark) .16f else .08f) else bg,bg)))) {
             if(theme==VisualTheme.GLASS) GlassBackdrop(details?.glassBackdrop,bg)
             Scaffold(containerColor=Color.Transparent,contentColor=colors.onBackground,bottomBar={
@@ -170,15 +173,22 @@ fun PrismaApp() {
                     }
                     error?.let { message -> Surface(color=colors.errorContainer,shape=RoundedCornerShape(16.dp),modifier=Modifier.padding(horizontal=16.dp)) { Row(Modifier.padding(12.dp),verticalAlignment=Alignment.CenterVertically) { Text(message,Modifier.weight(1f),color=colors.onErrorContainer,style=MaterialTheme.typography.bodySmall); IconButton(onClick={error=null}) { Icon(Icons.Rounded.Close,"Cerrar mensaje") } } } }
                     Crossfade(targetState=page,animationSpec=tween(300, easing=FastOutSlowInEasing),label="page",modifier=Modifier.weight(1f)) { route -> when(route) {
-                        "Biblioteca"->if(!granted) PermissionCard { requestPermission.launch(permission) } else LibraryScreen(visible,busy,currentId,onPlay=::play,onAdd={addToList=it})
-                        "Listas"->PlaylistScreen(lists,visible,currentId,onCreate={newListDialog=true},onDelete={key->lists=lists-key; prefs.savePlaylists(lists)},onRemove={key,id->lists=lists+(key to lists.getValue(key).filterNot { it==id }); prefs.savePlaylists(lists)},onPlay=::play)
+                        "Biblioteca"->if(!granted) PermissionCard { requestPermission.launch(permission) } else LibraryScreen(visible,busy,currentId,onPlay=::play,onAdd={addToList=it},onOptions={actionSong=it})
+                        "Listas"->PlaylistScreen(lists,visible,currentId,onCreate={newListDialog=true},onDelete={key->lists=lists-key; prefs.savePlaylists(lists)},onRemove={key,id->lists=lists+(key to lists.getValue(key).filterNot { it==id }); prefs.savePlaylists(lists)},onPlay=::play,onOptions={actionSong=it})
                         "Sonido"->EqScreen(prefs) { config->prefs.eq=config; controller?.sendCustomCommand(SessionCommand("prisma.eq",Bundle.EMPTY),Bundle.EMPTY) }
-                        "Ajustes"->SettingsScreen(theme,mode,prefs,songs,{theme=it;prefs.theme=it},{mode=it;prefs.mode=it},{libraryVersion++}, { controller?.sendCustomCommand(SessionCommand("prisma.settings",Bundle.EMPTY),Bundle.EMPTY) })
-                        "Reproduciendo"->if(current!=null) PlayerScreen(current,details,theme,prefs,position,duration,playing,shuffled,repeat,controller) else EmptyCard("Selecciona una canción","Tu música local aparecerá aquí.",Icons.Rounded.MusicNote)
+                        "Ajustes"->SettingsScreen(theme,mode,prefs,songs,personal,{personal=it;prefs.personalization=it},{theme=it;prefs.theme=it},{mode=it;prefs.mode=it},{libraryVersion++}, { controller?.sendCustomCommand(SessionCommand("prisma.settings",Bundle.EMPTY),Bundle.EMPTY) })
+                        "Reproduciendo"->if(current!=null) PlayerScreen(current,details,theme,prefs,position,duration,playing,shuffled,repeat,controller,onDismiss={page="Biblioteca"}) else EmptyCard("Selecciona una canción","Tu música local aparecerá aquí.",Icons.Rounded.MusicNote)
                     } }
                 }
             }
         }
+        actionSong?.let { song -> SongActions(song,onDismiss={actionSong=null},onPlay={play(visible,song)},onNext={
+            controller?.let { c -> if(c.mediaItemCount==0) play(listOf(song),song) else { c.addMediaItem(c.currentMediaItemIndex+1,song.mediaItem()); c.shuffleModeEnabled=false } } ?: run {error="El reproductor se está iniciando."}
+        },onQueue={controller?.let { c -> if(c.mediaItemCount==0) play(listOf(song),song) else c.addMediaItem(song.mediaItem()) } ?: run {error="El reproductor se está iniciando."}},onList={addToList=song},onDeleted={ deleted ->
+            controller?.let { c -> for(i in c.mediaItemCount-1 downTo 0) {if(c.getMediaItemAt(i).mediaId==deleted.id) c.removeMediaItem(i)} }
+            lists=lists.mapValues { (_,ids)->ids.filterNot {it==deleted.id} };prefs.savePlaylists(lists)
+            songs=songs.filterNot {it.id==deleted.id};libraryVersion++;if(currentId==deleted.id) page="Biblioteca"
+        },onError={error=it}) }
         if(newListDialog) NameDialog(onDismiss={newListDialog=false},onSave={name->if(name !in lists) { lists=lists+(name to emptyList()); prefs.savePlaylists(lists); newListDialog=false }},exists={it in lists})
         addToList?.let { song -> AlertDialog(onDismissRequest={addToList=null},title={Text("Añadir a una lista")},text={ Column(Modifier.verticalScroll(rememberScrollState())) { if(lists.isEmpty()) Text("Crea tu primera lista en la pestaña Listas."); lists.keys.forEach { name-> TextButton(onClick={lists=lists+(name to (lists.getValue(name)+song.id).distinct());prefs.savePlaylists(lists);addToList=null},modifier=Modifier.fillMaxWidth()) {Text(name)} } } },confirmButton={TextButton(onClick={addToList=null}){Text("Cerrar")}}) }
         }
@@ -197,16 +207,21 @@ fun PrismaApp() {
 @Composable fun PermissionCard(onGrant:()->Unit) {
     Column(Modifier.fillMaxSize().padding(28.dp),verticalArrangement=Arrangement.Center,horizontalAlignment=Alignment.CenterHorizontally) { Cover(null,Modifier.size(130.dp)); Spacer(Modifier.height(24.dp)); Text("Tu colección empieza aquí",fontSize=23.sp,fontWeight=FontWeight.Bold); Spacer(Modifier.height(10.dp)); Text("Permite leer la música de tu teléfono. Prisma funciona sin conexión y excluye los audios de WhatsApp de forma predeterminada."); Spacer(Modifier.height(20.dp)); Button(onClick=onGrant){Text("Permitir acceso a mi música")} }
 }
-@Composable fun SongRow(song:Song,currentId:String,onPlay:()->Unit,onAdd:(()->Unit)?=null) {
+@Composable fun SongRow(song:Song,currentId:String,onPlay:()->Unit,onAdd:(()->Unit)?=null,onOptions:(()->Unit)?=null) {
     val visualTheme=LocalVisualTheme.current
-    Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(if(visualTheme==VisualTheme.NIGHT) 4.dp else 16.dp)).clickable(onClick=onPlay).padding(horizontal=8.dp,vertical=9.dp),verticalAlignment=Alignment.CenterVertically) {
-        if(visualTheme!=VisualTheme.MINIMAL) {Cover(song,Modifier.size(if(visualTheme==VisualTheme.NIGHT) 42.dp else 52.dp)); Spacer(Modifier.width(14.dp))} else {Text("♪",fontSize=22.sp,color=MaterialTheme.colorScheme.primary,modifier=Modifier.padding(end=18.dp))}; Column(Modifier.weight(1f)) { Text(song.title,maxLines=1,overflow=TextOverflow.Ellipsis,fontWeight=FontWeight.SemiBold,color=if(currentId==song.id) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface); Text(song.artist,maxLines=1,overflow=TextOverflow.Ellipsis,color=MaterialTheme.colorScheme.onSurfaceVariant,style=MaterialTheme.typography.bodySmall) }
+    val personal=LocalPersonalization.current
+    val compact=personal.layout==LibraryLayout.COMPACT
+    Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(if(visualTheme==VisualTheme.NIGHT) 4.dp else 16.dp)).combinedClickable(onClick=onPlay,onLongClick=onOptions,onLongClickLabel="Opciones de canción").padding(horizontal=8.dp,vertical=if(compact) 4.dp else 9.dp),verticalAlignment=Alignment.CenterVertically) {
+        if(visualTheme!=VisualTheme.MINIMAL && !compact) {Cover(song,Modifier.size(if(visualTheme==VisualTheme.NIGHT) 42.dp else 52.dp)); Spacer(Modifier.width(14.dp))} else {Text("♪",fontSize=22.sp,color=MaterialTheme.colorScheme.primary,modifier=Modifier.padding(end=18.dp))}; Column(Modifier.weight(1f)) { Text(song.title,maxLines=1,overflow=TextOverflow.Ellipsis,fontWeight=FontWeight.SemiBold,color=if(currentId==song.id) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface); Text(song.subtitle(personal.info),maxLines=1,overflow=TextOverflow.Ellipsis,color=MaterialTheme.colorScheme.onSurfaceVariant,style=MaterialTheme.typography.bodySmall) }
         Text(time(song.duration),style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
-        if(onAdd!=null) IconButton(onClick=onAdd) { Icon(Icons.Rounded.PlaylistAdd,"Añadir ${song.title} a una lista") }
+        if(onOptions!=null) IconButton(onClick=onOptions) { Icon(Icons.Rounded.MoreVert,"Opciones de ${song.title}") }
+        else if(onAdd!=null) IconButton(onClick=onAdd) { Icon(Icons.Rounded.PlaylistAdd,"Añadir ${song.title} a una lista") }
     }
 }
-@Composable fun LibraryScreen(songs:List<Song>,busy:Boolean,currentId:String,onPlay:(List<Song>,Song)->Unit,onAdd:(Song)->Unit) {
+@Composable fun LibraryScreen(songs:List<Song>,busy:Boolean,currentId:String,onPlay:(List<Song>,Song)->Unit,onAdd:(Song)->Unit,onOptions:(Song)->Unit) {
     val visualTheme=LocalVisualTheme.current
+    val personal=LocalPersonalization.current
+    val grid=personal.layout==LibraryLayout.GRID || (personal.layout==LibraryLayout.THEME && (visualTheme==VisualTheme.CHROMATIC || visualTheme==VisualTheme.GLASS))
     var search by rememberSaveable { mutableStateOf("") }; var category by rememberSaveable { mutableStateOf("Canciones") }; var selected by rememberSaveable { mutableStateOf<String?>(null) }
     val filtered=remember(songs,search) { songs.filter { search.isBlank() || "${it.title} ${it.artist} ${it.album} ${it.genre}".contains(search,true) } }
     fun key(s:Song) = when(category) { "Artistas"->s.artist; "Álbumes"->"${s.album} · ${s.artist}"; "Géneros"->s.genre; else->s.folder.ifBlank { "Sin carpeta" } }
@@ -217,10 +232,10 @@ fun PrismaApp() {
         if(busy) LinearProgressIndicator(Modifier.fillMaxWidth())
         if(selected!=null) TextButton(onClick={selected=null}) { Icon(Icons.Rounded.ArrowBack,null); Text(selected!!,maxLines=1,overflow=TextOverflow.Ellipsis) }
         if(filtered.isEmpty()) EmptyCard(if(busy) "Buscando música…" else "No hay canciones",if(search.isNotBlank()) "Prueba otra búsqueda." else "Copia música al teléfono y pulsa Actualizar. Puedes revisar las carpetas excluidas en Ajustes.",Icons.Rounded.LibraryMusic)
-        else if((visualTheme==VisualTheme.CHROMATIC || visualTheme==VisualTheme.GLASS) && (category=="Canciones" || selected!=null)) LazyVerticalGrid(columns=GridCells.Fixed(2),modifier=Modifier.fillMaxSize(),contentPadding=PaddingValues(bottom=16.dp)) {items(queue,key={it.id}) {song->ThemeSongTile(song,{onPlay(queue,song)},{onAdd(song)})}}
+        else if(grid && (category=="Canciones" || selected!=null)) LazyVerticalGrid(columns=GridCells.Fixed(2),modifier=Modifier.fillMaxSize(),contentPadding=PaddingValues(bottom=16.dp)) {items(queue,key={it.id}) {song->ThemeSongTile(song,{onPlay(queue,song)},{onOptions(song)})}}
         else LazyColumn(Modifier.fillMaxSize(),contentPadding=PaddingValues(bottom=16.dp)) {
             if(category!="Canciones" && selected==null) items(filtered.groupBy(::key).toSortedMap().entries.toList(),key={it.key}) { group -> Surface(onClick={selected=group.key},shape=RoundedCornerShape(20.dp),color=MaterialTheme.colorScheme.surface.copy(alpha=.75f),modifier=Modifier.padding(vertical=5.dp).fillMaxWidth()) { Row(Modifier.padding(16.dp),verticalAlignment=Alignment.CenterVertically) { Cover(group.value.first(),Modifier.size(54.dp)); Spacer(Modifier.width(14.dp)); Column(Modifier.weight(1f)) { Text(group.key,maxLines=2,overflow=TextOverflow.Ellipsis,fontWeight=FontWeight.SemiBold); Text("${group.value.size} canciones",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant) }; Icon(Icons.Rounded.ChevronRight,null) } } }
-            else items(queue,key={it.id}) { song->SongRow(song,currentId,{onPlay(queue,song)},{onAdd(song)}) }
+            else items(queue,key={it.id}) { song->SongRow(song,currentId,{onPlay(queue,song)},{onAdd(song)},{onOptions(song)}) }
         }
     }
 }
@@ -228,7 +243,7 @@ fun PrismaApp() {
     var name by remember { mutableStateOf("") }
     AlertDialog(onDismissRequest=onDismiss,title={Text("Nueva lista")},text={OutlinedTextField(name,{name=it},label={Text("Nombre")},singleLine=true,isError=exists(name.trim()),supportingText={if(exists(name.trim())) Text("Ya existe una lista con ese nombre.")})},confirmButton={TextButton(onClick={onSave(name.trim())},enabled=name.isNotBlank() && !exists(name.trim())) {Text("Crear")}},dismissButton={TextButton(onClick=onDismiss){Text("Cancelar")}})
 }
-@Composable fun PlaylistScreen(lists:Map<String,List<String>>,songs:List<Song>,currentId:String,onCreate:()->Unit,onDelete:(String)->Unit,onRemove:(String,String)->Unit,onPlay:(List<Song>,Song)->Unit) {
+@Composable fun PlaylistScreen(lists:Map<String,List<String>>,songs:List<Song>,currentId:String,onCreate:()->Unit,onDelete:(String)->Unit,onRemove:(String,String)->Unit,onPlay:(List<Song>,Song)->Unit,onOptions:(Song)->Unit) {
     var selected by rememberSaveable { mutableStateOf<String?>(null) }; var delete by remember { mutableStateOf<String?>(null) }
     Column(Modifier.fillMaxSize().padding(horizontal=16.dp)) {
         if(selected==null) {
@@ -239,7 +254,7 @@ fun PrismaApp() {
             TextButton(onClick={selected=null}) {Icon(Icons.Rounded.ArrowBack,null);Text(selected!!)}
             val queue=lists[selected].orEmpty().mapNotNull { id->songs.find {it.id==id} }
             if(queue.isEmpty()) EmptyCard("Esta lista está vacía","Añade canciones desde la biblioteca. Las canciones de carpetas excluidas no se muestran.",Icons.Rounded.PlaylistAdd)
-            else LazyColumn { items(queue,key={it.id}) {song-> Row(verticalAlignment=Alignment.CenterVertically) { Box(Modifier.weight(1f)){SongRow(song,currentId,{onPlay(queue,song)})}; IconButton(onClick={onRemove(selected!!,song.id)}){Icon(Icons.Rounded.RemoveCircleOutline,"Quitar de la lista")} } } }
+            else LazyColumn { items(queue,key={it.id}) {song-> Row(verticalAlignment=Alignment.CenterVertically) { Box(Modifier.weight(1f)){SongRow(song,currentId,{onPlay(queue,song)},onOptions={onOptions(song)})}; IconButton(onClick={onRemove(selected!!,song.id)}){Icon(Icons.Rounded.RemoveCircleOutline,"Quitar de la lista")} } } }
         }
     }
     delete?.let { name->AlertDialog(onDismissRequest={delete=null},title={Text("Eliminar lista")},text={Text("Se eliminará «$name». Los archivos de música se conservarán.")},confirmButton={TextButton(onClick={onDelete(name);delete=null}){Text("Eliminar")}},dismissButton={TextButton(onClick={delete=null}){Text("Cancelar")}}) }
