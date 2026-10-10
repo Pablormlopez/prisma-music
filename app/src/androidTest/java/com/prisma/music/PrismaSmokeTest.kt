@@ -247,7 +247,7 @@ class PrismaSmokeTest {
             assertEquals(2,Preferences(context).playlists().getValue("Prisma selección").size)
             compose.onNodeWithText("Cancelar",substring=false).performClick()
             nav("Inicio")
-            compose.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Recién añadidas"))
+            compose.onNode(hasScrollToIndexAction() and hasAnyDescendant(hasText("Tu colección, contigo"))).performScrollToNode(hasText("Recién añadidas"))
             compose.onNodeWithText("Canciones de tu biblioteca").assertDoesNotExist()
             compose.onNodeWithText("Ver todas",substring=false).performClick()
             compose.onNodeWithText("Últimas incorporadas al teléfono, primero las más nuevas").assertExists()
