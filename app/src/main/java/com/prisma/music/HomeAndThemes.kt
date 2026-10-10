@@ -59,7 +59,7 @@ import androidx.compose.ui.unit.sp
             }
         }
         item {
-            Text(if(recent.isEmpty()) "Descubre tu colección" else "Vuelve a escuchar",fontSize=21.sp,fontWeight=FontWeight.Bold,modifier=Modifier.padding(horizontal=24.dp,bottom=14.dp))
+            Text(if(recent.isEmpty()) "Descubre tu colección" else "Vuelve a escuchar",fontSize=21.sp,fontWeight=FontWeight.Bold,modifier=Modifier.padding(start=24.dp,end=24.dp,bottom=14.dp))
             BoxWithConstraints(Modifier.fillMaxWidth()) {
                 val width=(maxWidth-64.dp).coerceAtMost(390.dp)
                 LazyRow(contentPadding=PaddingValues(horizontal=24.dp),horizontalArrangement=Arrangement.spacedBy(16.dp)) {
@@ -79,13 +79,13 @@ import androidx.compose.ui.unit.sp
             }
         }
         item {
-            Text("Canciones de tu biblioteca",fontSize=20.sp,fontWeight=FontWeight.Bold,modifier=Modifier.padding(horizontal=24.dp,bottom=14.dp))
+            Text("Canciones de tu biblioteca",fontSize=20.sp,fontWeight=FontWeight.Bold,modifier=Modifier.padding(start=24.dp,end=24.dp,bottom=14.dp))
             LazyRow(contentPadding=PaddingValues(horizontal=24.dp),horizontalArrangement=Arrangement.spacedBy(16.dp)) {
                 items(songs.take(16),key={it.id}) {song->HomeSongCard(song,{onPlay(songs,song)},{onOptions(song)})}
             }
         }
         item {
-            Text("Tus álbumes",fontSize=20.sp,fontWeight=FontWeight.Bold,modifier=Modifier.padding(horizontal=24.dp,bottom=14.dp))
+            Text("Tus álbumes",fontSize=20.sp,fontWeight=FontWeight.Bold,modifier=Modifier.padding(start=24.dp,end=24.dp,bottom=14.dp))
             LazyRow(contentPadding=PaddingValues(horizontal=24.dp),horizontalArrangement=Arrangement.spacedBy(16.dp)) {
                 items(albums,key={"${it.album}\u0000${it.artist}"}) {song->HomeSongCard(song,{onPlay(songs.filter {it.album==song.album && it.artist==song.artist},song)},{onOptions(song)},album=true)}
             }
