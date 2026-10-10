@@ -20,9 +20,9 @@ jobs:
           log-accepted-android-sdk-licenses: false
       - name: Descargar APKs públicas y verificar firma
         run: |
-          curl --fail --location --retry 3 https://github.com/nexlibre/prisma-music/releases/download/v2.0.2-beta/Prisma-Music-2.0.2-beta.apk -o previous.apk
-          curl --fail --location --retry 3 https://github.com/nexlibre/prisma-music/releases/download/v2.1.0-beta/Prisma-Music-2.1.0-beta.apk -o current.apk
-          echo "0a74ee47fafc76ac417d8a620f1d8f103504d5249f316ccf1c9398aaeae5dbbb  current.apk" | sha256sum -c -
+          curl --fail --location --retry 3 https://github.com/nexlibre/prisma-music/releases/download/v2.1.0-beta/Prisma-Music-2.1.0-beta.apk -o previous.apk
+          curl --fail --location --retry 3 https://github.com/nexlibre/prisma-music/releases/download/v2.1.1-beta/Prisma-Music-2.1.1-beta.apk -o current.apk
+          echo "6886e9630d994674baf8ba54eee7bb8d295552c2d199989dedb0fc0086859afc  current.apk" | sha256sum -c -
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs previous.apk > previous-cert.txt
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs current.apk > current-cert.txt
           diff <(grep 'certificate SHA-256 digest' previous-cert.txt) <(grep 'certificate SHA-256 digest' current-cert.txt)
@@ -41,7 +41,7 @@ jobs:
             adb install previous.apk
             adb install -r current.apk
             adb shell dumpsys package com.prisma.music > installed-package.txt
-            grep 'versionName=2.1.0-beta' installed-package.txt
+            grep 'versionName=2.1.1-beta' installed-package.txt
             adb logcat -c
             adb shell am start -W -n com.prisma.music/.MainActivity
             sleep 5
