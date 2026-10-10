@@ -149,7 +149,7 @@ fun PrismaApp() {
     }
     MaterialTheme(colorScheme=colors) {
         CompositionLocalProvider(LocalVisualTheme provides theme, LocalPersonalization provides personal) {
-        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(if(theme==VisualTheme.CHROMATIC || theme==VisualTheme.GLASS) androidx.compose.ui.graphics.lerp(bg,accent,if(dark) .16f else .08f) else bg,bg)))) {
+        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(if(theme==VisualTheme.CHROMATIC || theme==VisualTheme.GLASS || personal.accent.isNotEmpty()) androidx.compose.ui.graphics.lerp(bg,accent,if(dark) .16f else .08f) else bg,bg)))) {
             if(theme==VisualTheme.GLASS) GlassBackdrop(details?.glassBackdrop,bg)
             Scaffold(containerColor=Color.Transparent,contentColor=colors.onBackground,bottomBar={
                 Column {

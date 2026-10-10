@@ -123,6 +123,9 @@ class PrismaSmokeTest {
             compose.onNodeWithContentDescription("Diseño Chromatic Flow").performTouchInput {swipeDown()}
             compose.waitUntil(5000) {compose.onAllNodesWithContentDescription("Abrir reproductor").fetchSemanticsNodes().isNotEmpty()}
             nav("Ajustes")
+            compose.onNodeWithText("Elegir un color personalizado").performScrollTo().performClick()
+            compose.onNodeWithText("Usar este color").performClick()
+            assertEquals("#9D87E8",Preferences(context).personalization.accent)
             compose.onNodeWithText("Menta",substring=false).performScrollTo().performClick()
             compose.onNodeWithText("Lista compacta",substring=false).performScrollTo().performClick()
             compose.onNodeWithText("Artista y álbum",substring=false).performScrollTo().performClick()
