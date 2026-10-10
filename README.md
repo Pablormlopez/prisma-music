@@ -7,7 +7,7 @@
 - Se conservan la personalización manual, cola editable, gestos, letras, metadatos y ecualizador.
 - Historial y preferencias se guardan en el teléfono. No requiere cuentas ni servicios de música en línea.
 
-## Beta 2.0.1 · Cola de reproducción
+## Beta 1.0.4 · Cola de reproducción
 
 - Botón de cola en el reproductor: muestra la canción actual y cuál sigue, con el orden real incluso en aleatorio.
 - Mueve entradas hacia arriba o abajo, o quítalas solo de la cola. Las canciones repetidas se editan individualmente. Mover conserva la posición y estado de reproducción; en aleatorio mantiene la secuencia visible y aplica tu cambio como orden manual.
@@ -45,7 +45,7 @@ Reproductor de música local para Android, gratuito y de código abierto. Beta a
 - Biblioteca de canciones, artistas, álbumes, géneros y carpetas; búsqueda, cola, repetición y aleatorio.
 - Listas locales: crear, añadir, quitar canciones y eliminar listas sin borrar archivos.
 - Exclusión predeterminada de audios/notas de voz de WhatsApp y WhatsApp Business. Carpetas registradas por MediaStore seleccionables.
-- Diseños distintos: Chromatic Flow con mosaicos y carátulas, Liquid Glass con tarjetas y disco circular, Pure Minimal con lista tipográfica y reproductor editorial, Black Night con filas compactas y carátula inmersiva.
+- Seis diseños en Ajustes → Temas: Chromatic Flow, Liquid Glass, Pure Minimal, Black Night, Studio y Sunset. Portadas protagonistas, paletas propias y líneas de tiempo distintas. Inicio independiente con canciones, álbumes e historial local.
 - Modo **claro, oscuro y según el sistema**, independiente del tema. Preferencias persistentes.
 - Ecualizador DSP original de diez bandas: 31, 63, 125, 250, 500 Hz; 1, 2, 4, 8, 16 kHz. Q global ajustable, preamplificador, graves, medios, agudos, presencia de voces y limitador de picos enlazado entre canales.
 - Letras incrustadas automáticas: MP3 ID3v2 (USLT/ULT, SYLT/SLT y TXXX de letras), FLAC/Vorbis y Ogg/Opus (LYRICS y variantes), M4A/MP4 (©lyr y campos libres de letras). Prioridad a letras incrustadas; TXT/LRC manual como alternativa. Letras sincronizadas cuando contienen tiempos, seguimiento y salto al pulsar una línea.
