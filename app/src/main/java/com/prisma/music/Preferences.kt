@@ -21,6 +21,25 @@ class Preferences(context: Context) {
     var excluded: Set<String>
         get() = prefs.getStringSet("excluded", emptySet())!!.toSet()
         set(v) { prefs.edit().putStringSet("excluded", v).apply() }
+    var showMetadata: Boolean
+        get() = prefs.getBoolean("showMetadata", true)
+        set(v) { prefs.edit().putBoolean("showMetadata", v).apply() }
+    var keepScreenOn: Boolean
+        get() = prefs.getBoolean("keepScreenOn", false)
+        set(v) { prefs.edit().putBoolean("keepScreenOn", v).apply() }
+    var skipSilence: Boolean
+        get() = prefs.getBoolean("skipSilence", false)
+        set(v) { prefs.edit().putBoolean("skipSilence", v).apply() }
+    var playbackSpeed: Float
+        get() = prefs.getFloat("playbackSpeed", 1f).coerceIn(.5f, 2f)
+        set(v) { prefs.edit().putFloat("playbackSpeed", v.coerceIn(.5f, 2f)).apply() }
+    var minimumDuration: Int
+        get() = prefs.getInt("minimumDuration", 0).coerceIn(0, 120)
+        set(v) { prefs.edit().putInt("minimumDuration", v.coerceIn(0, 120)).apply() }
+    // Wall-clock deadline survives activity recreation; the service owns the timer.
+    var sleepDeadline: Long
+        get() = prefs.getLong("sleepDeadline", 0)
+        set(v) { prefs.edit().putLong("sleepDeadline", v).apply() }
     var eq: DspEngine.Config
         get() = runCatching {
             val j = JSONObject(prefs.getString("eq", "{}")!!)
