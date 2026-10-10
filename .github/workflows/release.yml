@@ -1,5 +1,6 @@
 name: Preparar APK de distribución
 on:
+  pull_request:
   push:
     branches: [main]
     paths: ['app/**', '.github/workflows/release.yml']
@@ -7,7 +8,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: preparar-release
+  group: preparar-release-${{ github.ref }}
   cancel-in-progress: true
 jobs:
   release:

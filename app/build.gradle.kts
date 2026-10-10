@@ -4,7 +4,7 @@ android {
     compileSdk = 35
     defaultConfig { applicationId = "com.prisma.music"; minSdk = 26; targetSdk = 35; versionCode = 10; versionName = "2.1.0-beta"; testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner" }
     buildTypes { getByName("release") { isDebuggable = false; isMinifyEnabled = false } }
-    buildFeatures { compose = true }
+    buildFeatures { compose = true; buildConfig = true }
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
     kotlinOptions { jvmTarget = "17" }
 }
