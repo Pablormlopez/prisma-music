@@ -16,6 +16,7 @@ import org.junit.runner.RunWith
 import java.io.File
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import androidx.test.platform.app.InstrumentationRegistry
 
 /** Real app smoke test on Android 35. Uses an original generated tone, no user music. */
 @RunWith(AndroidJUnit4::class)
@@ -50,7 +51,11 @@ class PrismaSmokeTest {
         val resolver=context.contentResolver
         val values=ContentValues().apply {put(MediaStore.Audio.Media.DISPLAY_NAME,"Prisma prueba.wav");put(MediaStore.Audio.Media.MIME_TYPE,"audio/wav");put(MediaStore.Audio.Media.RELATIVE_PATH,"Music/PrismaTest/");put(MediaStore.Audio.Media.TITLE,"Prisma prueba");put(MediaStore.Audio.Media.ARTIST,"Prisma Music");put(MediaStore.Audio.Media.ALBUM,"Prueba local");put(MediaStore.Audio.Media.IS_PENDING,1)}
         val uri=resolver.insert(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,values)!!
+        val secondValues=ContentValues(values).apply {put(MediaStore.Audio.Media.DISPLAY_NAME,"Prisma segunda.flac");put(MediaStore.Audio.Media.TITLE,"Prisma segunda");put(MediaStore.Audio.Media.MIME_TYPE,"audio/flac")}
+        val second=resolver.insert(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,secondValues)!!
         try {
+            InstrumentationRegistry.getInstrumentation().context.assets.open("lyrics.flac").use {input->resolver.openOutputStream(second)!!.use {input.copyTo(it)}}
+            resolver.update(second,ContentValues().apply {put(MediaStore.Audio.Media.IS_PENDING,0)},null,null)
             val rate=44100;val count=rate*30;val b=ByteBuffer.allocate(44+count*2).order(ByteOrder.LITTLE_ENDIAN)
             b.put("RIFF".toByteArray()).putInt(36+count*2).put("WAVEfmt ".toByteArray()).putInt(16).putShort(1).putShort(1).putInt(rate).putInt(rate*2).putShort(2).putShort(16).put("data".toByteArray()).putInt(count*2)
             repeat(count) {i->b.putShort((Math.sin(2*Math.PI*440*i/rate)*900).toInt().toShort())}
@@ -64,6 +69,15 @@ class PrismaSmokeTest {
             compose.onNodeWithContentDescription("Abrir reproductor").performClick()
             compose.waitUntil(5000) {compose.onAllNodesWithText("Reproduciendo").fetchSemanticsNodes().isNotEmpty()}
             shot("02-reproductor")
+            compose.onNodeWithContentDescription("Diseño Chromatic Flow").performTouchInput {swipeLeft()}
+            compose.waitUntil(10000) {compose.onAllNodesWithText("Prisma segunda").fetchSemanticsNodes().isNotEmpty()}
+            compose.onNodeWithText("Letra",substring=false).performClick()
+            compose.waitUntil(15000) {compose.onAllNodesWithText("Primera línea incrustada").fetchSemanticsNodes().isNotEmpty()}
+            shot("06-letra-incrustada")
+            compose.onNodeWithText("Carátula",substring=false).performClick()
+            compose.onNodeWithContentDescription("Diseño Chromatic Flow").performTouchInput {swipeRight()}
+            compose.waitUntil(10000) {compose.onAllNodesWithText("Prisma prueba").fetchSemanticsNodes().isNotEmpty()}
+            compose.onAllNodesWithContentDescription("Pausar").onFirst().performClick()
             compose.onNodeWithContentDescription("Volver a la biblioteca").performClick()
             nav("Sonido")
             compose.onNode(isToggleable()).performClick()
@@ -75,6 +89,12 @@ class PrismaSmokeTest {
                 compose.onNodeWithText("Oscuro",substring=false).performScrollTo().performClick()
                 compose.onNodeWithText("Chromatic Flow").performScrollTo()
                 shot("04-tema-$index-oscuro")
+                compose.onNodeWithContentDescription("Abrir reproductor").performClick()
+                compose.onNodeWithContentDescription("Diseño $title").assertExists()
+                shot("07-reproductor-$index-oscuro")
+                nav("Música")
+                shot("08-biblioteca-$index-oscuro")
+                nav("Ajustes")
                 compose.onNodeWithText("Claro",substring=false).performScrollTo().performClick()
                 compose.onNodeWithText("Chromatic Flow").performScrollTo()
                 shot("05-tema-$index-claro")
@@ -88,6 +108,6 @@ class PrismaSmokeTest {
             runCatching {shot("99-failure")}
             compose.onRoot().printToLog("PrismaTest")
             throw t
-        } finally {resolver.delete(uri,null,null)}
+        } finally {resolver.delete(uri,null,null);resolver.delete(second,null,null)}
     }
 }

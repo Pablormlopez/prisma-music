@@ -13,6 +13,9 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -129,16 +132,17 @@ fun PrismaApp() {
     val baseAccent=when(theme) { VisualTheme.CHROMATIC->Color(details?.color ?: 0xffb0a2ff.toInt()); VisualTheme.GLASS->if(dark) Color(0xff8bd6f8) else Color(0xff126185); VisualTheme.MINIMAL->if(dark) Color(0xffc6c5ce) else Color(0xff494650); VisualTheme.NIGHT->if(dark) Color(0xff66e2ac) else Color(0xff006c43) }
     // Keep readable controls even when a cover produces a very dark/light swatch.
     val accent by animateColorAsState(if(theme==VisualTheme.CHROMATIC) androidx.compose.ui.graphics.lerp(baseAccent,if(dark) Color.White else Color.Black,if(dark) .55f else .6f) else baseAccent,label="cover")
-    val bg=if(dark) { if(theme==VisualTheme.NIGHT) Color(0xff060a09) else Color(0xff101018) } else Color(0xfff6f5fa)
-    val colors=if(dark) darkColorScheme(primary=accent,background=bg,surface=Color(0xff1c1c27),onPrimary=Color(0xff101018),onBackground=Color(0xfff0eef7),onSurface=Color(0xfff0eef7)) else lightColorScheme(primary=accent,background=bg,surface=Color.White,onPrimary=Color.White)
+    val bg=if(dark) { if(theme==VisualTheme.NIGHT) Color(0xff060a09) else when(theme) {VisualTheme.GLASS->Color(0xff102535);VisualTheme.MINIMAL->Color(0xff161616);else->Color(0xff101018)} } else when(theme) {VisualTheme.GLASS->Color(0xffe1eef4);VisualTheme.MINIMAL->Color(0xfffffdf8);VisualTheme.NIGHT->Color(0xffeaf5ee);else->Color(0xfff6f5fa)}
+    val colors=if(dark) darkColorScheme(primary=accent,background=bg,surface=Color(0xff1c1c27),onPrimary=Color(0xff101018),onBackground=Color(0xfff0eef7),onSurface=Color(0xfff0eef7),onSurfaceVariant=Color(0xffd5d8e4),surfaceVariant=Color(0xff323341),outline=Color(0xff9399ac)) else lightColorScheme(primary=accent,background=bg,surface=Color.White,onPrimary=Color.White)
     fun play(queue:List<Song>,song:Song) {
         if(controller==null) { error="El reproductor se está iniciando. Intenta de nuevo."; return }
         if(Build.VERSION.SDK_INT>=33 && ContextCompat.checkSelfPermission(context,Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED) notifications.launch(Manifest.permission.POST_NOTIFICATIONS)
         controller?.run { setMediaItems(queue.map { it.mediaItem() },queue.indexOf(song).coerceAtLeast(0),0); prepare(); play() }
     }
     MaterialTheme(colorScheme=colors) {
+        CompositionLocalProvider(LocalVisualTheme provides theme) {
         Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(if(theme==VisualTheme.CHROMATIC || theme==VisualTheme.GLASS) androidx.compose.ui.graphics.lerp(bg,accent,if(dark) .16f else .08f) else bg,bg)))) {
-            Scaffold(containerColor=Color.Transparent,bottomBar={
+            Scaffold(containerColor=Color.Transparent,contentColor=colors.onBackground,bottomBar={
                 Column {
                     current?.let { song -> Surface(onClick={page="Reproduciendo"},modifier=Modifier.padding(horizontal=14.dp,vertical=5.dp).fillMaxWidth().semantics {contentDescription="Abrir reproductor"},shape=RoundedCornerShape(22.dp),color=colors.surface.copy(alpha=if(theme==VisualTheme.GLASS) .7f else 1f),border=BorderStroke(1.dp,accent.copy(alpha=.15f))) {
                         Row(Modifier.padding(10.dp),verticalAlignment=Alignment.CenterVertically) {
@@ -155,7 +159,7 @@ fun PrismaApp() {
                 Column(Modifier.fillMaxSize().padding(padding)) {
                     Row(Modifier.fillMaxWidth().padding(horizontal=22.dp,vertical=14.dp),verticalAlignment=Alignment.CenterVertically) {
                         if(page=="Reproduciendo") IconButton(onClick={page="Biblioteca"}) { Icon(Icons.Rounded.KeyboardArrowDown,"Volver a la biblioteca") }
-                        Column(Modifier.weight(1f)) { Text("PRISMA",fontSize=12.sp,letterSpacing=4.sp,fontWeight=FontWeight.Bold,color=accent); Text(if(page=="Biblioteca") "Tu música, a tu manera." else page,fontSize=23.sp,fontWeight=FontWeight.Bold) }
+                        Column(Modifier.weight(1f)) { Text("PRISMA",fontSize=12.sp,letterSpacing=4.sp,fontWeight=FontWeight.Bold,color=accent); Text(if(page=="Biblioteca") "Tu música, a tu manera." else page,fontSize=if(theme==VisualTheme.MINIMAL) 30.sp else 23.sp,fontWeight=if(theme==VisualTheme.MINIMAL) FontWeight.Light else FontWeight.Bold) }
                         if(page=="Biblioteca") IconButton(onClick={libraryVersion++}) { Icon(Icons.Rounded.Refresh,"Actualizar biblioteca") }
                     }
                     error?.let { message -> Surface(color=colors.errorContainer,shape=RoundedCornerShape(16.dp),modifier=Modifier.padding(horizontal=16.dp)) { Row(Modifier.padding(12.dp),verticalAlignment=Alignment.CenterVertically) { Text(message,Modifier.weight(1f),color=colors.onErrorContainer,style=MaterialTheme.typography.bodySmall); IconButton(onClick={error=null}) { Icon(Icons.Rounded.Close,"Cerrar mensaje") } } } }
@@ -171,6 +175,7 @@ fun PrismaApp() {
         }
         if(newListDialog) NameDialog(onDismiss={newListDialog=false},onSave={name->if(name !in lists) { lists=lists+(name to emptyList()); prefs.savePlaylists(lists); newListDialog=false }},exists={it in lists})
         addToList?.let { song -> AlertDialog(onDismissRequest={addToList=null},title={Text("Añadir a una lista")},text={ Column(Modifier.verticalScroll(rememberScrollState())) { if(lists.isEmpty()) Text("Crea tu primera lista en la pestaña Listas."); lists.keys.forEach { name-> TextButton(onClick={lists=lists+(name to (lists.getValue(name)+song.id).distinct());prefs.savePlaylists(lists);addToList=null},modifier=Modifier.fillMaxWidth()) {Text(name)} } } },confirmButton={TextButton(onClick={addToList=null}){Text("Cerrar")}}) }
+        }
     }
 }
 
@@ -187,13 +192,15 @@ fun PrismaApp() {
     Column(Modifier.fillMaxSize().padding(28.dp),verticalArrangement=Arrangement.Center,horizontalAlignment=Alignment.CenterHorizontally) { Cover(null,Modifier.size(130.dp)); Spacer(Modifier.height(24.dp)); Text("Tu colección empieza aquí",fontSize=23.sp,fontWeight=FontWeight.Bold); Spacer(Modifier.height(10.dp)); Text("Permite leer la música de tu teléfono. Prisma funciona sin conexión y excluye los audios de WhatsApp de forma predeterminada."); Spacer(Modifier.height(20.dp)); Button(onClick=onGrant){Text("Permitir acceso a mi música")} }
 }
 @Composable fun SongRow(song:Song,currentId:String,onPlay:()->Unit,onAdd:(()->Unit)?=null) {
-    Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).clickable(onClick=onPlay).padding(horizontal=8.dp,vertical=9.dp),verticalAlignment=Alignment.CenterVertically) {
-        Cover(song,Modifier.size(52.dp)); Spacer(Modifier.width(14.dp)); Column(Modifier.weight(1f)) { Text(song.title,maxLines=1,overflow=TextOverflow.Ellipsis,fontWeight=FontWeight.SemiBold,color=if(currentId==song.id) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface); Text(song.artist,maxLines=1,overflow=TextOverflow.Ellipsis,color=MaterialTheme.colorScheme.onSurfaceVariant,style=MaterialTheme.typography.bodySmall) }
+    val visualTheme=LocalVisualTheme.current
+    Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(if(visualTheme==VisualTheme.NIGHT) 4.dp else 16.dp)).clickable(onClick=onPlay).padding(horizontal=8.dp,vertical=9.dp),verticalAlignment=Alignment.CenterVertically) {
+        if(visualTheme!=VisualTheme.MINIMAL) {Cover(song,Modifier.size(if(visualTheme==VisualTheme.NIGHT) 42.dp else 52.dp)); Spacer(Modifier.width(14.dp))} else {Text("♪",fontSize=22.sp,color=MaterialTheme.colorScheme.primary,modifier=Modifier.padding(end=18.dp))}; Column(Modifier.weight(1f)) { Text(song.title,maxLines=1,overflow=TextOverflow.Ellipsis,fontWeight=FontWeight.SemiBold,color=if(currentId==song.id) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface); Text(song.artist,maxLines=1,overflow=TextOverflow.Ellipsis,color=MaterialTheme.colorScheme.onSurfaceVariant,style=MaterialTheme.typography.bodySmall) }
         Text(time(song.duration),style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
         if(onAdd!=null) IconButton(onClick=onAdd) { Icon(Icons.Rounded.PlaylistAdd,"Añadir ${song.title} a una lista") }
     }
 }
 @Composable fun LibraryScreen(songs:List<Song>,busy:Boolean,currentId:String,onPlay:(List<Song>,Song)->Unit,onAdd:(Song)->Unit) {
+    val visualTheme=LocalVisualTheme.current
     var search by rememberSaveable { mutableStateOf("") }; var category by rememberSaveable { mutableStateOf("Canciones") }; var selected by rememberSaveable { mutableStateOf<String?>(null) }
     val filtered=remember(songs,search) { songs.filter { search.isBlank() || "${it.title} ${it.artist} ${it.album} ${it.genre}".contains(search,true) } }
     fun key(s:Song) = when(category) { "Artistas"->s.artist; "Álbumes"->"${s.album} · ${s.artist}"; "Géneros"->s.genre; else->s.folder.ifBlank { "Sin carpeta" } }
@@ -204,6 +211,7 @@ fun PrismaApp() {
         if(busy) LinearProgressIndicator(Modifier.fillMaxWidth())
         if(selected!=null) TextButton(onClick={selected=null}) { Icon(Icons.Rounded.ArrowBack,null); Text(selected!!,maxLines=1,overflow=TextOverflow.Ellipsis) }
         if(filtered.isEmpty()) EmptyCard(if(busy) "Buscando música…" else "No hay canciones",if(search.isNotBlank()) "Prueba otra búsqueda." else "Copia música al teléfono y pulsa Actualizar. Puedes revisar las carpetas excluidas en Ajustes.",Icons.Rounded.LibraryMusic)
+        else if((visualTheme==VisualTheme.CHROMATIC || visualTheme==VisualTheme.GLASS) && (category=="Canciones" || selected!=null)) LazyVerticalGrid(columns=GridCells.Fixed(2),modifier=Modifier.fillMaxSize(),contentPadding=PaddingValues(bottom=16.dp)) {items(queue,key={it.id}) {song->ThemeSongTile(song,{onPlay(queue,song)},{onAdd(song)})}}
         else LazyColumn(Modifier.fillMaxSize(),contentPadding=PaddingValues(bottom=16.dp)) {
             if(category!="Canciones" && selected==null) items(filtered.groupBy(::key).toSortedMap().entries.toList(),key={it.key}) { group -> Surface(onClick={selected=group.key},shape=RoundedCornerShape(20.dp),color=MaterialTheme.colorScheme.surface.copy(alpha=.75f),modifier=Modifier.padding(vertical=5.dp).fillMaxWidth()) { Row(Modifier.padding(16.dp),verticalAlignment=Alignment.CenterVertically) { Cover(group.value.first(),Modifier.size(54.dp)); Spacer(Modifier.width(14.dp)); Column(Modifier.weight(1f)) { Text(group.key,maxLines=2,overflow=TextOverflow.Ellipsis,fontWeight=FontWeight.SemiBold); Text("${group.value.size} canciones",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant) }; Icon(Icons.Rounded.ChevronRight,null) } } }
             else items(queue,key={it.id}) { song->SongRow(song,currentId,{onPlay(queue,song)},{onAdd(song)}) }

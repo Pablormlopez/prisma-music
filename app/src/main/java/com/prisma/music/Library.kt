@@ -70,7 +70,8 @@ object Library {
         val estimate=if(song.duration>0) song.size*8/song.duration else null
         val parts=listOfNotNull(song.name.substringAfterLast('.',song.mime).uppercase(),codec,bitrate?.let { "${it/1000} kbps" } ?: estimate?.let { "≈ $it kbps (estimado)" },rate?.let { "${it/1000.0} kHz" },bits?.let { "$it bits" },channels?.let { if(it==2) "Estéreo" else "$it canal(es)" },"%.1f MB".format(song.size/1000000.0))
         val color=art?.let { Palette.from(it).generate().getVibrantColor(0xffb0a2ff.toInt()) }
-        return Details(parts.joinToString(" · "),art,color)
+        val lyrics=runCatching { context.contentResolver.openInputStream(song.uri)?.use { EmbeddedLyrics.read(it) } ?: "" }.getOrDefault("")
+        return Details(parts.joinToString(" · "),art,color,lyrics)
     }
 }
 
