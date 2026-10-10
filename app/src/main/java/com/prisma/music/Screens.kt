@@ -92,7 +92,7 @@ import kotlinx.coroutines.withContext
         Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {Column(Modifier.weight(1f)) {Text("Excluir audios de WhatsApp",fontWeight=FontWeight.SemiBold);Text("También notas de voz y WhatsApp Business",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)};Switch(checked=hide,onCheckedChange={hide=it;prefs.hideWhatsApp=it;onLibraryChanged()})}
         OutlinedButton(onClick={foldersDialog=true},modifier=Modifier.fillMaxWidth(),shape=RoundedCornerShape(16.dp)) {Icon(Icons.Rounded.FolderOpen,null);Text("Elegir carpetas · ${excluded.size} excluidas",Modifier.padding(8.dp))}
         Text("Se muestran las carpetas que Android ha registrado con archivos de audio. Las carpetas privadas de otras apps pueden no ser accesibles.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
-        SectionTitle("PRISMA MUSIC","0.2.0 · Beta de código abierto")
+        SectionTitle("PRISMA MUSIC","1.0.1 · Beta de código abierto")
         Text("Sin anuncios, sin cuenta y sin subir tu música. Las letras incrustadas se leen automáticamente. Puedes importar LRC o TXT si el archivo no contiene letra. El motor usa PCM de 16 bits para aplicar el ecualizador; los datos mostrados describen el archivo original.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(24.dp))
     }
