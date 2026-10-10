@@ -1,6 +1,14 @@
 package com.prisma.music
 
 import android.Manifest
+import android.content.ComponentName
+import androidx.media3.session.MediaController
+import androidx.media3.session.SessionToken
+import androidx.test.uiautomator.UiDevice
+import androidx.test.uiautomator.By
+import androidx.test.uiautomator.Until
+import java.util.concurrent.TimeUnit
+import java.util.regex.Pattern
 import android.content.ContentValues
 import android.graphics.Bitmap
 import android.provider.MediaStore
@@ -103,7 +111,14 @@ class PrismaSmokeTest {
             compose.onNodeWithText("Eliminar del teléfono").performClick()
             compose.onNodeWithText("¿Eliminar del teléfono?").assertExists()
             compose.onNodeWithText("Cancelar",substring=false).performClick()
+            var connection:com.google.common.util.concurrent.ListenableFuture<MediaController>?=null
+            compose.runOnIdle {connection=MediaController.Builder(context,SessionToken(context,ComponentName(context,PlaybackService::class.java))).buildAsync()}
+            val observer=connection!!.get(10,TimeUnit.SECONDS)
+            val previousCount=compose.runOnIdle {observer.mediaItemCount}
+            val previousId=compose.runOnIdle {observer.currentMediaItem?.mediaId}
             compose.onNodeWithText("Reproducir a continuación").performClick()
+            compose.waitUntil(5000) {compose.runOnIdle {observer.mediaItemCount==previousCount+1}}
+            compose.runOnIdle {assertEquals(previousId,observer.currentMediaItem?.mediaId);assertEquals(uri.lastPathSegment,observer.getMediaItemAt(observer.currentMediaItemIndex+1).mediaId)}
             compose.onNodeWithContentDescription("Abrir reproductor").performClick()
             compose.onNodeWithContentDescription("Diseño Chromatic Flow").performTouchInput {swipeDown()}
             compose.waitUntil(5000) {compose.onAllNodesWithContentDescription("Abrir reproductor").fetchSemanticsNodes().isNotEmpty()}
@@ -153,6 +168,18 @@ class PrismaSmokeTest {
             assertEquals(LightMode.SYSTEM,prefs.mode)
             assertEquals(VisualTheme.NIGHT,prefs.theme)
             assertTrue(prefs.eq.enabled)
+            // Only generated test audio is deleted. Exercise the native Android consent dialog.
+            nav("Música")
+            compose.onNodeWithContentDescription("Opciones de Prisma segunda").performClick()
+            compose.onNodeWithText("Eliminar del teléfono").performClick()
+            compose.onNodeWithText("Eliminar archivo",substring=false).performClick()
+            val device=UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+            val deleteButton=device.wait(Until.findObject(By.text(Pattern.compile("(?i)delete|eliminar"))),5000)
+            deleteButton?.click()
+            compose.waitUntil(10000) {resolver.query(second,arrayOf("_id"),null,null,null)?.use {it.count==0} ?: true}
+            compose.waitUntil(5000) {compose.onAllNodesWithContentDescription("Opciones de Prisma segunda").fetchSemanticsNodes().isEmpty()}
+            compose.runOnIdle {for(i in 0 until observer.mediaItemCount) assertNotEquals(second.lastPathSegment,observer.getMediaItemAt(i).mediaId);observer.release()}
+            shot("12-eliminacion-completada")
         } catch (t:Throwable) {
             runCatching {shot("99-failure")}
             compose.onRoot().printToLog("PrismaTest")
