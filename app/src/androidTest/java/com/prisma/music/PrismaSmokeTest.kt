@@ -187,6 +187,6 @@ class PrismaSmokeTest {
             runCatching {shot("99-failure")}
             compose.onAllNodes(isRoot()).onLast().printToLog("PrismaTest")
             throw t
-        } finally {resolver.delete(uri,null,null);resolver.delete(second,null,null)}
+        } finally {runCatching {resolver.delete(uri,null,null)};runCatching {resolver.delete(second,null,null)}}
     }
 }
