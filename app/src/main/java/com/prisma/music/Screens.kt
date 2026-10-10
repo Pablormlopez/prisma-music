@@ -158,6 +158,8 @@ import kotlinx.coroutines.withContext
         view.keepScreenOn=prefs.keepScreenOn
         onDispose {view.keepScreenOn=previous}
     }
+    var queueVisible by rememberSaveable {mutableStateOf(false)}
+    if(queueVisible && controller!=null) PlaybackQueue(controller,onDismiss={queueVisible=false})
     var metadataVisible by remember { mutableStateOf(prefs.showMetadata) }
     var lyricsVisible by rememberSaveable {mutableStateOf(false)}
     var importedText by remember(song.id) {mutableStateOf(prefs.lyrics(song.id))}
@@ -197,7 +199,7 @@ import kotlinx.coroutines.withContext
         Box(Modifier.fillMaxWidth().height(32.dp).semantics {contentDescription="Deslizar hacia abajo para cerrar"}.pointerInput(Unit) {
             detectVerticalDragGestures(onDragStart={verticalDrag=0f},onDragCancel={verticalDrag=0f},onDragEnd={if(verticalDrag>closeThreshold) closing=true;verticalDrag=0f}) {change,amount->change.consume();verticalDrag=(verticalDrag+amount).coerceAtLeast(0f)}
         },contentAlignment=Alignment.Center) {Box(Modifier.width(40.dp).height(4.dp).clip(RoundedCornerShape(8.dp)).background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha=.45f)))}
-        Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.Center,verticalAlignment=Alignment.CenterVertically) {FilterChip(!lyricsVisible,{lyricsVisible=false},label={Text("Carátula")});Spacer(Modifier.width(8.dp));FilterChip(lyricsVisible,{lyricsVisible=true},label={Text("Letra")});IconButton(onClick={metadataVisible=!metadataVisible;prefs.showMetadata=metadataVisible}) {Icon(Icons.Rounded.Info,if(metadataVisible) "Ocultar metadatos" else "Mostrar metadatos",tint=if(metadataVisible) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)}}
+        Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.Center,verticalAlignment=Alignment.CenterVertically) {FilterChip(!lyricsVisible,{lyricsVisible=false},label={Text("Carátula")});Spacer(Modifier.width(8.dp));FilterChip(lyricsVisible,{lyricsVisible=true},label={Text("Letra")});IconButton(onClick={metadataVisible=!metadataVisible;prefs.showMetadata=metadataVisible}) {Icon(Icons.Rounded.Info,if(metadataVisible) "Ocultar metadatos" else "Mostrar metadatos",tint=if(metadataVisible) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)};IconButton(enabled=controller!=null,onClick={queueVisible=true}) {Icon(Icons.Rounded.QueueMusic,"Ver cola de reproducción")}}
         Box(Modifier.weight(1f).fillMaxWidth().then(if(lyricsVisible) Modifier else swipe),contentAlignment=Alignment.Center) {
             if(lyricsVisible) {
                 val lines=remember(lyricText) {Lyrics.parse(lyricText)}
@@ -223,7 +225,6 @@ import kotlinx.coroutines.withContext
 
             }
         }
-        Text("Desliza: ← siguiente · anterior → · ↓ cerrar",fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant,modifier=Modifier.padding(top=6.dp))
         Text(song.title,fontSize=if(theme==VisualTheme.MINIMAL) 30.sp else 23.sp,fontWeight=FontWeight.Bold,maxLines=2,overflow=TextOverflow.Ellipsis,modifier=Modifier.padding(top=18.dp))
         Text(song.artist,color=MaterialTheme.colorScheme.onSurfaceVariant,maxLines=1,overflow=TextOverflow.Ellipsis)
         AnimatedVisibility(metadataVisible,enter=fadeIn(tween(220))+expandVertically(tween(280)),exit=fadeOut(tween(150))+shrinkVertically(tween(280))) {

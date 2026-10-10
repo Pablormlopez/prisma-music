@@ -121,6 +121,40 @@ class PrismaSmokeTest {
             compose.waitUntil(5000) {compose.runOnIdle {observer.mediaItemCount==previousCount+1}}
             compose.runOnIdle {assertEquals(previousId,observer.currentMediaItem?.mediaId);assertEquals(uri.lastPathSegment,observer.getMediaItemAt(observer.currentMediaItemIndex+1).mediaId)}
             compose.onNodeWithContentDescription("Abrir reproductor").performClick()
+            compose.onNodeWithText("Desliza:",substring=true).assertDoesNotExist()
+            // Duplicate IDs must remain separate queue entries; moving preserves playback.
+            compose.runOnIdle {
+                val first=observer.getMediaItemAt(observer.currentMediaItemIndex)
+                val other=(0 until observer.mediaItemCount).map {observer.getMediaItemAt(it)}.first {it.mediaId!=first.mediaId}
+                observer.setMediaItems(listOf(first,other,first),0,2000)
+                observer.prepare();observer.pause();observer.repeatMode=androidx.media3.common.Player.REPEAT_MODE_OFF
+            }
+            compose.onNodeWithContentDescription("Ver cola de reproducción").performClick()
+            compose.onNodeWithText("Cola de reproducción",substring=false).assertExists()
+            compose.onNodeWithText("Sonando ahora",substring=false).assertExists()
+            compose.onNodeWithText("A continuación",substring=false).assertExists()
+            compose.onNodeWithContentDescription("Subir canción 3").performScrollTo().performClick()
+            compose.waitUntil(5000) {compose.runOnIdle {observer.getMediaItemAt(1).mediaId==previousId}}
+            compose.runOnIdle {assertEquals(previousId,observer.currentMediaItem?.mediaId);assertEquals(2000L,observer.currentPosition);assertFalse(observer.playWhenReady)}
+            compose.onNodeWithContentDescription("Bajar canción 2").performScrollTo().performClick()
+            compose.waitUntil(5000) {compose.runOnIdle {observer.getMediaItemAt(2).mediaId==previousId}}
+            compose.onNodeWithContentDescription("Quitar canción 3 de la cola").performScrollTo().performClick()
+            compose.waitUntil(5000) {compose.runOnIdle {observer.mediaItemCount==2}}
+            compose.runOnIdle {assertEquals(previousId,observer.currentMediaItem?.mediaId);assertEquals(2000L,observer.currentPosition)}
+            // Shuffle order is read from the timeline; a manual move materializes that order.
+            var shuffledOrder:List<Any> = emptyList()
+            compose.runOnIdle {observer.shuffleModeEnabled=true}
+            compose.waitUntil(5000) {compose.runOnIdle {observer.shuffleModeEnabled}}
+            compose.runOnIdle {shuffledOrder=queueEntries(observer).map {it.uid}}
+            compose.onNodeWithContentDescription("Subir canción 2").performScrollTo().performClick()
+            compose.waitUntil(5000) {compose.runOnIdle {!observer.shuffleModeEnabled}}
+            compose.runOnIdle {assertEquals(shuffledOrder.reversed(),queueEntries(observer).map {it.uid});assertEquals(previousId,observer.currentMediaItem?.mediaId);assertEquals(2000L,observer.currentPosition)}
+            val screenshot=File(context.cacheDir,"queue.png")
+            assertTrue(UiDevice.getInstance(InstrumentationRegistry.getInstrumentation()).takeScreenshot(screenshot))
+            val shotValues=ContentValues().apply {put(MediaStore.Downloads.DISPLAY_NAME,"13-cola.png");put(MediaStore.Downloads.MIME_TYPE,"image/png");put(MediaStore.Downloads.RELATIVE_PATH,"Download/PrismaTest/")}
+            val shotUri=resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI,shotValues)!!
+            resolver.openOutputStream(shotUri)!!.use {out->screenshot.inputStream().use {it.copyTo(out)}}
+            compose.onNodeWithContentDescription("Cerrar cola").performClick()
             compose.onNodeWithContentDescription("Diseño Chromatic Flow").performTouchInput {swipeDown()}
             compose.waitUntil(5000) {compose.onAllNodesWithContentDescription("Abrir reproductor").fetchSemanticsNodes().isNotEmpty()}
             nav("Ajustes")

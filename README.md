@@ -1,3 +1,10 @@
+## Beta 1.0.4 · Cola de reproducción
+
+- Botón de cola en el reproductor: muestra la canción actual y cuál sigue, con el orden real incluso en aleatorio.
+- Mueve entradas hacia arriba o abajo, o quítalas solo de la cola. Las canciones repetidas se editan individualmente. Mover conserva la posición y estado de reproducción; en aleatorio mantiene la secuencia visible y aplica tu cambio como orden manual.
+- La cola se actualiza al cambiar de canción o editarla. Se indica cuando está activada la repetición de una canción.
+- Se retira la etiqueta de instrucciones de gestos; deslizar para cambiar canciones o cerrar sigue disponible.
+
 ## Beta 1.0.3 · Personalización y acciones de canciones
 
 - Ajustes → Personalización: mini temas de color, código hexadecimal manual, lista/cuadrícula/lista compacta y subtítulo de artista, álbum o archivo. Las elecciones se guardan y se combinan con los cuatro temas. El color elegido se ajusta para mantener contraste.
@@ -7,7 +14,7 @@
 
 # Prisma Music
 
-Reproductor de música local para Android, gratuito y de código abierto. Beta actual: **1.0.3**. Android 8.0 o posterior.
+Reproductor de música local para Android, gratuito y de código abierto. Beta actual: **1.0.4**. Android 8.0 o posterior.
 
 ## Beta 1.0.2 — experiencia visual
 
@@ -38,7 +45,7 @@ Reproductor de música local para Android, gratuito y de código abierto. Beta a
 
 ## Instalar
 
-**[⬇ Descargar Prisma Music para Android (APK)](https://github.com/nexlibre/prisma-music/releases/download/v1.0.3-beta/Prisma-Music-1.0.3-beta.apk)**
+**[⬇ Descargar Prisma Music para Android (APK)](https://github.com/nexlibre/prisma-music/releases/download/v1.0.4-beta/Prisma-Music-1.0.4-beta.apk)**
 
 Android 8.0 o posterior. Abre el enlace desde el teléfono, espera a que termine la descarga y abre el archivo `.apk`. Android puede pedir permitir instalaciones desde el navegador o gestor de archivos usado. No necesitas descargar el código ni entrar en Actions.
 
@@ -65,7 +72,7 @@ Salida: `app/build/outputs/apk/debug/app-debug.apk`. GitHub Actions ejecuta prue
 - No se buscan letras en internet. Las etiquetas comprimidas/cifradas, Lyrics3, APE y letras de servicios externos no están cubiertas. SYLT con tiempos expresados en frames se muestra sin sincronización. Metadatos limitados a 16 MB por etiqueta y letra a 1 MB. Un archivo de alta calidad puede no incluir letras ni tiempos.
 - El bitrate estimado usa tamaño/duración y puede incluir metadatos. Profundidad de bits no disponible se omite.
 - Géneros de MediaStore requieren Android 11 o posterior; en versiones anteriores se muestra “Sin género”.
-- No se restaura la cola tras reiniciar el servicio. Listas y preferencias sí persisten. La app no borra archivos de audio.
+- No se restaura la cola tras reiniciar el servicio. Listas y preferencias sí persisten. Quitar de la cola no borra archivos; eliminar del teléfono sí requiere confirmación.
 
 ## Próximas versiones
 
