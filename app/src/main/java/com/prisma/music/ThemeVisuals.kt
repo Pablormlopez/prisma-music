@@ -37,8 +37,12 @@ val LocalVisualTheme=staticCompositionLocalOf { VisualTheme.CHROMATIC }
                 ActualArtwork(song,details,Modifier.align(Alignment.Center).padding(22.dp).fillMaxHeight(.84f).aspectRatio(1f).clip(RoundedCornerShape(28.dp)))
                 Text("CHROMATIC / FLOW",fontSize=10.sp,letterSpacing=3.sp,fontWeight=FontWeight.Bold,color=c.onBackground,modifier=Modifier.align(Alignment.BottomCenter).padding(12.dp))
             }
-            VisualTheme.GLASS->Column(horizontalAlignment=Alignment.CenterHorizontally,modifier=Modifier.fillMaxSize().background(Brush.radialGradient(listOf(c.primary.copy(alpha=.3f),Color.Transparent)))) {
-                Spacer(Modifier.weight(1f));Surface(shape=CircleShape,color=c.surface.copy(alpha=.6f),border=BorderStroke(2.dp,c.primary.copy(alpha=.55f)),shadowElevation=18.dp,modifier=Modifier.fillMaxWidth(.76f).aspectRatio(1f)) {ActualArtwork(song,details,Modifier.padding(14.dp).clip(CircleShape).fillMaxSize())};Spacer(Modifier.height(12.dp));Surface(shape=RoundedCornerShape(30.dp),color=c.surface.copy(alpha=.65f),border=BorderStroke(1.dp,c.outline.copy(alpha=.4f))) {Text("LIQUID GLASS   ✦",fontSize=11.sp,letterSpacing=2.sp,color=c.onSurface,modifier=Modifier.padding(horizontal=22.dp,vertical=12.dp))};Spacer(Modifier.weight(1f))
+            VisualTheme.GLASS->Column(horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.Center,modifier=Modifier.fillMaxSize()) {
+                Box(Modifier.fillMaxWidth(.9f).aspectRatio(1f).crystal().background(c.surface.copy(alpha=.22f)).padding(18.dp)) {
+                    ActualArtwork(song,details,Modifier.fillMaxSize().clip(RoundedCornerShape(24.dp)))
+                }
+                Spacer(Modifier.height(18.dp))
+                Box(Modifier.crystal().background(c.surface.copy(alpha=.35f))) {Text("LIQUID GLASS",fontSize=10.sp,letterSpacing=3.sp,color=c.onSurface,modifier=Modifier.padding(horizontal=24.dp,vertical=12.dp))}
             }
             VisualTheme.MINIMAL->Column(Modifier.fillMaxSize().padding(top=18.dp),verticalArrangement=Arrangement.Center) {
                 Text("${song.artist.uppercase()}",fontSize=11.sp,letterSpacing=2.sp,color=c.onSurfaceVariant,maxLines=1,overflow=TextOverflow.Ellipsis)
@@ -52,7 +56,7 @@ val LocalVisualTheme=staticCompositionLocalOf { VisualTheme.CHROMATIC }
 }
 @Composable fun ThemeSongTile(song:Song,onPlay:()->Unit,onAdd:()->Unit) {
     val theme=LocalVisualTheme.current;val c=MaterialTheme.colorScheme
-    Surface(onClick=onPlay,shape=RoundedCornerShape(if(theme==VisualTheme.GLASS) 30.dp else 20.dp),color=if(theme==VisualTheme.GLASS)c.surface.copy(alpha=.75f) else c.surface,border=if(theme==VisualTheme.GLASS) BorderStroke(1.dp,c.primary.copy(alpha=.3f)) else null,modifier=Modifier.padding(4.dp)) {
+    Surface(onClick=onPlay,shape=RoundedCornerShape(if(theme==VisualTheme.GLASS) 30.dp else 20.dp),color=if(theme==VisualTheme.GLASS)c.surface.copy(alpha=.4f) else c.surface,border=if(theme==VisualTheme.GLASS) BorderStroke(1.dp,c.primary.copy(alpha=.3f)) else null,modifier=Modifier.padding(4.dp).then(if(theme==VisualTheme.GLASS) Modifier.crystal() else Modifier)) {
         Column(Modifier.padding(if(theme==VisualTheme.GLASS)16.dp else 10.dp)) {
             Cover(song,Modifier.fillMaxWidth().aspectRatio(1f).clip(if(theme==VisualTheme.GLASS) CircleShape else RoundedCornerShape(14.dp)))
             Text(song.title,color=c.onSurface,fontWeight=FontWeight.Bold,maxLines=2,overflow=TextOverflow.Ellipsis,modifier=Modifier.padding(top=10.dp))

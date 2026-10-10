@@ -1,6 +1,13 @@
 # Prisma Music
 
-Reproductor de música local para Android, gratuito y de código abierto. Beta actual: **1.0.1**. Android 8.0 o posterior.
+Reproductor de música local para Android, gratuito y de código abierto. Beta actual: **1.0.2**. Android 8.0 o posterior.
+
+## Beta 1.0.2 — experiencia visual
+
+- Transiciones de páginas de 300 ms y carátulas con fundidos de 340 ms; progreso interpolado entre actualizaciones.
+- Liquid Glass: fondo difuminado compatible con Android 8+, reflejos de borde y paneles de cristal translúcido. El desenfoque se calcula fuera del hilo de interfaz al leer la carátula.
+- Línea de tiempo por tema: onda cromática, cápsula de cristal, trazo minimalista y segmentos Night; conservan el control táctil y accesible del Slider nativo. La onda es decorativa, no un análisis del audio.
+- Botón de información dentro del reproductor para mostrar u ocultar formato, bitrate y frecuencia con animación; comparte la preferencia persistente de Ajustes.
 
 ## Ajustes ampliados
 
@@ -24,7 +31,7 @@ Reproductor de música local para Android, gratuito y de código abierto. Beta a
 
 ## Instalar
 
-**[⬇ Descargar Prisma Music para Android (APK)](https://github.com/nexlibre/prisma-music/releases/download/v1.0.1-beta/Prisma-Music-1.0.1-beta.apk)**
+**[⬇ Descargar Prisma Music para Android (APK)](https://github.com/nexlibre/prisma-music/releases/download/v1.0.2-beta/Prisma-Music-1.0.2-beta.apk)**
 
 Android 8.0 o posterior. Abre el enlace desde el teléfono, espera a que termine la descarga y abre el archivo `.apk`. Android puede pedir permitir instalaciones desde el navegador o gestor de archivos usado. No necesitas descargar el código ni entrar en Actions.
 
@@ -47,7 +54,7 @@ Salida: `app/build/outputs/apk/debug/app-debug.apk`. GitHub Actions ejecuta prue
 - La biblioteca depende de MediaStore: archivos ocultos con `.nomedia`, carpetas privadas de apps o archivos aún no indexados pueden no aparecer. No hay exploración SAF recursiva en esta versión.
 - El procesamiento usa PCM de 16 bits. Reproducir FLAC no implica salida bit-perfect o sin pérdida por Bluetooth. No se promete salida de alta resolución.
 - La presencia de voces realza una zona de frecuencias; no separa voces e instrumentos. Q es común a las diez bandas en esta versión. A frecuencias de muestreo bajas se limita la frecuencia de los filtros a menos de Nyquist.
-- Liquid Glass es una interpretación visual con transparencias, sin desenfoque real todavía. Los temas cambian también la composición del reproductor y de la biblioteca.
+- Liquid Glass usa una carátula difuminada precalculada, transparencias y reflejos en los bordes. Es una interpretación propia: no reproduce la refracción óptica del sistema de Apple. Los temas cambian también la composición del reproductor y de la biblioteca.
 - No se buscan letras en internet. Las etiquetas comprimidas/cifradas, Lyrics3, APE y letras de servicios externos no están cubiertas. SYLT con tiempos expresados en frames se muestra sin sincronización. Metadatos limitados a 16 MB por etiqueta y letra a 1 MB. Un archivo de alta calidad puede no incluir letras ni tiempos.
 - El bitrate estimado usa tamaño/duración y puede incluir metadatos. Profundidad de bits no disponible se omite.
 - Géneros de MediaStore requieren Android 11 o posterior; en versiones anteriores se muestra “Sin género”.

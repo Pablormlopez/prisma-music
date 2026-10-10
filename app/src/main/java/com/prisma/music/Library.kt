@@ -38,7 +38,7 @@ object Library {
         }
         return result
     }
-    data class Details(val text: String, val art: Bitmap?, val color: Int?, val embeddedLyrics: String = "")
+    data class Details(val text: String, val art: Bitmap?, val color: Int?, val embeddedLyrics: String = "", val glassBackdrop: Bitmap? = null)
     fun details(context: Context, song: Song): Details {
         var art: Bitmap? = null
         var rate:Int? = null; var channels:Int? = null; var bitrate:Int? = null; var bits:Int? = null; var codec:String? = null
@@ -71,7 +71,7 @@ object Library {
         val parts=listOfNotNull(song.name.substringAfterLast('.',song.mime).uppercase(),codec,bitrate?.let { "${it/1000} kbps" } ?: estimate?.let { "≈ $it kbps (estimado)" },rate?.let { "${it/1000.0} kHz" },bits?.let { "$it bits" },channels?.let { if(it==2) "Estéreo" else "$it canal(es)" },"%.1f MB".format(song.size/1000000.0))
         val color=art?.let { Palette.from(it).generate().getVibrantColor(0xffb0a2ff.toInt()) }
         val lyrics=runCatching { context.contentResolver.openInputStream(song.uri)?.use { EmbeddedLyrics.read(it) } ?: "" }.getOrDefault("")
-        return Details(parts.joinToString(" · "),art,color,lyrics)
+        return Details(parts.joinToString(" · "),art,color,lyrics,art?.let { FrostedArtwork.create(it) })
     }
 }
 

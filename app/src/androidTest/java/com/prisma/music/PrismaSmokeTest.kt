@@ -6,6 +6,7 @@ import android.graphics.Bitmap
 import android.provider.MediaStore
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.test.*
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.rule.GrantPermissionRule
@@ -70,6 +71,13 @@ class PrismaSmokeTest {
             compose.waitUntil(5000) {compose.onAllNodesWithText("Reproduciendo").fetchSemanticsNodes().isNotEmpty()}
             compose.onNodeWithContentDescription("Abrir reproductor").assertDoesNotExist()
             compose.onAllNodesWithContentDescription("Pausar").assertCountEquals(1)
+            compose.onNodeWithContentDescription("Línea de tiempo Chromatic Flow").assertExists()
+            compose.onNodeWithContentDescription("Ocultar metadatos").performClick()
+            compose.onNodeWithContentDescription("Información técnica de la canción").assertDoesNotExist()
+            assertFalse(Preferences(context).showMetadata)
+            compose.onNodeWithContentDescription("Mostrar metadatos").performClick()
+            compose.onNodeWithContentDescription("Información técnica de la canción").assertExists()
+            assertTrue(Preferences(context).showMetadata)
             shot("02-reproductor")
             compose.onNodeWithContentDescription("Diseño Chromatic Flow").performTouchInput {swipeLeft()}
             compose.waitUntil(10000) {compose.onAllNodesWithText("Prisma segunda").fetchSemanticsNodes().isNotEmpty()}
@@ -100,6 +108,8 @@ class PrismaSmokeTest {
                 shot("04-tema-$index-oscuro")
                 compose.onNodeWithContentDescription("Abrir reproductor").performClick()
                 compose.onNodeWithContentDescription("Diseño $title").assertExists()
+                compose.onNodeWithContentDescription("Línea de tiempo $title").assertExists()
+                compose.onNodeWithContentDescription("Línea de tiempo $title").performSemanticsAction(SemanticsActions.SetProgress) { it(1000f) }
                 shot("07-reproductor-$index-oscuro")
                 nav("Música")
                 shot("08-biblioteca-$index-oscuro")
