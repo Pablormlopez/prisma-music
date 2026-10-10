@@ -105,10 +105,10 @@ class PrismaSmokeTest {
             compose.onNodeWithContentDescription("Volver a la biblioteca").performClick()
             compose.onNodeWithContentDescription("Abrir reproductor").assertExists()
             // A long press opens actions without replacing playback; deletion can be canceled.
-            compose.onNodeWithText("Prisma prueba",substring=false).performTouchInput {longClick()}
+            compose.onNode(hasText("Prisma prueba") and SemanticsMatcher.keyIsDefined(SemanticsActions.OnLongClick)).performTouchInput {longClick()}
             compose.onNodeWithText("Reproducir a continuación").assertExists()
             shot("09-menu-cancion")
-            compose.onNodeWithText("Eliminar del teléfono").performClick()
+            compose.onNodeWithText("Eliminar del teléfono").performScrollTo().performClick()
             compose.onNodeWithText("¿Eliminar del teléfono?").assertExists()
             compose.onNodeWithText("Cancelar",substring=false).performClick()
             var connection:com.google.common.util.concurrent.ListenableFuture<MediaController>?=null
@@ -134,7 +134,7 @@ class PrismaSmokeTest {
             assertEquals(SongInfoStyle.ALBUM,Preferences(context).personalization.info)
             shot("10-personalizacion")
             nav("Música")
-            compose.onNodeWithText("Prisma prueba",substring=false).assertExists()
+            compose.onNode(hasText("Prisma prueba") and SemanticsMatcher.keyIsDefined(SemanticsActions.OnLongClick)).assertExists()
             shot("11-lista-compacta")
             nav("Ajustes")
             compose.onNodeWithText("Cuadrícula",substring=false).performScrollTo().performClick()
@@ -174,7 +174,7 @@ class PrismaSmokeTest {
             // Only generated test audio is deleted. Exercise the native Android consent dialog.
             nav("Música")
             compose.onNodeWithContentDescription("Opciones de Prisma segunda").performClick()
-            compose.onNodeWithText("Eliminar del teléfono").performClick()
+            compose.onNodeWithText("Eliminar del teléfono").performScrollTo().performClick()
             compose.onNodeWithText("Eliminar archivo",substring=false).performClick()
             val device=UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
             val deleteButton=device.wait(Until.findObject(By.text(Pattern.compile("(?i)delete|eliminar"))),5000)
