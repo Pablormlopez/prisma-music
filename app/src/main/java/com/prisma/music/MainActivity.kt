@@ -11,7 +11,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.Crossfade
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.animateColorAsState
@@ -102,7 +102,7 @@ fun PrismaApp() {
     var playerReturn by rememberSaveable {mutableStateOf("Inicio")}
     var recentIds by remember {mutableStateOf(prefs.recentIds())}
     fun openPlayer() {playerReturn=page;page="Reproduciendo"}
-    androidx.activity.compose.BackHandler(enabled=page=="Reproduciendo" || page=="Temas") { page=if(page=="Temas") "Ajustes" else playerReturn }
+    androidx.activity.compose.BackHandler(enabled=page=="Reproduciendo" || page=="Temas" || page=="Personalización") { page=when(page) {"Temas"->"Personalización";"Personalización"->"Ajustes";else->playerReturn} }
     val scope=rememberCoroutineScope()
     val permission=if(Build.VERSION.SDK_INT>=33) Manifest.permission.READ_MEDIA_AUDIO else Manifest.permission.READ_EXTERNAL_STORAGE
     var granted by remember { mutableStateOf(ContextCompat.checkSelfPermission(context,permission)==PackageManager.PERMISSION_GRANTED) }
@@ -169,7 +169,7 @@ fun PrismaApp() {
                 Column(Modifier.fillMaxSize().padding(padding)) {
                     Row(Modifier.fillMaxWidth().padding(horizontal=22.dp,vertical=if(page=="Reproduciendo") 4.dp else 14.dp),verticalAlignment=Alignment.CenterVertically) {
                         if(page=="Reproduciendo") IconButton(onClick={page=playerReturn}) { Icon(Icons.Rounded.KeyboardArrowDown,if(playerReturn=="Biblioteca") "Volver a la biblioteca" else "Cerrar reproductor") }
-                        if(page=="Temas") IconButton(onClick={page="Ajustes"}) {Icon(Icons.Rounded.ArrowBack,"Volver a ajustes")}
+                        if(page=="Temas" || page=="Personalización") IconButton(onClick={page=if(page=="Temas") "Personalización" else "Ajustes"}) {Icon(Icons.Rounded.ArrowBack,if(page=="Temas") "Volver a personalización" else "Volver a ajustes")}
                         Column(Modifier.weight(1f)) {
                             if(page!="Reproduciendo") Text("PRISMA MUSIC",fontSize=10.sp,letterSpacing=2.sp,fontWeight=FontWeight.Bold,color=accent)
                             Text(page,fontSize=if(page=="Reproduciendo") 14.sp else 32.sp,fontWeight=FontWeight.Bold)
@@ -178,13 +178,14 @@ fun PrismaApp() {
                         if(page=="Biblioteca" || page=="Inicio") IconButton(onClick={libraryVersion++}) { Icon(Icons.Rounded.Refresh,"Actualizar biblioteca") }
                     }
                     error?.let { message -> Surface(color=colors.errorContainer,shape=RoundedCornerShape(16.dp),modifier=Modifier.padding(horizontal=16.dp)) { Row(Modifier.padding(12.dp),verticalAlignment=Alignment.CenterVertically) { Text(message,Modifier.weight(1f),color=colors.onErrorContainer,style=MaterialTheme.typography.bodySmall); IconButton(onClick={error=null}) { Icon(Icons.Rounded.Close,"Cerrar mensaje") } } } }
-                    Crossfade(targetState=page,animationSpec=tween(300, easing=FastOutSlowInEasing),label="page",modifier=Modifier.weight(1f)) { route -> when(route) {
+                    AnimatedContent(targetState=page,transitionSpec={contentMotion(personal.motion,personal.motionDuration).using(null)},label="page",modifier=Modifier.weight(1f)) { route -> when(route) {
                         "Inicio"->if(!granted) PermissionCard {requestPermission.launch(permission)} else HomeScreen(visible,busy,current,recentIds,onPlay={queue,song->play(queue,song);openPlayer()},onLibrary={page="Biblioteca"},onOptions={actionSong=it})
+                        "Personalización"->PersonalizationScreen(personal,{personal=it;prefs.personalization=it},{page="Temas"})
                         "Temas"->ThemesScreen(theme,mode,{theme=it;prefs.theme=it},{mode=it;prefs.mode=it})
                         "Biblioteca"->if(!granted) PermissionCard { requestPermission.launch(permission) } else LibraryScreen(visible,busy,currentId,onPlay=::play,onAdd={addToList=it},onOptions={actionSong=it})
                         "Listas"->PlaylistScreen(lists,visible,currentId,onCreate={newListDialog=true},onDelete={key->lists=lists-key; prefs.savePlaylists(lists)},onRemove={key,id->lists=lists+(key to lists.getValue(key).filterNot { it==id }); prefs.savePlaylists(lists)},onPlay=::play,onOptions={actionSong=it})
                         "Sonido"->EqScreen(prefs) { config->prefs.eq=config; controller?.sendCustomCommand(SessionCommand("prisma.eq",Bundle.EMPTY),Bundle.EMPTY) }
-                        "Ajustes"->SettingsScreen(theme,mode,prefs,songs,personal,{personal=it;prefs.personalization=it},{theme=it;prefs.theme=it},{mode=it;prefs.mode=it},{libraryVersion++}, { controller?.sendCustomCommand(SessionCommand("prisma.settings",Bundle.EMPTY),Bundle.EMPTY) },onThemes={page="Temas"})
+                        "Ajustes"->SettingsScreen(theme,mode,prefs,songs,personal,{personal=it;prefs.personalization=it},{theme=it;prefs.theme=it},{mode=it;prefs.mode=it},{libraryVersion++}, { controller?.sendCustomCommand(SessionCommand("prisma.settings",Bundle.EMPTY),Bundle.EMPTY) },onThemes={page="Personalización"})
                         "Reproduciendo"->if(current!=null) PlayerScreen(current,details,theme,prefs,position,duration,playing,shuffled,repeat,controller,onDismiss={page=playerReturn}) else EmptyCard("Selecciona una canción","Tu música local aparecerá aquí.",Icons.Rounded.MusicNote)
                     } }
                 }

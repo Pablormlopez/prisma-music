@@ -159,6 +159,7 @@ class PrismaSmokeTest {
             compose.onNodeWithContentDescription("Diseño Chromatic Flow").performTouchInput {swipeDown()}
             compose.waitUntil(5000) {compose.onAllNodesWithContentDescription("Abrir reproductor").fetchSemanticsNodes().isNotEmpty()}
             nav("Ajustes")
+            compose.onNode(hasText("Personalización",substring=false) and hasClickAction()).performScrollTo().performClick()
             compose.onNodeWithText("Elegir un color personalizado").performScrollTo().performClick()
             compose.onNodeWithText("Usar este color").performClick()
             assertEquals("#9D87E8",Preferences(context).personalization.accent)
@@ -168,27 +169,55 @@ class PrismaSmokeTest {
             assertEquals("#58CBA4",Preferences(context).personalization.accent)
             assertEquals(LibraryLayout.COMPACT,Preferences(context).personalization.layout)
             assertEquals(SongInfoStyle.ALBUM,Preferences(context).personalization.info)
+            compose.onNodeWithText("Deslizamiento",substring=false).performScrollTo().performClick()
+            assertEquals(MotionStyle.SLIDE,Preferences(context).personalization.motion)
+            compose.onNodeWithText("Probar animación").performScrollTo().performClick()
             shot("10-personalizacion")
+            compose.onNodeWithContentDescription("Volver a ajustes").performClick()
+            compose.onNodeWithContentDescription("Duración de entrada").performScrollTo().performSemanticsAction(SemanticsActions.SetProgress) {it(4f)}
+            compose.onNodeWithContentDescription("Duración de salida").performScrollTo().performSemanticsAction(SemanticsActions.SetProgress) {it(3f)}
+            assertEquals(4f,Preferences(context).fadeInSeconds,0f)
+            assertEquals(3f,Preferences(context).fadeOutSeconds,0f)
+            compose.runOnIdle {observer.seekTo(2000)}
+            compose.waitUntil(10000) {compose.runOnIdle {kotlin.math.abs(observer.volume-.5f)<.04f}}
+            compose.onNodeWithContentDescription("Duración de entrada").performScrollTo().performSemanticsAction(SemanticsActions.SetProgress) {it(0f)}
+            compose.onNodeWithContentDescription("Duración de salida").performScrollTo().performSemanticsAction(SemanticsActions.SetProgress) {it(0f)}
+            compose.waitUntil(10000) {compose.runOnIdle {observer.volume==1f}}
+
             nav("Biblioteca")
             compose.onNode(hasText("Prisma prueba") and SemanticsMatcher.keyIsDefined(SemanticsActions.OnLongClick)).assertExists()
             shot("11-lista-compacta")
             nav("Ajustes")
+            compose.onNode(hasText("Personalización",substring=false) and hasClickAction()).performScrollTo().performClick()
             compose.onNodeWithText("Cuadrícula",substring=false).performScrollTo().performClick()
             nav("Biblioteca")
             compose.onNodeWithContentDescription("Opciones de Prisma prueba").performClick()
             compose.onNodeWithText("Añadir al final de la cola").performClick()
             nav("Ajustes")
+            compose.onNode(hasText("Personalización",substring=false) and hasClickAction()).performScrollTo().performClick()
             compose.onNodeWithText("Restablecer personalización").performScrollTo().performClick()
             assertEquals(Personalization(),Preferences(context).personalization)
             nav("Sonido")
             compose.onNode(isToggleable()).performClick()
             compose.onNode(hasText("Graves") and hasClickAction()).performClick()
+            compose.onNodeWithText("Guardar preset",substring=false).performScrollTo().performClick()
+            compose.onNodeWithText("Nombre del preset").performTextInput("Mi prueba")
+            compose.onNodeWithText("Guardar",substring=false).performClick()
+            val saved=Preferences(context).eqPresets().getValue("Mi prueba")
+            assertArrayEquals(Preferences(context).eq.gains,saved.gains,0.0)
+            compose.onNodeWithText("Plano",substring=false).performScrollTo().performClick()
+            compose.onNodeWithText("Mis presets · 1",substring=false).performScrollTo().performClick()
+            compose.onNodeWithText("Mi prueba",substring=false).performClick()
+            assertArrayEquals(saved.gains,Preferences(context).eq.gains,0.0)
+            assertEquals(saved.preamp,Preferences(context).eq.preamp,0.0)
+            assertEquals(saved.q,Preferences(context).eq.q,0.0)
             shot("03-ecualizador")
             nav("Inicio")
             compose.onNodeWithText("Tu colección, contigo").assertExists()
             compose.onNodeWithText("Vuelve a escuchar").assertExists()
             shot("14-inicio-chromatic")
             nav("Ajustes")
+            compose.onNode(hasText("Personalización",substring=false) and hasClickAction()).performScrollTo().performClick()
             compose.onNode(hasText("Temas") and hasClickAction()).performScrollTo().performClick()
             listOf("Chromatic Flow","Liquid Glass","Pure Minimal","Black Night","Studio","Sunset").forEachIndexed {index,title->
                 compose.onNode(hasScrollToIndexAction()).performScrollToNode(hasText(title))
@@ -206,6 +235,7 @@ class PrismaSmokeTest {
                 nav("Biblioteca")
                 shot("08-biblioteca-$index-oscuro")
                 nav("Ajustes")
+            compose.onNode(hasText("Personalización",substring=false) and hasClickAction()).performScrollTo().performClick()
                 compose.onNode(hasText("Temas") and hasClickAction()).performScrollTo().performClick()
                 compose.onNodeWithText("Claro",substring=false).performScrollTo().performClick()
                 compose.onNode(hasScrollToIndexAction()).performScrollToNode(hasText(title))
@@ -216,6 +246,7 @@ class PrismaSmokeTest {
                 nav("Inicio")
                 shot("16-inicio-$index-claro")
                 nav("Ajustes")
+            compose.onNode(hasText("Personalización",substring=false) and hasClickAction()).performScrollTo().performClick()
                 compose.onNode(hasText("Temas") and hasClickAction()).performScrollTo().performClick()
             }
             compose.onNode(hasScrollToIndexAction()).performScrollToIndex(0)

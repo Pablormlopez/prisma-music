@@ -71,19 +71,20 @@ import kotlinx.coroutines.withContext
     var silence by remember { mutableStateOf(prefs.skipSilence) }
     var speed by remember { mutableFloatStateOf(prefs.playbackSpeed) }
     var minimum by remember { mutableIntStateOf(prefs.minimumDuration) }
+    var fadeIn by remember {mutableFloatStateOf(prefs.fadeInSeconds)}
+    var fadeOut by remember {mutableFloatStateOf(prefs.fadeOutSeconds)}
     var deadline by remember { mutableLongStateOf(prefs.sleepDeadline) }
     LaunchedEffect(Unit) { while(true) { deadline=prefs.sleepDeadline; kotlinx.coroutines.delay(1000) } }
     var foldersDialog by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal=20.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
-        SectionTitle("APARIENCIA","Elige tu ambiente")
-        Surface(onClick=onThemes,shape=RoundedCornerShape(24.dp),color=MaterialTheme.colorScheme.surface,modifier=Modifier.fillMaxWidth()) {
+        SectionTitle("APARIENCIA","Diseña tu Prisma")
+        Surface(onClick=onThemes,shape=RoundedCornerShape(24.dp),color=MaterialTheme.colorScheme.surfaceContainerHigh,modifier=Modifier.fillMaxWidth()) {
             Row(Modifier.padding(18.dp),verticalAlignment=Alignment.CenterVertically) {
-                Icon(Icons.Rounded.Palette,null,Modifier.size(36.dp),tint=MaterialTheme.colorScheme.primary)
-                Column(Modifier.weight(1f).padding(horizontal=16.dp)) {Text("Temas",fontSize=20.sp,fontWeight=FontWeight.Bold);Text("${theme.title} · 6 diseños para explorar",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)}
+                Icon(Icons.Rounded.Tune,null,Modifier.size(36.dp),tint=MaterialTheme.colorScheme.primary)
+                Column(Modifier.weight(1f).padding(horizontal=16.dp)) {Text("Personalización",fontSize=20.sp,fontWeight=FontWeight.Bold);Text("Temas, colores y animaciones",style=MaterialTheme.typography.bodySmall)}
                 Icon(Icons.Rounded.ChevronRight,null)
             }
         }
-        PersonalizationSettings(personal,onPersonal)
         SectionTitle("MODO DE COLOR","La luz cambia. Tu música sigue.")
         LightMode.entries.forEach { v -> Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).clickable {onMode(v)}.padding(8.dp),verticalAlignment=Alignment.CenterVertically) {RadioButton(selected=mode==v,onClick={onMode(v)});Text(v.title)} }
         SectionTitle("REPRODUCTOR","Personaliza la escucha")
@@ -93,6 +94,12 @@ import kotlinx.coroutines.withContext
         Text("Velocidad · %.2f×".format(speed),fontWeight=FontWeight.SemiBold)
         Slider(value=speed,onValueChange={speed=it},onValueChangeFinished={prefs.playbackSpeed=speed;onPlaybackChanged()},valueRange=.5f..2f,steps=5)
         TextButton(onClick={speed=1f;prefs.playbackSpeed=1f;onPlaybackChanged()}) {Text("Velocidad normal")}
+        SectionTitle("DESVANECIDOS","Entrada y salida de canciones")
+        Text("Entrada · %.1f s".format(fadeIn),fontWeight=FontWeight.SemiBold)
+        Slider(fadeIn,{fadeIn=it},modifier=Modifier.semantics {contentDescription="Duración de entrada"},valueRange=0f..12f,steps=23,onValueChangeFinished={prefs.fadeInSeconds=fadeIn;onPlaybackChanged()})
+        Text("Salida · %.1f s".format(fadeOut),fontWeight=FontWeight.SemiBold)
+        Slider(fadeOut,{fadeOut=it},modifier=Modifier.semantics {contentDescription="Duración de salida"},valueRange=0f..12f,steps=23,onValueChangeFinished={prefs.fadeOutSeconds=fadeOut;onPlaybackChanged()})
+        Text("0 s desactiva el efecto. La entrada sigue el inicio de cada canción y la salida sus últimos segundos. No superpone canciones; en pistas cortas los tiempos se reducen proporcionalmente. Al saltar manualmente solo se aplica la entrada de la siguiente.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
         SectionTitle("TEMPORIZADOR","Pausar automáticamente")
         Text(if(deadline>0) "Se pausará en ${((deadline-System.currentTimeMillis()).coerceAtLeast(0)+59999)/60000} min" else "Desactivado",style=MaterialTheme.typography.bodySmall)
         Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(8.dp)) {
@@ -106,7 +113,7 @@ import kotlinx.coroutines.withContext
         Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {Column(Modifier.weight(1f)) {Text("Excluir audios de WhatsApp",fontWeight=FontWeight.SemiBold);Text("También notas de voz y WhatsApp Business",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)};Switch(checked=hide,onCheckedChange={hide=it;prefs.hideWhatsApp=it;onLibraryChanged()})}
         OutlinedButton(onClick={foldersDialog=true},modifier=Modifier.fillMaxWidth(),shape=RoundedCornerShape(16.dp)) {Icon(Icons.Rounded.FolderOpen,null);Text("Elegir carpetas · ${excluded.size} excluidas",Modifier.padding(8.dp))}
         Text("Se muestran las carpetas que Android ha registrado con archivos de audio. Las carpetas privadas de otras apps pueden no ser accesibles.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
-        SectionTitle("PRISMA MUSIC","2.0.1 · Beta de código abierto")
+        SectionTitle("PRISMA MUSIC","${BuildConfig.VERSION_NAME} · Código abierto")
         Text("Sin anuncios, sin cuenta y sin subir tu música. Las letras incrustadas se leen automáticamente. Puedes importar LRC o TXT si el archivo no contiene letra. El motor usa PCM de 16 bits para aplicar el ecualizador; los datos mostrados describen el archivo original.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(24.dp))
     }
@@ -125,13 +132,41 @@ import kotlinx.coroutines.withContext
 
 @Composable fun EqScreen(prefs:Preferences,onChange:(DspEngine.Config)->Unit) {
     var config by remember {mutableStateOf(prefs.eq)}
+    var presets by remember {mutableStateOf(prefs.eqPresets())}
+    var showPresets by remember {mutableStateOf(false)}
+    var saving by remember {mutableStateOf(false)}
+    var presetName by remember {mutableStateOf("")}
+    var replaceName by remember {mutableStateOf<String?>(null)}
+    fun save(name:String) {presets=presets+(name to config);prefs.saveEqPresets(presets);saving=false;replaceName=null}
+    fun applyPreset(value:DspEngine.Config) {config=value;onChange(config);showPresets=false}
+    if(saving) AlertDialog(onDismissRequest={saving=false},title={Text("Guardar preset")},text={OutlinedTextField(presetName,{presetName=it.take(40)},label={Text("Nombre del preset")},singleLine=true)},confirmButton={TextButton(enabled=presetName.trim().isNotEmpty(),onClick={val name=presetName.trim();if(name in presets) {saving=false;replaceName=name} else save(name)}){Text("Guardar")}},dismissButton={TextButton(onClick={saving=false}){Text("Cancelar")}})
+    replaceName?.let {name->AlertDialog(onDismissRequest={replaceName=null},title={Text("¿Reemplazar «$name»?")},text={Text("Se guardarán las bandas, Q, preamplificador, tono, voces y estado del ecualizador actuales.")},confirmButton={TextButton(onClick={save(name)}){Text("Reemplazar")}},dismissButton={TextButton(onClick={replaceName=null}){Text("Cancelar")}})}
+    if(showPresets) ModalBottomSheet(onDismissRequest={showPresets=false}) {
+        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(24.dp)) {
+            Text("Mis presets",style=MaterialTheme.typography.titleLarge)
+            if(presets.isEmpty()) Text("Ajusta el sonido y pulsa Guardar preset para crear el primero.",modifier=Modifier.padding(vertical=16.dp))
+            presets.toSortedMap().forEach {(name,value)->
+                Row(verticalAlignment=Alignment.CenterVertically) {
+                    TextButton(onClick={applyPreset(value)},modifier=Modifier.weight(1f)) {Text(name)}
+                    IconButton(onClick={presetName=name;showPresets=false;saving=true}) {Icon(Icons.Rounded.Save,"Actualizar $name con el sonido actual")}
+                    IconButton(onClick={presets=presets-name;prefs.saveEqPresets(presets)}) {Icon(Icons.Rounded.DeleteOutline,"Eliminar preset $name")}
+                }
+            }
+            TextButton(onClick={showPresets=false}) {Text("Cerrar")}
+        }
+    }
     fun update(enabled:Boolean=config.enabled,gains:DoubleArray=config.gains,q:Double=config.q,preamp:Double=config.preamp,bass:Double=config.bass,mids:Double=config.mids,treble:Double=config.treble,voice:Double=config.voice) {config=DspEngine.Config(enabled,gains,q,preamp,bass,mids,treble,voice);onChange(config)}
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal=20.dp)) {
         Row(verticalAlignment=Alignment.CenterVertically,modifier=Modifier.fillMaxWidth()) {Column(Modifier.weight(1f)) {Text("Escucha los detalles",fontWeight=FontWeight.Bold,fontSize=21.sp);Text("10 bandas · procesamiento propio",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)};Switch(config.enabled,{update(enabled=it)})}
         Text("Los controles se aplican a la música reproducida en Prisma. Con el ecualizador activo, el limitador controla los picos.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant,modifier=Modifier.padding(vertical=12.dp))
         Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(8.dp)) {
-            listOf("Plano","Graves","Voces","Suave").forEach { name -> OutlinedButton(onClick={val gains=when(name){"Graves"->doubleArrayOf(4.0,4.0,3.0,1.0,0.0,0.0,0.0,0.0,1.0,1.0);"Voces"->doubleArrayOf(-2.0,-1.0,0.0,0.0,1.0,2.0,3.0,2.0,0.0,0.0);"Suave"->doubleArrayOf(1.0,1.0,0.0,0.0,-1.0,-1.0,-2.0,-2.0,-1.0,-1.0);else->DoubleArray(10)};update(enabled=true,gains=gains,q=1.0,preamp=if(name=="Plano") 0.0 else -4.0,bass=0.0,mids=0.0,treble=0.0,voice=0.0)}) {Text(name)} }
+            builtInEqPresets.forEach {(name,value)->OutlinedButton(onClick={applyPreset(value)}) {Text(name)}}
         }
+        Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+            OutlinedButton(onClick={showPresets=true},modifier=Modifier.weight(1f)) {Text("Mis presets · ${presets.size}")}
+            Button(onClick={presetName="";saving=true},modifier=Modifier.weight(1f)) {Text("Guardar preset")}
+        }
+
         SectionTitle("ECUALIZADOR","Bandas de frecuencia")
         DspEngine.FREQUENCIES.forEachIndexed { index,freq -> SoundSlider(if(freq>=1000) "${freq.toInt()/1000} kHz" else "${freq.toInt()} Hz",config.gains[index],"dB",config.enabled) {value->val gains=config.gains.clone();gains[index]=value;update(gains=gains)} }
         SectionTitle("CONTROL FINO","Tono y presencia")
@@ -155,6 +190,9 @@ import kotlinx.coroutines.withContext
         view.keepScreenOn=prefs.keepScreenOn
         onDispose {view.keepScreenOn=previous}
     }
+    val motion=LocalPersonalization.current
+    var swipeDirection by remember {mutableIntStateOf(1)}
+    var isDragging by remember {mutableStateOf(false)}
     var queueVisible by rememberSaveable {mutableStateOf(false)}
     if(queueVisible && controller!=null) PlaybackQueue(controller,onDismiss={queueVisible=false})
     var metadataVisible by remember { mutableStateOf(prefs.showMetadata) }
@@ -168,16 +206,18 @@ import kotlinx.coroutines.withContext
     var closing by remember {mutableStateOf(false)}
     val screenHeight=with(LocalDensity.current) {LocalConfiguration.current.screenHeightDp.dp.toPx()}
     val closeThreshold=with(LocalDensity.current) {96.dp.toPx()}
-    val offset by animateFloatAsState(if(closing) screenHeight else verticalDrag,animationSpec=if(closing) tween(240, easing=FastOutSlowInEasing) else spring(stiffness=900f),label="dismissPlayer")
+    val motionMs=if(motion.motion==MotionStyle.NONE) 0 else motion.motionDuration
+    val artworkOffset by animateFloatAsState(if(motion.motion==MotionStyle.NONE) 0f else drag*.35f,animationSpec=tween(if(isDragging) 0 else motionMs,easing=FastOutSlowInEasing),label="artworkGesture")
+    val offset by animateFloatAsState(if(closing) screenHeight else verticalDrag,animationSpec=tween(if(isDragging) 0 else motionMs,easing=FastOutSlowInEasing),label="dismissPlayer")
     val latestDismiss by rememberUpdatedState(onDismiss)
-    LaunchedEffect(closing) {if(closing) {kotlinx.coroutines.delay(260);latestDismiss()}}
+    LaunchedEffect(closing) {if(closing) {kotlinx.coroutines.delay(motionMs.toLong());latestDismiss()}}
     val latestController by rememberUpdatedState(controller)
-    val swipe=Modifier.pointerInput(song.id,lyricsVisible) {
+    val swipe=Modifier.pointerInput(song.id,lyricsVisible,motion.motion,motion.motionDuration) {
         var axis=0
-        detectDragGestures(onDragStart={axis=0;drag=0f;verticalDrag=0f},onDragCancel={drag=0f;verticalDrag=0f},onDragEnd={
+        detectDragGestures(onDragStart={axis=0;isDragging=true;drag=0f;verticalDrag=0f},onDragCancel={isDragging=false;drag=0f;verticalDrag=0f},onDragEnd={
             if(axis==2 && verticalDrag>closeThreshold) closing=true
-            else if(axis==1) {if(drag < -swipeThreshold) latestController?.seekToNextMediaItem() else if(drag > swipeThreshold) latestController?.seekToPreviousMediaItem()}
-            drag=0f;verticalDrag=0f
+            else if(axis==1) {if(drag < -swipeThreshold) {swipeDirection=1;latestController?.seekToNextMediaItem()} else if(drag > swipeThreshold) {swipeDirection=-1;latestController?.seekToPreviousMediaItem()}}
+            isDragging=false;drag=0f;verticalDrag=0f
         }) {change,amount->
             if(axis==0) axis=if(abs(amount.x)>abs(amount.y)) 1 else 2
             if(axis==1) {change.consume();drag+=amount.x}
@@ -194,7 +234,7 @@ import kotlinx.coroutines.withContext
     var seeking by remember(song.id) {mutableStateOf<Float?>(null)}
     Column(Modifier.fillMaxSize().graphicsLayer {translationY=offset;alpha=1f-(offset/screenHeight).coerceIn(0f,.7f)}.padding(horizontal=24.dp)) {
         Box(Modifier.fillMaxWidth().height(20.dp).semantics {contentDescription="Deslizar hacia abajo para cerrar"}.pointerInput(Unit) {
-            detectVerticalDragGestures(onDragStart={verticalDrag=0f},onDragCancel={verticalDrag=0f},onDragEnd={if(verticalDrag>closeThreshold) closing=true;verticalDrag=0f}) {change,amount->change.consume();verticalDrag=(verticalDrag+amount).coerceAtLeast(0f)}
+            detectVerticalDragGestures(onDragStart={isDragging=true;verticalDrag=0f},onDragCancel={isDragging=false;verticalDrag=0f},onDragEnd={isDragging=false;if(verticalDrag>closeThreshold) closing=true;verticalDrag=0f}) {change,amount->change.consume();verticalDrag=(verticalDrag+amount).coerceAtLeast(0f)}
         },contentAlignment=Alignment.Center) {Box(Modifier.width(40.dp).height(4.dp).clip(RoundedCornerShape(8.dp)).background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha=.45f)))}
         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.Center,verticalAlignment=Alignment.CenterVertically) {FilterChip(!lyricsVisible,{lyricsVisible=false},label={Text("Carátula")});Spacer(Modifier.width(8.dp));FilterChip(lyricsVisible,{lyricsVisible=true},label={Text("Letra")});IconButton(onClick={metadataVisible=!metadataVisible;prefs.showMetadata=metadataVisible}) {Icon(Icons.Rounded.Info,if(metadataVisible) "Ocultar metadatos" else "Mostrar metadatos",tint=if(metadataVisible) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)};IconButton(enabled=controller!=null,onClick={queueVisible=true}) {Icon(Icons.Rounded.QueueMusic,"Ver cola de reproducción")}}
         Box(Modifier.weight(1f).fillMaxWidth().then(if(lyricsVisible) Modifier else swipe),contentAlignment=Alignment.Center) {
@@ -216,14 +256,18 @@ import kotlinx.coroutines.withContext
                 }
                 lyricError?.let {Text(it,color=MaterialTheme.colorScheme.error,modifier=Modifier.align(Alignment.BottomCenter))}
             } else {
-                AnimatedContent(targetState=Pair(song,theme),contentKey={it.first.id to it.second},transitionSpec={fadeIn(tween(340, easing=FastOutSlowInEasing)) togetherWith fadeOut(tween(220))},label="themedCover") { target ->
+                AnimatedContent(targetState=Pair(song,theme),contentKey={it.first.id to it.second},transitionSpec={contentMotion(motion.motion,motion.motionDuration,swipeDirection).using(null)},modifier=Modifier.graphicsLayer {translationX=artworkOffset},label="themedCover") { target ->
                     ThemeArtwork(target.first,if(target.first.id==song.id) details else null,target.second)
                 }
 
             }
         }
-        Text(song.title,fontSize=if(theme==VisualTheme.MINIMAL) 30.sp else 27.sp,fontWeight=FontWeight.Bold,maxLines=2,overflow=TextOverflow.Ellipsis,modifier=Modifier.padding(top=16.dp))
-        Text(song.artist,color=MaterialTheme.colorScheme.onSurfaceVariant,maxLines=1,overflow=TextOverflow.Ellipsis)
+        AnimatedContent(targetState=song,contentKey={it.id},transitionSpec={contentMotion(motion.motion,motion.motionDuration,swipeDirection).using(null)},label="songCaption") {caption->
+            Column {
+                Text(caption.title,fontSize=if(theme==VisualTheme.MINIMAL) 30.sp else 27.sp,fontWeight=FontWeight.Bold,maxLines=2,overflow=TextOverflow.Ellipsis,modifier=Modifier.padding(top=16.dp))
+                Text(caption.artist,color=MaterialTheme.colorScheme.onSurfaceVariant,maxLines=1,overflow=TextOverflow.Ellipsis)
+            }
+        }
         AnimatedVisibility(metadataVisible,enter=fadeIn(tween(220))+expandVertically(tween(280)),exit=fadeOut(tween(150))+shrinkVertically(tween(280))) {
             Text(details?.text ?: "Leyendo información del archivo…",fontSize=10.sp,maxLines=2,overflow=TextOverflow.Ellipsis,color=MaterialTheme.colorScheme.primary,modifier=Modifier.padding(top=7.dp).semantics {contentDescription="Información técnica de la canción"})
         }

@@ -1,3 +1,10 @@
+## Beta 2.1.0 · Sonido y movimiento personales
+
+- Sonido → **Guardar preset** y **Mis presets**: guarda, carga, reemplaza y elimina ajustes propios. Se conservan las diez bandas, Q, preamplificador, graves, medios, agudos, voces y estado del ecualizador. Los cuatro presets incluidos siguen disponibles.
+- Ajustes → **Desvanecidos**: entrada y salida independientes de 0 a 12 s, en pasos de 0,5 s. 0 desactiva cada efecto. El servicio aplica el volumen según la posición de la pista, también con pantalla apagada. Pistas cortas ajustan proporcionalmente ambos tiempos; duración desconocida aplica solo entrada. No es crossfade: no superpone pistas. Un salto manual inicia la entrada de la siguiente sin retrasarlo para una salida.
+- Ajustes → **Personalización** reúne **Temas**, colores y **Animaciones**. Fundido suave, Deslizamiento, Zoom delicado o Sin animaciones; duración de 250 a 900 ms y vista previa.
+- Pantallas, portadas y títulos comparten la transición elegida. La carátula acompaña el dedo al deslizar y vuelve suavemente cuando el gesto es corto. Preferencias anteriores, listas y colores se conservan.
+
 ## Beta 2.0.2 · Colección y cola a tu medida
 
 - Cola con tirador ≡: mantener pulsado y arrastrar hacia arriba o abajo, con desplazamiento al acercarse a los bordes, tarjeta elevada y destino resaltado. Se conservan los botones accesibles. Un cambio externo en la cola cancela la aplicación del movimiento.
@@ -29,7 +36,7 @@
 
 # Prisma Music
 
-Reproductor de música local para Android, gratuito y de código abierto. Beta actual: **2.0.2**. Android 8.0 o posterior.
+Reproductor de música local para Android, gratuito y de código abierto. Beta actual: **2.1.0**. Android 8.0 o posterior.
 
 ## Beta 1.0.2 — experiencia visual
 
