@@ -9,13 +9,13 @@ enum class LightMode(val title: String) { SYSTEM("Según el sistema"), DARK("Osc
 
 enum class LibraryLayout(val title:String) { THEME("Según el tema"), LIST("Lista"), GRID("Cuadrícula"), COMPACT("Lista compacta") }
 enum class SongInfoStyle(val title:String) { ARTIST("Artista"), ALBUM("Artista y álbum"), FILE("Nombre del archivo") }
-data class Personalization(val accent:String="",val layout:LibraryLayout=LibraryLayout.THEME,val info:SongInfoStyle=SongInfoStyle.ARTIST)
+data class Personalization(val accent:String="",val layout:LibraryLayout=LibraryLayout.THEME,val info:SongInfoStyle=SongInfoStyle.ARTIST,val motion:MotionStyle=MotionStyle.SOFT,val motionDuration:Int=550)
 
 class Preferences(context: Context) {
     private val prefs = context.getSharedPreferences("prisma", Context.MODE_PRIVATE)
     var personalization: Personalization
-        get() = runCatching { val j=JSONObject(prefs.getString("personalization","{}")!!); Personalization(j.optString("accent"),LibraryLayout.valueOf(j.optString("layout","THEME")),SongInfoStyle.valueOf(j.optString("info","ARTIST"))) }.getOrDefault(Personalization())
-        set(v) { prefs.edit().putString("personalization",JSONObject().put("accent",v.accent).put("layout",v.layout.name).put("info",v.info.name).toString()).apply() }
+        get() = runCatching { val j=JSONObject(prefs.getString("personalization","{}")!!); Personalization(j.optString("accent"),LibraryLayout.valueOf(j.optString("layout","THEME")),SongInfoStyle.valueOf(j.optString("info","ARTIST")),runCatching {MotionStyle.valueOf(j.optString("motion","SOFT"))}.getOrDefault(MotionStyle.SOFT),j.optInt("motionDuration",550).coerceIn(250,900)) }.getOrDefault(Personalization())
+        set(v) { prefs.edit().putString("personalization",JSONObject().put("accent",v.accent).put("layout",v.layout.name).put("info",v.info.name).put("motion",v.motion.name).put("motionDuration",v.motionDuration.coerceIn(250,900)).toString()).apply() }
     var theme: VisualTheme
         get() = runCatching { VisualTheme.valueOf(prefs.getString("theme", "CHROMATIC")!!) }.getOrDefault(VisualTheme.CHROMATIC)
         set(v) { prefs.edit().putString("theme", v.name).apply() }
@@ -47,13 +47,23 @@ class Preferences(context: Context) {
     var sleepDeadline: Long
         get() = prefs.getLong("sleepDeadline", 0)
         set(v) { prefs.edit().putLong("sleepDeadline", v).apply() }
-    var eq: DspEngine.Config
-        get() = runCatching {
-            val j = JSONObject(prefs.getString("eq", "{}")!!)
-            val gains = j.optJSONArray("gains")
-            DspEngine.Config(j.optBoolean("enabled"), DoubleArray(10) { gains?.optDouble(it, 0.0) ?: 0.0 }, j.optDouble("q", 1.0), j.optDouble("preamp", 0.0), j.optDouble("bass", 0.0), j.optDouble("mids", 0.0), j.optDouble("treble", 0.0), j.optDouble("voice", 0.0))
-        }.getOrDefault(DspEngine.Config.flat())
-        set(v) { prefs.edit().putString("eq", JSONObject().put("enabled",v.enabled).put("gains",JSONArray(v.gains.toList())).put("q",v.q).put("preamp",v.preamp).put("bass",v.bass).put("mids",v.mids).put("treble",v.treble).put("voice",v.voice).toString()).apply() }
+    var fadeInSeconds:Float
+        get() = prefs.getFloat("fadeInSeconds",0f).coerceIn(0f,12f)
+        set(v) {prefs.edit().putFloat("fadeInSeconds",v.coerceIn(0f,12f)).apply()}
+    var fadeOutSeconds:Float
+        get() = prefs.getFloat("fadeOutSeconds",0f).coerceIn(0f,12f)
+        set(v) {prefs.edit().putFloat("fadeOutSeconds",v.coerceIn(0f,12f)).apply()}
+    var eq:DspEngine.Config
+        get() = runCatching {decodeEq(JSONObject(prefs.getString("eq","{}")!!))}.getOrDefault(DspEngine.Config.flat())
+        set(v) {prefs.edit().putString("eq",encodeEq(v).toString()).apply()}
+    fun eqPresets():Map<String,DspEngine.Config> = runCatching {
+        val j=JSONObject(prefs.getString("eqPresets","{}")!!)
+        j.keys().asSequence().associateWith {decodeEq(j.getJSONObject(it))}
+    }.getOrDefault(emptyMap())
+    fun saveEqPresets(presets:Map<String,DspEngine.Config>) {
+        val j=JSONObject();presets.forEach {(name,config)->j.put(name,encodeEq(config))}
+        prefs.edit().putString("eqPresets",j.toString()).apply()
+    }
     fun playlists(): Map<String, List<String>> = runCatching {
         val j = JSONObject(prefs.getString("playlists", "{}")!!)
         j.keys().asSequence().associateWith { key -> val a=j.getJSONArray(key); List(a.length()) { a.getString(it) } }

@@ -20,6 +20,17 @@ import com.google.common.util.concurrent.ListenableFuture
 
 @UnstableApi
 class PlaybackService : MediaSessionService() {
+    private var fadeIn=0f
+    private var fadeOut=0f
+    private val fadeCheck=object:Runnable {
+        override fun run() {
+            session?.player?.let {updateFade(it)}
+            handler.postDelayed(this,if(session?.player?.isPlaying==true) 30 else 250)
+        }
+    }
+    private fun updateFade(player:androidx.media3.common.Player) {
+        player.volume=songFadeGain(player.currentPosition,player.duration,fadeIn,fadeOut)
+    }
     private var session: MediaSession? = null
     private val eq = EqProcessor()
     private val handler = android.os.Handler(android.os.Looper.getMainLooper())
@@ -37,6 +48,8 @@ class PlaybackService : MediaSessionService() {
         val prefs = Preferences(this)
         player.setPlaybackSpeed(prefs.playbackSpeed)
         player.skipSilenceEnabled = prefs.skipSilence
+        fadeIn=prefs.fadeInSeconds;fadeOut=prefs.fadeOutSeconds
+        updateFade(player)
     }
     override fun onCreate() {
         super.onCreate()
@@ -51,6 +64,10 @@ class PlaybackService : MediaSessionService() {
             setWakeMode(C.WAKE_MODE_LOCAL)
         }
         applySettings(player)
+        player.addListener(object:androidx.media3.common.Player.Listener {
+            override fun onMediaItemTransition(mediaItem:androidx.media3.common.MediaItem?,reason:Int) {updateFade(player)}
+            override fun onPositionDiscontinuity(oldPosition:androidx.media3.common.Player.PositionInfo,newPosition:androidx.media3.common.Player.PositionInfo,reason:Int) {updateFade(player)}
+        })
         handler.post(sleepCheck)
         val activity = PendingIntent.getActivity(this,0,Intent(this,MainActivity::class.java),PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         session = MediaSession.Builder(this, player).setSessionActivity(activity).setCallback(object : MediaSession.Callback {
@@ -64,8 +81,9 @@ class PlaybackService : MediaSessionService() {
                 return Futures.immediateFuture(SessionResult(SessionError.ERROR_NOT_SUPPORTED))
             }
         }).build()
+        handler.post(fadeCheck)
     }
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? = session
-    override fun onDestroy() { handler.removeCallbacks(sleepCheck); session?.run { player.release(); release() }; session=null; super.onDestroy() }
+    override fun onDestroy() { handler.removeCallbacks(sleepCheck); handler.removeCallbacks(fadeCheck); session?.run { player.release(); release() }; session=null; super.onDestroy() }
     override fun onTaskRemoved(rootIntent: Intent?) { if(session?.player?.playWhenReady != true) stopSelf() }
 }

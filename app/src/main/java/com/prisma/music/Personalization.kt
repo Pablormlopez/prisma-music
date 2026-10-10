@@ -22,7 +22,7 @@ fun accentColor(hex:String):Color? = hex.takeIf {it.matches(Regex("#[0-9a-fA-F]{
 @Composable fun PersonalizationSettings(value:Personalization,onChange:(Personalization)->Unit) {
     var picker by remember {mutableStateOf(false)}
     var hex by remember(value.accent) {mutableStateOf(value.accent)}
-    SectionTitle("PERSONALIZACIÓN","Diseña tu Prisma")
+    SectionTitle("COLORES","Tu acento personal")
     Text("Combina cualquier tema con tu color y la vista que prefieras.",style=MaterialTheme.typography.bodySmall)
     Text("Mini temas de color")
     Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(8.dp)) {
@@ -53,4 +53,30 @@ fun accentColor(hex:String):Color? = hex.takeIf {it.matches(Regex("#[0-9a-fA-F]{
         Text("Intensidad");Slider(saturation,{saturation=it})
         Text("Luminosidad");Slider(brightness,{brightness=it})
     }},confirmButton={TextButton(onClick={onSave("#%06X".format(color and 0xffffff))}){Text("Usar este color")}},dismissButton={TextButton(onClick=onDismiss){Text("Cancelar")}})
+}
+
+@Composable fun PersonalizationScreen(value:Personalization,onChange:(Personalization)->Unit,onThemes:()->Unit) {
+    var preview by remember {mutableStateOf(false)}
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
+        SectionTitle("TEMAS","Elige tu ambiente")
+        OutlinedButton(onClick=onThemes,modifier=Modifier.fillMaxWidth()) {Text("Temas")}
+        SectionTitle("ANIMACIONES","El movimiento también es tuyo")
+        MotionStyle.entries.forEach {style->
+            FilterChip(value.motion==style,{onChange(value.copy(motion=style))},label={Text(style.title)})
+            if(value.motion==style) Text(style.description,style=MaterialTheme.typography.bodySmall)
+        }
+        if(value.motion!=MotionStyle.NONE) {
+            Text("Duración · ${value.motionDuration} ms")
+            Slider(value.motionDuration.toFloat(),{onChange(value.copy(motionDuration=(it/50).toInt()*50))},valueRange=250f..900f,steps=12)
+        }
+        OutlinedButton(onClick={preview=!preview},modifier=Modifier.fillMaxWidth()) {Text("Probar animación")}
+        androidx.compose.animation.AnimatedContent(targetState=preview,transitionSpec={contentMotion(value.motion,value.motionDuration)},label="motionPreview") {alternate->
+            Surface(color=if(alternate) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer,shape=RoundedCornerShape(24.dp),modifier=Modifier.fillMaxWidth()) {
+                Text(if(alternate) "Tu próxima canción" else "Tu música, a tu ritmo",modifier=Modifier.padding(24.dp))
+            }
+        }
+        Text("Se aplica a las pantallas, las portadas y el gesto de cambio de canción. Sin animaciones reduce el movimiento visual.",style=MaterialTheme.typography.bodySmall)
+        PersonalizationSettings(value,onChange)
+        Spacer(Modifier.height(24.dp))
+    }
 }
