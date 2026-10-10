@@ -2,7 +2,7 @@ plugins { id("com.android.application"); id("org.jetbrains.kotlin.android"); id(
 android {
     namespace = "com.prisma.music"
     compileSdk = 35
-    defaultConfig { applicationId = "com.prisma.music"; minSdk = 26; targetSdk = 35; versionCode = 8; versionName = "2.0.1-beta"; testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner" }
+    defaultConfig { applicationId = "com.prisma.music"; minSdk = 26; targetSdk = 35; versionCode = 9; versionName = "2.0.2-beta"; testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner" }
     buildTypes { getByName("release") { isDebuggable = false; isMinifyEnabled = false } }
     buildFeatures { compose = true }
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }

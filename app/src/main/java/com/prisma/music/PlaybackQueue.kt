@@ -2,6 +2,13 @@
 package com.prisma.music
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.gestures.scrollBy
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.zIndex
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -37,7 +44,11 @@ internal fun queueEntries(player:Player):List<QueueEntry> {
 internal fun moveQueueEntry(player:Player,index:Int,direction:Int) {
     val ordered=queueEntries(player).map {it.index}.toMutableList()
     val from=ordered.indexOf(index)
-    val to=from+direction
+    moveQueueEntryTo(player,index,from+direction)
+}
+internal fun moveQueueEntryTo(player:Player,index:Int,to:Int) {
+    val ordered=queueEntries(player).map {it.index}.toMutableList()
+    val from=ordered.indexOf(index)
     if(from<0 || to !in ordered.indices) return
     ordered.add(to,ordered.removeAt(from))
     // Materialize the heard shuffle order and its edit using a local permutation.
@@ -67,15 +78,31 @@ internal fun moveQueueEntry(player:Player,index:Int,direction:Int) {
         controller.addListener(listener)
         onDispose {controller.removeListener(listener)}
     }
+    var dragging by remember {mutableStateOf<Int?>(null)}
+    var dragOffset by remember {mutableFloatStateOf(0f)}
+    var dragCenter by remember {mutableFloatStateOf(0f)}
+    var target by remember {mutableIntStateOf(-1)}
+    var dragTimeline by remember {mutableStateOf<Timeline?>(null)}
+    val latestEntries by rememberUpdatedState(entries)
     val expectedTimeline=snapshot
     val state=rememberLazyListState()
+    LaunchedEffect(dragging) {
+        while(dragging!=null && isActive) {
+            val edge=80f
+            val layout=state.layoutInfo
+            val scroll=when {dragCenter<layout.viewportStartOffset+edge -> -18f;dragCenter>layout.viewportEndOffset-edge -> 18f;else->0f}
+            if(scroll!=0f) {val consumed=state.scrollBy(scroll);dragOffset+=consumed}
+            layout.visibleItemsInfo.minByOrNull {kotlin.math.abs(it.offset+it.size/2f-dragCenter)}?.let {target=it.index}
+            delay(16)
+        }
+    }
     LaunchedEffect(controller) {val current=entries.indexOfFirst {it.current};if(current>=0) state.scrollToItem(current)}
     ModalBottomSheet(onDismissRequest=onDismiss,sheetState=rememberModalBottomSheetState(skipPartiallyExpanded=true)) {
         Column(Modifier.fillMaxWidth().padding(horizontal=16.dp)) {
             Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text("Cola de reproducción",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Bold)
-                    Text("${entries.size} canciones",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("${entries.size} canciones · Mantén pulsado ≡ y arrastra",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 IconButton(onClick=onDismiss) {Icon(Icons.Rounded.Close,"Cerrar cola")}
             }
@@ -86,11 +113,20 @@ internal fun moveQueueEntry(player:Player,index:Int,direction:Int) {
             val next=if(repeat==Player.REPEAT_MODE_ONE) current else if(current+1<entries.size) current+1 else if(repeat==Player.REPEAT_MODE_ALL && entries.isNotEmpty()) 0 else -1
             LazyColumn(state=state,modifier=Modifier.fillMaxWidth().heightIn(max=520.dp),contentPadding=PaddingValues(bottom=24.dp)) {
                 itemsIndexed(entries,key={_,entry->entry.index}) {index,entry ->
-                    Column(Modifier.fillMaxWidth().background(if(entry.current) MaterialTheme.colorScheme.primaryContainer.copy(alpha=.5f) else MaterialTheme.colorScheme.surface,MaterialTheme.shapes.medium).padding(start=12.dp,top=8.dp,end=4.dp,bottom=4.dp)) {
+                    Column(Modifier.fillMaxWidth().zIndex(if(dragging==entry.index) 1f else 0f).graphicsLayer {translationY=if(dragging==entry.index) dragOffset else 0f;scaleX=if(dragging==entry.index) 1.02f else 1f;scaleY=scaleX}.background(if(dragging==entry.index || (dragging!=null && index==target)) MaterialTheme.colorScheme.secondaryContainer else if(entry.current) MaterialTheme.colorScheme.primaryContainer.copy(alpha=.5f) else MaterialTheme.colorScheme.surface,MaterialTheme.shapes.medium).padding(start=12.dp,top=8.dp,end=4.dp,bottom=4.dp)) {
                         Text(if(entry.current) "Sonando ahora" else if(index==next) "A continuación" else "${index+1}",style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.primary)
                         Text(entry.title,maxLines=1,overflow=TextOverflow.Ellipsis,fontWeight=FontWeight.SemiBold)
                         Text(entry.artist,maxLines=1,overflow=TextOverflow.Ellipsis,style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
-                        Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.End) {
+                        Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.End,verticalAlignment=Alignment.CenterVertically) {
+                            Icon(Icons.Rounded.DragHandle,"Mantén pulsado para arrastrar ${entry.title}",Modifier.size(48.dp).pointerInput(entry.index) {
+                                detectDragGesturesAfterLongPress(onDragStart={
+                                    val item=state.layoutInfo.visibleItemsInfo.firstOrNull {it.index==index}
+                                    dragging=entry.index;dragOffset=0f;dragCenter=(item?.offset ?: 0)+(item?.size ?: 0)/2f;target=index;dragTimeline=controller.currentTimeline
+                                },onDragCancel={dragging=null;dragOffset=0f},onDragEnd={
+                                    if(controller.currentTimeline===dragTimeline && latestEntries.any {it.index==entry.index}) moveQueueEntryTo(controller,entry.index,target)
+                                    dragging=null;dragOffset=0f
+                                }) {change,amount->change.consume();dragOffset+=amount.y;dragCenter+=amount.y}
+                            })
                             IconButton(enabled=index>0,onClick={if(controller.currentTimeline===expectedTimeline) moveQueueEntry(controller,entry.index,-1)}) {Icon(Icons.Rounded.ArrowUpward,"Subir canción ${index+1}")}
                             IconButton(enabled=index<entries.lastIndex,onClick={if(controller.currentTimeline===expectedTimeline) moveQueueEntry(controller,entry.index,1)}) {Icon(Icons.Rounded.ArrowDownward,"Bajar canción ${index+1}")}
                             IconButton(onClick={if(controller.currentTimeline===expectedTimeline && entry.index<controller.mediaItemCount) controller.removeMediaItem(entry.index)}) {Icon(Icons.Rounded.RemoveCircleOutline,"Quitar canción ${index+1} de la cola")}
