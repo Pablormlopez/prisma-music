@@ -79,6 +79,10 @@ class PrismaSmokeTest {
             compose.waitUntil(5000) {compose.onAllNodesWithText("Reproduciendo").fetchSemanticsNodes().isNotEmpty()}
             compose.onNodeWithContentDescription("Abrir reproductor").assertDoesNotExist()
             compose.onAllNodesWithContentDescription("Pausar").assertCountEquals(1)
+            compose.onNodeWithContentDescription("Pausar").performClick()
+            compose.waitUntil(5000) {compose.onAllNodesWithContentDescription("Reproducir").fetchSemanticsNodes().isNotEmpty()}
+            compose.onNodeWithContentDescription("Reproducir").performClick()
+            compose.waitUntil(5000) {compose.onAllNodesWithContentDescription("Pausar").fetchSemanticsNodes().isNotEmpty()}
             compose.onNodeWithContentDescription("Línea de tiempo Chromatic Flow").assertExists()
             compose.onNodeWithContentDescription("Ocultar metadatos").performClick()
             compose.onNodeWithContentDescription("Información técnica de la canción").assertDoesNotExist()
@@ -95,11 +99,11 @@ class PrismaSmokeTest {
             compose.onNodeWithText("Carátula",substring=false).performClick()
             compose.onNodeWithContentDescription("Diseño Chromatic Flow").performTouchInput {swipeRight()}
             compose.waitUntil(10000) {compose.onAllNodesWithText("Prisma prueba").fetchSemanticsNodes().isNotEmpty()}
-            // The short FLAC fixture can finish while lyrics/screenshots are checked.
-            // Both playing and naturally ended playback are valid here.
-            if (compose.onAllNodesWithContentDescription("Pausar").fetchSemanticsNodes().isNotEmpty()) {
-                compose.onNodeWithContentDescription("Pausar").performClick()
-            }
+            var connection:com.google.common.util.concurrent.ListenableFuture<MediaController>?=null
+            compose.runOnIdle {connection=MediaController.Builder(context,SessionToken(context,ComponentName(context,PlaybackService::class.java))).buildAsync()}
+            val observer=connection!!.get(10,TimeUnit.SECONDS)
+            // Pause explicitly: the short fixture can end between a rendered icon and a tap.
+            compose.runOnIdle {observer.pause()}
             compose.waitUntil(5000) { compose.onAllNodesWithContentDescription("Reproducir").fetchSemanticsNodes().isNotEmpty() }
             compose.onNodeWithContentDescription("Reproducir").assertExists()
             compose.onNodeWithContentDescription("Volver a la biblioteca").performClick()
@@ -111,9 +115,6 @@ class PrismaSmokeTest {
             compose.onNodeWithText("Eliminar del teléfono").performScrollTo().performClick()
             compose.onNodeWithText("¿Eliminar del teléfono?").assertExists()
             compose.onNodeWithText("Cancelar",substring=false).performClick()
-            var connection:com.google.common.util.concurrent.ListenableFuture<MediaController>?=null
-            compose.runOnIdle {connection=MediaController.Builder(context,SessionToken(context,ComponentName(context,PlaybackService::class.java))).buildAsync()}
-            val observer=connection!!.get(10,TimeUnit.SECONDS)
             val previousCount=compose.runOnIdle {observer.mediaItemCount}
             val previousId=compose.runOnIdle {observer.currentMediaItem?.mediaId}
             compose.onNodeWithText("Reproducir a continuación").performClick()
