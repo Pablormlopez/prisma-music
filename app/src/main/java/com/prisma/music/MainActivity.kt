@@ -178,7 +178,7 @@ fun PrismaApp() {
                         if(page=="Biblioteca" || page=="Inicio") IconButton(onClick={libraryVersion++}) { Icon(Icons.Rounded.Refresh,"Actualizar biblioteca") }
                     }
                     error?.let { message -> Surface(color=colors.errorContainer,shape=RoundedCornerShape(16.dp),modifier=Modifier.padding(horizontal=16.dp)) { Row(Modifier.padding(12.dp),verticalAlignment=Alignment.CenterVertically) { Text(message,Modifier.weight(1f),color=colors.onErrorContainer,style=MaterialTheme.typography.bodySmall); IconButton(onClick={error=null}) { Icon(Icons.Rounded.Close,"Cerrar mensaje") } } } }
-                    AnimatedContent(targetState=page,transitionSpec={contentMotion(personal.motion,personal.motionDuration)},label="page",modifier=Modifier.weight(1f)) { route -> when(route) {
+                    AnimatedContent(targetState=page,transitionSpec={contentMotion(personal.motion,personal.motionDuration).using(null)},label="page",modifier=Modifier.weight(1f)) { route -> when(route) {
                         "Inicio"->if(!granted) PermissionCard {requestPermission.launch(permission)} else HomeScreen(visible,busy,current,recentIds,onPlay={queue,song->play(queue,song);openPlayer()},onLibrary={page="Biblioteca"},onOptions={actionSong=it})
                         "Personalización"->PersonalizationScreen(personal,{personal=it;prefs.personalization=it},{page="Temas"})
                         "Temas"->ThemesScreen(theme,mode,{theme=it;prefs.theme=it},{mode=it;prefs.mode=it})

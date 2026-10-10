@@ -256,13 +256,13 @@ import kotlinx.coroutines.withContext
                 }
                 lyricError?.let {Text(it,color=MaterialTheme.colorScheme.error,modifier=Modifier.align(Alignment.BottomCenter))}
             } else {
-                AnimatedContent(targetState=Pair(song,theme),contentKey={it.first.id to it.second},transitionSpec={contentMotion(motion.motion,motion.motionDuration,swipeDirection)},modifier=Modifier.graphicsLayer {translationX=artworkOffset},label="themedCover") { target ->
+                AnimatedContent(targetState=Pair(song,theme),contentKey={it.first.id to it.second},transitionSpec={contentMotion(motion.motion,motion.motionDuration,swipeDirection).using(null)},modifier=Modifier.graphicsLayer {translationX=artworkOffset},label="themedCover") { target ->
                     ThemeArtwork(target.first,if(target.first.id==song.id) details else null,target.second)
                 }
 
             }
         }
-        AnimatedContent(targetState=song,contentKey={it.id},transitionSpec={contentMotion(motion.motion,motion.motionDuration,swipeDirection)},label="songCaption") {caption->
+        AnimatedContent(targetState=song,contentKey={it.id},transitionSpec={contentMotion(motion.motion,motion.motionDuration,swipeDirection).using(null)},label="songCaption") {caption->
             Column {
                 Text(caption.title,fontSize=if(theme==VisualTheme.MINIMAL) 30.sp else 27.sp,fontWeight=FontWeight.Bold,maxLines=2,overflow=TextOverflow.Ellipsis,modifier=Modifier.padding(top=16.dp))
                 Text(caption.artist,color=MaterialTheme.colorScheme.onSurfaceVariant,maxLines=1,overflow=TextOverflow.Ellipsis)

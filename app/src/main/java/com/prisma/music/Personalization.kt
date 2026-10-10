@@ -71,7 +71,7 @@ fun accentColor(hex:String):Color? = hex.takeIf {it.matches(Regex("#[0-9a-fA-F]{
             Slider(value.motionDuration.toFloat(),{onChange(value.copy(motionDuration=(it/50).toInt()*50))},valueRange=250f..900f,steps=12)
         }
         OutlinedButton(onClick={preview=!preview},modifier=Modifier.fillMaxWidth()) {Text("Probar animación")}
-        androidx.compose.animation.AnimatedContent(targetState=preview,transitionSpec={contentMotion(value.motion,value.motionDuration)},label="motionPreview") {alternate->
+        androidx.compose.animation.AnimatedContent(targetState=preview,transitionSpec={contentMotion(value.motion,value.motionDuration).using(null)},label="motionPreview") {alternate->
             Surface(color=if(alternate) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer,shape=RoundedCornerShape(24.dp),modifier=Modifier.fillMaxWidth()) {
                 Text(if(alternate) "Tu próxima canción" else "Tu música, a tu ritmo",modifier=Modifier.padding(24.dp))
             }
