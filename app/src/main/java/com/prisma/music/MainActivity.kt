@@ -23,6 +23,10 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
@@ -94,6 +98,8 @@ fun PrismaApp() {
     var playing by remember { mutableStateOf(false) }
     var shuffled by remember { mutableStateOf(false) }
     var repeat by remember { mutableIntStateOf(Player.REPEAT_MODE_OFF) }
+    val pageStates=rememberSaveableStateHolder()
+    val swipeThreshold=with(LocalDensity.current) {72.dp.toPx()}
     var page by rememberSaveable { mutableStateOf("Inicio") }
     var details by remember { mutableStateOf<Library.Details?>(null) }
     var lists by remember { mutableStateOf(prefs.playlists()) }
@@ -183,7 +189,14 @@ fun PrismaApp() {
                         if(page=="Biblioteca" || page=="Inicio") IconButton(onClick={libraryVersion++}) { Icon(Icons.Rounded.Refresh,"Actualizar biblioteca") }
                     }
                     error?.let { message -> Surface(color=colors.errorContainer,shape=RoundedCornerShape(16.dp),modifier=Modifier.padding(horizontal=16.dp)) { Row(Modifier.padding(12.dp),verticalAlignment=Alignment.CenterVertically) { Text(message,Modifier.weight(1f),color=colors.onErrorContainer,style=MaterialTheme.typography.bodySmall); IconButton(onClick={error=null}) { Icon(Icons.Rounded.Close,"Cerrar mensaje") } } } }
-                    AnimatedContent(targetState=page,transitionSpec={contentMotion(personal.motion,personal.motionDuration).using(null)},label="page",modifier=Modifier.weight(1f)) { route -> when(route) {
+                    AnimatedContent(targetState=page,transitionSpec={contentMotion(personal.motion,personal.motionDuration).using(null)},label="page",modifier=Modifier.weight(1f).semantics {contentDescription="Contenido de $page"}.pointerInput(page,swipeThreshold) {
+                        if(page in mainPages) {
+                            var distance=0f
+                            detectHorizontalDragGestures(onDragStart={distance=0f},onDragCancel={distance=0f},onDragEnd={
+                                adjacentPage(page,distance,swipeThreshold)?.let {page=it}
+                            }) {change,amount->change.consume();distance+=amount}
+                        }
+                    }) { route -> pageStates.SaveableStateProvider(route) {when(route) {
                         "Inicio"->if(!granted) PermissionCard {requestPermission.launch(permission)} else HomeScreen(visible,busy,current,recentIds,onPlay={queue,song->play(queue,song);openPlayer()},onLibrary={libraryCategory="Canciones";page="Biblioteca"},onRecent={libraryCategory="Recién añadidas";page="Biblioteca"},onOptions={actionSong=it})
                         "Personalización"->PersonalizationScreen(personal,mode,{mode=it;prefs.mode=it},{personal=it;prefs.personalization=it},{page="Temas"})
                         "Temas"->ThemesScreen(theme,mode,{theme=it;prefs.theme=it},{mode=it;prefs.mode=it})
@@ -193,7 +206,7 @@ fun PrismaApp() {
                         "Sonido"->EqScreen(prefs) { config->prefs.eq=config; controller?.sendCustomCommand(SessionCommand("prisma.eq",Bundle.EMPTY),Bundle.EMPTY) }
                         "Ajustes"->SettingsScreen(prefs,songs,{libraryVersion++}, { controller?.sendCustomCommand(SessionCommand("prisma.settings",Bundle.EMPTY),Bundle.EMPTY) },onThemes={page="Personalización"})
                         "Reproduciendo"->if(current!=null) PlayerScreen(current,details,theme,prefs,position,duration,playing,shuffled,repeat,controller,onDismiss={page=playerReturn},onArtist={openArtist(it)},onAlbum={openArtist(it,true)}) else EmptyCard("Selecciona una canción","Tu música local aparecerá aquí.",Icons.Rounded.MusicNote)
-                    } }
+                    } } }
                 }
             }
         }
@@ -236,6 +249,11 @@ fun PrismaApp() {
 @Composable fun LibraryScreen(songs:List<Song>,busy:Boolean,currentId:String,onPlay:(List<Song>,Song)->Unit,onAdd:(List<Song>)->Unit,onOptions:(Song)->Unit,initialCategory:String="Canciones") {
     val visualTheme=LocalVisualTheme.current
     val personal=LocalPersonalization.current
+    val context=LocalContext.current
+    val sortPrefs=remember(context) {Preferences(context)}
+    var sort by remember {mutableStateOf(sortPrefs.librarySort)}
+    var sortMenu by remember {mutableStateOf(false)}
+    var recentSort by rememberSaveable {mutableStateOf(SongSort.NEWEST)}
     var choosing by rememberSaveable {mutableStateOf(false)}
     var chosen by remember {mutableStateOf(setOf<String>())}
     var search by rememberSaveable {mutableStateOf("")}
@@ -244,7 +262,8 @@ fun PrismaApp() {
     val filtered=remember(songs,search) {songs.filter {search.isBlank() || "${it.title} ${it.artist} ${it.album} ${it.genre}".contains(search,true)}}
     fun key(s:Song)=when(category) {"Artistas"->s.artist; "Álbumes"->"${s.album} · ${s.artist}"; "Géneros"->s.genre; else->s.folder.ifBlank {"Sin carpeta"}}
     val songCategory=category=="Canciones" || category=="Recién añadidas"
-    val queue=if(category=="Recién añadidas") recentlyAdded(filtered) else if(songCategory || selected==null) filtered else filtered.filter {key(it)==selected}
+    val activeSort=if(category=="Recién añadidas") recentSort else sort
+    val queue=remember(filtered,category,selected,activeSort) {sortSongs(if(songCategory || selected==null) filtered else filtered.filter {key(it)==selected},activeSort)}
     val selection=songs.filter {it.id in chosen}
     fun toggle(group:List<Song>) {val ids=group.map {it.id}.toSet();chosen=if(chosen.containsAll(ids)) chosen-ids else chosen+ids}
     androidx.activity.compose.BackHandler(choosing) {choosing=false;chosen=emptySet()}
@@ -262,7 +281,16 @@ fun PrismaApp() {
                 } else {Spacer(Modifier.weight(1f)); Text("${queue.size} canciones",style=MaterialTheme.typography.labelMedium,modifier=Modifier.padding(end=12.dp))}
             }
         }
-        if(category=="Recién añadidas") Text("Últimas incorporadas al teléfono, primero las más nuevas",style=MaterialTheme.typography.bodySmall,modifier=Modifier.padding(vertical=8.dp))
+        if(songCategory || selected!=null) Box {
+            TextButton(onClick={sortMenu=true},modifier=Modifier.semantics {contentDescription="Ordenar canciones"}) {Icon(Icons.Rounded.Sort,null);Text("Orden: ${activeSort.title}",Modifier.padding(start=8.dp))}
+            DropdownMenu(expanded=sortMenu,onDismissRequest={sortMenu=false}) {
+                val options=if(category=="Recién añadidas") listOf(SongSort.NEWEST,SongSort.OLDEST) else SongSort.entries
+                options.forEach {option->DropdownMenuItem(text={Text(option.title)},leadingIcon={if(activeSort==option) Icon(Icons.Rounded.Check,null)},onClick={
+                    if(category=="Recién añadidas") recentSort=option else {sort=option;sortPrefs.librarySort=option}
+                    sortMenu=false
+                })}
+            }
+        }
         if(busy) LinearProgressIndicator(Modifier.fillMaxWidth())
         if(selected!=null) Row(verticalAlignment=Alignment.CenterVertically) {TextButton(onClick={selected=null},modifier=Modifier.weight(1f)) {Icon(Icons.Rounded.ArrowBack,null);Text(selected!!,maxLines=1,overflow=TextOverflow.Ellipsis)};IconButton(onClick={onAdd(queue)}) {Icon(Icons.Rounded.PlaylistAdd,"Añadir todas las canciones de este grupo a una playlist")}}
         val grid=!choosing && (personal.layout==LibraryLayout.GRID || (personal.layout==LibraryLayout.THEME && (visualTheme==VisualTheme.CHROMATIC || visualTheme==VisualTheme.GLASS)))

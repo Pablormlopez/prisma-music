@@ -16,6 +16,9 @@ class Preferences(context: Context) {
     var personalization: Personalization
         get() = runCatching { val j=JSONObject(prefs.getString("personalization","{}")!!); Personalization(j.optString("accent"),LibraryLayout.valueOf(j.optString("layout","THEME")),SongInfoStyle.valueOf(j.optString("info","ARTIST")),runCatching {MotionStyle.valueOf(j.optString("motion","SOFT"))}.getOrDefault(MotionStyle.SOFT),j.optInt("motionDuration",550).coerceIn(250,900)) }.getOrDefault(Personalization())
         set(v) { prefs.edit().putString("personalization",JSONObject().put("accent",v.accent).put("layout",v.layout.name).put("info",v.info.name).put("motion",v.motion.name).put("motionDuration",v.motionDuration.coerceIn(250,900)).toString()).apply() }
+    var librarySort: SongSort
+        get() = runCatching { SongSort.valueOf(prefs.getString("librarySort", "TITLE_ASC")!!) }.getOrDefault(SongSort.TITLE_ASC)
+        set(v) { prefs.edit().putString("librarySort", v.name).apply() }
     var theme: VisualTheme
         get() = runCatching { VisualTheme.valueOf(prefs.getString("theme", "CHROMATIC")!!) }.getOrDefault(VisualTheme.CHROMATIC)
         set(v) { prefs.edit().putString("theme", v.name).apply() }

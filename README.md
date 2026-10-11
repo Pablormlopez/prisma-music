@@ -1,3 +1,10 @@
+## Beta 2.1.2 · Orden y navegación
+
+- Biblioteca → **Ordenar canciones**: A a Z, Z a A, más nuevas primero y más antiguas primero. El orden se guarda y se aplica a búsquedas, grupos y reproducción desde la biblioteca.
+- **Recién añadidas** permite alternar entre nuevas y antiguas; por defecto muestra las nuevas. Usa la fecha de incorporación al teléfono.
+- Desliza horizontalmente el contenido para pasar entre Inicio, Biblioteca, Listas, Sonido y Ajustes. Los iconos siguen disponibles. Los gestos cortos y verticales no cambian de menú; los controles horizontales conservan sus gestos.
+- Cola simplificada: solo el tirador ≡ para mantener pulsado y arrastrar canciones. Se retiran los botones de subir, bajar y quitar de la cola.
+
 ## Beta 2.1.1 · Tu colección, conectada
 
 - Toca el artista del reproductor para ver sus canciones y álbumes locales sin cambiar la reproducción. Los álbumes abren su lista de canciones, con reproducción y añadir a playlist.

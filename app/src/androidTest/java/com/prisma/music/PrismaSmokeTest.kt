@@ -55,6 +55,44 @@ class PrismaSmokeTest {
         eq.queueInput(androidx.media3.common.audio.AudioProcessor.EMPTY_BUFFER)
         eq.queueEndOfStream();assertTrue(eq.isEnded);eq.reset()
     }
+    @Test fun libraryOrderUsesDatesAndLocaleTitles() {
+        fun song(id:String,title:String,date:Long)=Song(id,android.net.Uri.EMPTY,title,"","","","","",0,0,"",android.net.Uri.EMPTY,date)
+        val songs=listOf(song("3","Zulu",20),song("1","ábaco",10),song("2","Beta",20))
+        assertEquals(listOf("1","2","3"),sortSongs(songs,SongSort.TITLE_ASC).map {it.id})
+        assertEquals(listOf("3","2","1"),sortSongs(songs,SongSort.TITLE_DESC).map {it.id})
+        assertEquals(listOf("3","2","1"),sortSongs(songs,SongSort.NEWEST).map {it.id})
+        assertEquals(listOf("1","2","3"),sortSongs(songs,SongSort.OLDEST).map {it.id})
+        assertTrue(sortSongs(emptyList(),SongSort.NEWEST).isEmpty())
+        val prefs=Preferences(compose.activity)
+        val previous=prefs.librarySort
+        try {prefs.librarySort=SongSort.OLDEST;assertEquals(SongSort.OLDEST,Preferences(compose.activity).librarySort)}
+        finally {prefs.librarySort=previous}
+    }
+    @Test fun mainMenusSupportSwipes() {
+        compose.onNodeWithContentDescription("Contenido de Inicio").performTouchInput {swipeLeft()}
+        compose.onNodeWithContentDescription("Contenido de Biblioteca").assertExists()
+        compose.onNodeWithContentDescription("Contenido de Biblioteca").performTouchInput {swipeLeft()}
+        compose.onNodeWithContentDescription("Contenido de Listas").assertExists()
+        compose.onNodeWithContentDescription("Contenido de Listas").performTouchInput {swipeRight()}
+        compose.onNodeWithContentDescription("Contenido de Biblioteca").assertExists()
+        compose.onNodeWithContentDescription("Ordenar canciones").performClick()
+        compose.onNodeWithText("Z a A",substring=false).performClick()
+        compose.onNodeWithText("Orden: Z a A").assertExists()
+        compose.onNodeWithContentDescription("Ordenar canciones").performClick()
+        compose.onNodeWithText("A a Z",substring=false).performClick()
+    }
+    private fun dragQueue(from:Int,to:Int) {
+        val handles=compose.onAllNodes(hasContentDescription("Mantén pulsado para arrastrar",substring=true))
+        val source=handles[from].fetchSemanticsNode().boundsInRoot
+        val destination=handles[to].fetchSemanticsNode().boundsInRoot
+        handles[from].performTouchInput {
+            down(center)
+            advanceEventTime(700)
+            moveTo(center + androidx.compose.ui.geometry.Offset(0f,destination.center.y-source.center.y),300)
+            up()
+        }
+        compose.waitForIdle()
+    }
     @Test fun libraryPlaybackThemesAndDspControls() {
         val context=compose.activity
         val resolver=context.contentResolver
@@ -160,12 +198,14 @@ class PrismaSmokeTest {
             compose.onNodeWithText("Cola de reproducción",substring=false).assertExists()
             compose.onNodeWithText("Sonando ahora",substring=false).assertExists()
             compose.onNodeWithText("A continuación",substring=false).assertExists()
-            compose.onNodeWithContentDescription("Subir canción 3").performScrollTo().performClick()
+            compose.onNodeWithContentDescription("Subir canción 3").assertDoesNotExist()
+            compose.onNodeWithContentDescription("Quitar canción 3 de la cola").assertDoesNotExist()
+            dragQueue(2,1)
             compose.waitUntil(5000) {compose.runOnIdle {observer.getMediaItemAt(1).mediaId==previousId}}
             compose.runOnIdle {assertEquals(previousId,observer.currentMediaItem?.mediaId);assertEquals(2000L,observer.currentPosition);assertFalse(observer.playWhenReady)}
-            compose.onNodeWithContentDescription("Bajar canción 2").performScrollTo().performClick()
+            dragQueue(1,2)
             compose.waitUntil(5000) {compose.runOnIdle {observer.getMediaItemAt(2).mediaId==previousId}}
-            compose.onNodeWithContentDescription("Quitar canción 3 de la cola").performScrollTo().performClick()
+            compose.runOnIdle {observer.removeMediaItem(2)}
             compose.waitUntil(5000) {compose.runOnIdle {observer.mediaItemCount==2}}
             compose.runOnIdle {assertEquals(previousId,observer.currentMediaItem?.mediaId);assertEquals(2000L,observer.currentPosition)}
             // Shuffle order is read from the timeline; a manual move materializes that order.
@@ -173,7 +213,7 @@ class PrismaSmokeTest {
             compose.runOnIdle {observer.shuffleModeEnabled=true}
             compose.waitUntil(5000) {compose.runOnIdle {observer.shuffleModeEnabled}}
             compose.runOnIdle {shuffledOrder=queueEntries(observer).map {it.mediaId}}
-            compose.onNodeWithContentDescription("Subir canción 2").performScrollTo().performClick()
+            dragQueue(1,0)
             compose.waitUntil(5000) {compose.runOnIdle {!observer.shuffleModeEnabled}}
             compose.runOnIdle {assertEquals(shuffledOrder.reversed(),queueEntries(observer).map {it.mediaId});assertEquals(previousId,observer.currentMediaItem?.mediaId);assertEquals(2000L,observer.currentPosition)}
             val screenshot=File(context.cacheDir,"queue.png")
