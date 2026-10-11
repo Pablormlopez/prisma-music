@@ -146,3 +146,34 @@ internal fun glassDragIndex(position:Float) = position.roundToInt().coerceIn(0,m
         }
     }
 }
+
+@Composable fun PrismaButton(onClick:()->Unit,modifier:Modifier=Modifier,enabled:Boolean=true,shape:Shape=ButtonDefaults.shape,content:@Composable RowScope.()->Unit) {
+    if(LocalVisualTheme.current!=VisualTheme.GLASS) {Button(onClick,modifier,enabled,shape=shape,content=content);return}
+    GlassAction(onClick,modifier,enabled,shape,true,content)
+}
+@Composable fun PrismaOutlinedButton(onClick:()->Unit,modifier:Modifier=Modifier,enabled:Boolean=true,shape:Shape=ButtonDefaults.outlinedShape,content:@Composable RowScope.()->Unit) {
+    if(LocalVisualTheme.current!=VisualTheme.GLASS) {OutlinedButton(onClick,modifier,enabled,shape=shape,content=content);return}
+    GlassAction(onClick,modifier,enabled,shape,false,content)
+}
+@Composable fun PrismaTextButton(onClick:()->Unit,modifier:Modifier=Modifier,enabled:Boolean=true,content:@Composable RowScope.()->Unit) {
+    if(LocalVisualTheme.current!=VisualTheme.GLASS) {TextButton(onClick,modifier,enabled,content=content);return}
+    GlassAction(onClick,modifier,enabled,ButtonDefaults.textShape,false,content)
+}
+@Composable private fun GlassAction(onClick:()->Unit,modifier:Modifier,enabled:Boolean,shape:Shape,emphasized:Boolean,content:@Composable RowScope.()->Unit) {
+    val interactions=remember {MutableInteractionSource()}
+    val pressed by interactions.collectIsPressedAsState()
+    val pressure by liquidResponse(pressed && enabled)
+    val colors=MaterialTheme.colorScheme
+    TextButton(onClick=onClick,enabled=enabled,shape=shape,interactionSource=interactions,
+        modifier=modifier.graphicsLayer {scaleX=1f+pressure*.035f;scaleY=1f-pressure*.05f}.liquidSurface(28f,(if(emphasized) colors.primary else colors.surface).copy(alpha=if(emphasized) .18f else .10f),pressure),content=content)
+}
+@Composable fun PrismaFilterChip(selected:Boolean,onClick:()->Unit,label:@Composable ()->Unit,modifier:Modifier=Modifier,leadingIcon:(@Composable ()->Unit)?=null) {
+    if(LocalVisualTheme.current!=VisualTheme.GLASS) {FilterChip(selected,onClick,label,modifier=modifier,leadingIcon=leadingIcon);return}
+    val interactions=remember {MutableInteractionSource()}
+    val pressed by interactions.collectIsPressedAsState()
+    val pressure by liquidResponse(pressed)
+    val colors=MaterialTheme.colorScheme
+    FilterChip(selected,onClick,label,leadingIcon=leadingIcon,interactionSource=interactions,shape=RoundedCornerShape(20.dp),border=null,
+        colors=FilterChipDefaults.filterChipColors(containerColor=Color.Transparent,selectedContainerColor=Color.Transparent),
+        modifier=modifier.graphicsLayer {scaleX=1f+pressure*.05f;scaleY=1f-pressure*.04f}.liquidSurface(20f,(if(selected) colors.primary else colors.surface).copy(alpha=if(selected) .18f else .08f),pressure))
+}
