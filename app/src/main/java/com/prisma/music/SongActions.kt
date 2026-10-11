@@ -24,7 +24,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-@Composable fun SongActions(song:Song,onDismiss:()->Unit,onPlay:()->Unit,onNext:()->Unit,onQueue:()->Unit,onList:()->Unit,onDeleted:(Song)->Unit,onError:(String)->Unit) {
+@Composable fun SongActions(song:Song,onDismiss:()->Unit,onPlay:()->Unit,onNext:()->Unit,onQueue:()->Unit,onList:()->Unit,onDeleted:(Song)->Unit,onError:(String)->Unit,onSelectSong:(Song)->Unit={},onSelectMultiple:(Song)->Unit={}) {
     val context=LocalContext.current; val scope=rememberCoroutineScope()
     var confirmDelete by remember {mutableStateOf(false)}
     var info by remember {mutableStateOf(false)}
@@ -69,6 +69,8 @@ import kotlinx.coroutines.withContext
             Text(song.title,style=MaterialTheme.typography.titleLarge)
             Text(song.artist,style=MaterialTheme.typography.bodySmall)
             listOf("Reproducir ahora" to onPlay,"Reproducir a continuación" to onNext,"Añadir al final de la cola" to onQueue,"Añadir a una lista" to onList).forEach {(title,action)->PrismaTextButton(onClick={onDismiss();action()},modifier=Modifier.fillMaxWidth()){Text(title)}}
+            PrismaTextButton(onClick={onDismiss();onSelectSong(song)},modifier=Modifier.fillMaxWidth()){Text("Seleccionar canción")}
+            PrismaTextButton(onClick={onDismiss();onSelectMultiple(song)},modifier=Modifier.fillMaxWidth()){Text("Seleccionar varias")}
             PrismaTextButton(onClick={runCatching {context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {type=song.mime.ifBlank {"audio/*"};putExtra(Intent.EXTRA_STREAM,song.uri);addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)},"Compartir canción"))}.onFailure {onError("No se pudo compartir este archivo.")};onDismiss()},modifier=Modifier.fillMaxWidth()){Text("Compartir archivo")}
             PrismaTextButton(onClick={info=true},modifier=Modifier.fillMaxWidth()){Text("Información de la canción")}
             PrismaTextButton(onClick={confirmDelete=true},modifier=Modifier.fillMaxWidth()){Text("Eliminar del teléfono",color=MaterialTheme.colorScheme.error)}
