@@ -55,6 +55,25 @@ class PrismaSmokeTest {
         eq.queueInput(androidx.media3.common.audio.AudioProcessor.EMPTY_BUFFER)
         eq.queueEndOfStream();assertTrue(eq.isEnded);eq.reset()
     }
+    @Test fun liquidGlassNavigationSupportsTapDragAndCancel() {
+        nav("Inicio")
+        compose.onNodeWithContentDescription("Abrir temas").performClick()
+        compose.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Liquid Glass"))
+        compose.onNodeWithText("Liquid Glass").performClick()
+        nav("Inicio")
+        compose.onNode(hasText("Inicio") and hasClickAction()).assertIsSelected()
+        val bar=compose.onNodeWithContentDescription("Navegación Liquid Glass")
+        bar.performTouchInput {swipe(androidx.compose.ui.geometry.Offset(width*.1f,centerY),androidx.compose.ui.geometry.Offset(width*.3f,centerY),500)}
+        compose.onNode(hasText("Biblioteca") and hasClickAction()).assertIsSelected()
+        shot("30-glass-library")
+        bar.performTouchInput {down(androidx.compose.ui.geometry.Offset(width*.3f,centerY));moveTo(androidx.compose.ui.geometry.Offset(width*.7f,centerY),300);cancel()}
+        compose.onNode(hasText("Biblioteca") and hasClickAction()).assertIsSelected()
+        bar.performTouchInput {swipe(androidx.compose.ui.geometry.Offset(width*.3f,centerY),androidx.compose.ui.geometry.Offset(width*.9f,centerY),700)}
+        compose.onNode(hasText("Ajustes") and hasClickAction()).assertIsSelected()
+        nav("Listas")
+        compose.onNode(hasText("Listas") and hasClickAction()).assertIsSelected()
+        nav("Inicio")
+    }
     @Test fun libraryOrderUsesDatesAndLocaleTitles() {
         fun song(id:String,title:String,date:Long)=Song(id,android.net.Uri.EMPTY,title,"","","","","",0,0,"",android.net.Uri.EMPTY,date)
         val songs=listOf(song("3","Zulu",20),song("1","ábaco",10),song("2","Beta",20))

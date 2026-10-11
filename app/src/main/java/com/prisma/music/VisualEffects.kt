@@ -2,6 +2,9 @@
 package com.prisma.music
 
 import android.graphics.Bitmap
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsDraggedAsState
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -50,33 +53,34 @@ object FrostedArtwork {
 
 @Composable fun GlassBackdrop(bitmap:Bitmap?,background:Color) {
     Box(Modifier.fillMaxSize()) {
+        Canvas(Modifier.fillMaxSize()) {
+            drawRect(background)
+            drawRect(Brush.radialGradient(listOf(Color(0xff569cd9).copy(alpha=.30f),Color.Transparent),center=Offset(size.width*.12f,size.height*.22f),radius=size.width*1.15f))
+            drawRect(Brush.radialGradient(listOf(Color(0xffbd8ddb).copy(alpha=.24f),Color.Transparent),center=Offset(size.width*.95f,size.height*.78f),radius=size.width*1.05f))
+        }
         if(bitmap!=null) Image(bitmap.asImageBitmap(),null,Modifier.fillMaxSize(),contentScale=ContentScale.Crop)
-        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(background.copy(alpha=.93f),background.copy(alpha=.87f),background.copy(alpha=.96f)))))
+        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(background.copy(alpha=.62f),background.copy(alpha=.72f),background.copy(alpha=.60f)))))
     }
 }
 
 /** Highlights follow the shape, leaving foreground controls readable. */
-fun Modifier.crystal() = clip(RoundedCornerShape(28.dp)).drawWithCache {
-    val radius=CornerRadius(28.dp.toPx())
-    val sheen=Brush.linearGradient(listOf(Color.White.copy(alpha=.18f),Color.White.copy(alpha=.035f),Color.White.copy(alpha=.09f)),Offset.Zero,Offset(size.width,size.height))
-    val rim=Brush.linearGradient(listOf(Color.White.copy(alpha=.7f),Color.White.copy(alpha=.08f),Color.White.copy(alpha=.35f)),Offset.Zero,Offset(size.width,size.height))
-    onDrawWithContent {
-        drawRoundRect(sheen,cornerRadius=radius)
-        drawContent()
-        drawRoundRect(rim,topLeft=Offset(.5.dp.toPx(),.5.dp.toPx()),size=Size((size.width-1.dp.toPx()).coerceAtLeast(0f),(size.height-1.dp.toPx()).coerceAtLeast(0f)),cornerRadius=radius,style=Stroke(1.dp.toPx()))
-    }
-}
+fun Modifier.crystal() = liquidSurface()
 
 @Composable fun ThemeTimeline(theme:VisualTheme,value:Float,end:Float,enabled:Boolean,onChange:(Float)->Unit,onFinished:()->Unit) {
     val colors=MaterialTheme.colorScheme
     val primary=colors.primary
     val inactive=colors.onSurface.copy(alpha=.22f)
-    Slider(value=value.coerceIn(0f,end),onValueChange=onChange,onValueChangeFinished=onFinished,valueRange=0f..end,enabled=enabled,
+    val interactions=remember {MutableInteractionSource()}
+    val dragged by interactions.collectIsDraggedAsState()
+    val pressed by interactions.collectIsPressedAsState()
+    val pressure by liquidResponse(enabled && (dragged || pressed))
+    Slider(interactionSource=interactions,value=value.coerceIn(0f,end),onValueChange=onChange,onValueChangeFinished=onFinished,valueRange=0f..end,enabled=enabled,
         modifier=Modifier.fillMaxWidth().heightIn(min=48.dp).semantics {contentDescription="Línea de tiempo ${theme.title}"},
         thumb={
             val shape=if(theme==VisualTheme.NIGHT) RoundedCornerShape(3.dp) else CircleShape
             val width=if(theme==VisualTheme.MINIMAL) 6.dp else if(theme==VisualTheme.GLASS) 24.dp else 16.dp
-            Box(Modifier.size(width,if(theme==VisualTheme.MINIMAL) 18.dp else 24.dp).clip(shape).background(if(theme==VisualTheme.GLASS) colors.surface.copy(alpha=.9f) else primary).border(1.dp,if(theme==VisualTheme.GLASS) primary.copy(alpha=.65f) else primary,shape))
+            if(theme==VisualTheme.GLASS) Box(Modifier.size(32.dp,24.dp).graphicsLayer {scaleX=1f+pressure*.22f;scaleY=1f+pressure*.12f}.liquidSurface(16f,colors.surface.copy(alpha=.35f),pressure))
+            else Box(Modifier.size(width,if(theme==VisualTheme.MINIMAL) 18.dp else 24.dp).clip(shape).background(if(theme==VisualTheme.GLASS) colors.surface.copy(alpha=.9f) else primary).border(1.dp,if(theme==VisualTheme.GLASS) primary.copy(alpha=.65f) else primary,shape))
         },
         track={state->Canvas(Modifier.fillMaxWidth().height(28.dp)) {
             val progress=((state.value-state.valueRange.start)/(state.valueRange.endInclusive-state.valueRange.start)).coerceIn(0f,1f)

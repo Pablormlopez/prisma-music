@@ -1,3 +1,10 @@
+## Beta 3.0.1 · Liquid Glass
+
+- Liquid Glass renovado: superficies translúcidas, reflejos finos y fondo visible a través de la navegación y el minirreproductor. Android 12 o posterior añade desenfoque del contenido; Android 8–11 conserva cristal translúcido y fondo de carátula difuminado.
+- La cápsula de navegación sigue el dedo y se estira al cambiar de sección; también responde al tocar los iconos. Los botones y el control de posición reaccionan suavemente a la pulsación y al arrastre.
+- Se respeta la opción **Sin animaciones**. La organización, las categorías y las vistas de la biblioteca se mantienen, igual que el orden de canciones y los gestos de la beta anterior.
+- Actívalo en Ajustes → Personalización → Temas → **Liquid Glass**.
+
 ## Beta 2.1.2 · Orden y navegación
 
 - Biblioteca → **Ordenar canciones**: A a Z, Z a A, más nuevas primero y más antiguas primero. El orden se guarda y se aplica a búsquedas, grupos y reproducción desde la biblioteca.

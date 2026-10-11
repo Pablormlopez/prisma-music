@@ -29,8 +29,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable fun FloatingNavigation(page:String,onPage:(String)->Unit) {
+    if(LocalVisualTheme.current==VisualTheme.GLASS) {LiquidNavigation(page,onPage);return}
     val c=MaterialTheme.colorScheme
-    val glass=LocalVisualTheme.current==VisualTheme.GLASS
+    val glass=false
     Surface(shape=RoundedCornerShape(38.dp),color=c.surface.copy(alpha=if(glass) .78f else .97f),border=BorderStroke(1.dp,c.outlineVariant.copy(alpha=.4f)),shadowElevation=if(glass) 12.dp else 5.dp,modifier=Modifier.navigationBarsPadding().padding(horizontal=14.dp,vertical=8.dp).fillMaxWidth().then(if(glass) Modifier.crystal() else Modifier)) {
         Row(Modifier.padding(6.dp),verticalAlignment=Alignment.CenterVertically) {
             listOf("Inicio" to Icons.Rounded.Home,"Biblioteca" to Icons.Rounded.LibraryMusic,"Listas" to Icons.Rounded.QueueMusic,"Sonido" to Icons.Rounded.Equalizer,"Ajustes" to Icons.Rounded.Tune).forEach { (route,icon)->
@@ -52,11 +53,11 @@ import androidx.compose.ui.unit.sp
     val featured=(listOfNotNull(current?.takeIf {it in songs})+recent+songs).distinctBy {it.id}.take(8)
     val added=recentlyAdded(songs)
     val albums=songs.distinctBy {it.album to it.artist}.take(12)
-    LazyColumn(Modifier.fillMaxSize(),contentPadding=PaddingValues(bottom=24.dp),verticalArrangement=Arrangement.spacedBy(24.dp)) {
+    LazyColumn(Modifier.fillMaxSize(),contentPadding=PaddingValues(bottom=LocalCollectionBottomPadding.current),verticalArrangement=Arrangement.spacedBy(24.dp)) {
         item {
             Row(Modifier.padding(horizontal=24.dp),verticalAlignment=Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {Text("Tu colección, contigo",fontSize=22.sp,fontWeight=FontWeight.Bold);Text("${songs.size} canciones · sin conexión",fontSize=13.sp,color=c.onSurfaceVariant,modifier=Modifier.padding(top=4.dp))}
-                IconButton(onClick=onLibrary) {Icon(Icons.Rounded.ArrowForward,"Explorar biblioteca")}
+                PrismaIconButton(onClick=onLibrary) {Icon(Icons.Rounded.ArrowForward,"Explorar biblioteca")}
             }
         }
         item {

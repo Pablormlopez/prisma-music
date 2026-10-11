@@ -97,7 +97,7 @@ internal fun moveQueueEntryTo(player:Player,index:Int,to:Int) {
                     Text("Cola de reproducción",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Bold)
                     Text("${entries.size} canciones · Mantén pulsado ≡ y arrastra",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-                IconButton(onClick=onDismiss) {Icon(Icons.Rounded.Close,"Cerrar cola")}
+                PrismaIconButton(onClick=onDismiss) {Icon(Icons.Rounded.Close,"Cerrar cola")}
             }
             if(shuffled) Text("Al mover canciones se usará tu orden manual.",style=MaterialTheme.typography.bodySmall,modifier=Modifier.padding(vertical=8.dp))
             if(repeat==Player.REPEAT_MODE_ONE) Text("La canción actual se repite hasta que desactives la repetición.",style=MaterialTheme.typography.bodySmall,modifier=Modifier.padding(vertical=8.dp))
