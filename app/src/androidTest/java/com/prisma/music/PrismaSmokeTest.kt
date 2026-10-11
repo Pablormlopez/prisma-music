@@ -328,6 +328,7 @@ class PrismaSmokeTest {
             nav("Ajustes")
             compose.onNode(hasText("Personalización",substring=false) and hasClickAction()).performScrollTo().performClick()
             compose.onNode(hasText("Temas") and hasClickAction()).performScrollTo().performClick()
+                compose.onNode(hasScrollToIndexAction()).performScrollToIndex(0)
             listOf("Chromatic Flow","Liquid Glass","Pure Minimal","Black Night","Studio","Sunset").forEachIndexed {index,title->
                 compose.onNode(hasScrollToIndexAction()).performScrollToNode(hasText(title))
                 compose.onNodeWithText(title).performClick()
@@ -346,6 +347,7 @@ class PrismaSmokeTest {
                 nav("Ajustes")
             compose.onNode(hasText("Personalización",substring=false) and hasClickAction()).performScrollTo().performClick()
                 compose.onNode(hasText("Temas") and hasClickAction()).performScrollTo().performClick()
+                compose.onNode(hasScrollToIndexAction()).performScrollToIndex(0)
                 compose.onNodeWithText("Claro",substring=false).performScrollTo().performClick()
                 compose.onNode(hasScrollToIndexAction()).performScrollToNode(hasText(title))
                 shot("05-tema-$index-claro")
@@ -357,6 +359,7 @@ class PrismaSmokeTest {
                 nav("Ajustes")
             compose.onNode(hasText("Personalización",substring=false) and hasClickAction()).performScrollTo().performClick()
                 compose.onNode(hasText("Temas") and hasClickAction()).performScrollTo().performClick()
+                compose.onNode(hasScrollToIndexAction()).performScrollToIndex(0)
             }
             compose.onNode(hasScrollToIndexAction()).performScrollToIndex(0)
             compose.onNodeWithText("Según el sistema").performClick()
