@@ -297,7 +297,7 @@ fun PrismaApp() {
                 FilledTonalButton(enabled=selection.isNotEmpty(),onClick={onAdd(selection)},modifier=Modifier.semantics {contentDescription="Añadir selección a una playlist"}) {Icon(Icons.Rounded.PlaylistAdd,null);Text("Añadir")}
             }
         }
-        if(songCategory || selected!=null) LibrarySortControl(activeSort,theme,expanded=sortMenu,onClick={sortMenu=true},onDismissRequest={sortMenu=false}) {
+        if(songCategory || selected!=null) LibrarySortControl(activeSort,visualTheme,expanded=sortMenu,onClick={sortMenu=true},onDismissRequest={sortMenu=false}) {
             val options=if(category=="Recién añadidas") listOf(SongSort.NEWEST,SongSort.OLDEST) else SongSort.entries
             options.forEach {option->DropdownMenuItem(text={Text(option.title)},leadingIcon={if(activeSort==option) Icon(Icons.Rounded.Check,null)},onClick={
                 if(category=="Recién añadidas") recentSort=option else {sort=option;sortPrefs.librarySort=option}
