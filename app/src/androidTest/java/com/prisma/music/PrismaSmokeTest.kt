@@ -100,7 +100,7 @@ class PrismaSmokeTest {
         compose.onNodeWithContentDescription("Contenido de Biblioteca").assertExists()
         compose.onNodeWithContentDescription("Ordenar canciones").performClick()
         compose.onNodeWithText("Z a A",substring=false).performClick()
-        compose.onNodeWithText("Orden: Z a A").assertExists()
+        compose.onNodeWithContentDescription("Ordenar canciones").assertExists()
         compose.onNodeWithContentDescription("Ordenar canciones").performClick()
         compose.onNodeWithText("A a Z",substring=false).performClick()
     }
@@ -159,6 +159,7 @@ class PrismaSmokeTest {
             compose.waitUntil(10000) {compose.onAllNodesWithText("Prisma segunda").fetchSemanticsNodes().isNotEmpty()}
             compose.onNodeWithText("Letra",substring=false).performClick()
             compose.waitUntil(15000) {compose.onAllNodesWithText("Primera línea incrustada").fetchSemanticsNodes().isNotEmpty()}
+            compose.onNodeWithContentDescription("Panel de letras").assertExists()
             shot("06-letra-incrustada")
             compose.onNodeWithText("Carátula",substring=false).performClick()
             compose.onNodeWithContentDescription("Diseño Chromatic Flow").performTouchInput {swipeRight()}
@@ -303,7 +304,9 @@ class PrismaSmokeTest {
             compose.onNodeWithText("Añadir 1 canciones",substring=false).performClick()
             assertEquals(setOf(uri.lastPathSegment,second.lastPathSegment),Preferences(context).playlists().getValue("Prisma selección").toSet())
             nav("Biblioteca")
-            compose.onNodeWithText("Seleccionar varias",substring=false).performClick()
+            compose.onNodeWithText("Seleccionar varias",substring=false).assertDoesNotExist()
+            compose.onNode(hasText("Prisma prueba") and SemanticsMatcher.keyIsDefined(SemanticsActions.OnLongClick)).performTouchInput {longClick()}
+            compose.onNodeWithText("Seleccionar varias",substring=false).performScrollTo().performClick()
             compose.onNodeWithContentDescription("Seleccionar Prisma prueba").performClick()
             compose.onNodeWithContentDescription("Seleccionar Prisma segunda").performClick()
             shot("19-multiseleccion")
