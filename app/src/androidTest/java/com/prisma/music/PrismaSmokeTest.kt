@@ -292,7 +292,7 @@ class PrismaSmokeTest {
             compose.onNode(hasScrollToIndexAction() and hasAnyDescendant(hasText("Tu colección, contigo"))).performScrollToNode(hasText("Recién añadidas"))
             compose.onNodeWithText("Canciones de tu biblioteca").assertDoesNotExist()
             compose.onNodeWithText("Ver todas",substring=false).performClick()
-            compose.onNodeWithText("Últimas incorporadas al teléfono, primero las más nuevas").assertExists()
+            compose.onNodeWithText("Orden: Más nuevas primero").assertExists()
             nav("Biblioteca")
             compose.onNode(hasText("Prisma prueba") and SemanticsMatcher.keyIsDefined(SemanticsActions.OnLongClick)).assertExists()
             shot("11-lista-compacta")

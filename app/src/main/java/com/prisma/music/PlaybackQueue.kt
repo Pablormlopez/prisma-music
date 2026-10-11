@@ -111,7 +111,7 @@ internal fun moveQueueEntryTo(player:Player,index:Int,to:Int) {
                         Text(entry.title,maxLines=1,overflow=TextOverflow.Ellipsis,fontWeight=FontWeight.SemiBold)
                         Text(entry.artist,maxLines=1,overflow=TextOverflow.Ellipsis,style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
                         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.End,verticalAlignment=Alignment.CenterVertically) {
-                            Icon(Icons.Rounded.DragHandle,"Mantén pulsado para arrastrar ${entry.title}",Modifier.size(48.dp).pointerInput(entry.index) {
+                            Icon(Icons.Rounded.DragHandle,"Mantén pulsado para arrastrar ${entry.title}",Modifier.size(48.dp).pointerInput(entry.index,index) {
                                 detectDragGesturesAfterLongPress(onDragStart={
                                     val item=state.layoutInfo.visibleItemsInfo.firstOrNull {it.index==index}
                                     dragging=entry.index;dragOffset=0f;dragCenter=(item?.offset ?: 0)+(item?.size ?: 0)/2f;target=index;dragTimeline=controller.currentTimeline

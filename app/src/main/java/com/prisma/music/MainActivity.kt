@@ -196,7 +196,7 @@ fun PrismaApp() {
                                 adjacentPage(page,distance,swipeThreshold)?.let {page=it}
                             }) {change,amount->change.consume();distance+=amount}
                         }
-                    }) { route -> pageStates.SaveableStateProvider(route) {when(route) {
+                    }) { route -> pageStates.SaveableStateProvider(if(route=="Biblioteca") "$route:$libraryCategory" else route) {when(route) {
                         "Inicio"->if(!granted) PermissionCard {requestPermission.launch(permission)} else HomeScreen(visible,busy,current,recentIds,onPlay={queue,song->play(queue,song);openPlayer()},onLibrary={libraryCategory="Canciones";page="Biblioteca"},onRecent={libraryCategory="Recién añadidas";page="Biblioteca"},onOptions={actionSong=it})
                         "Personalización"->PersonalizationScreen(personal,mode,{mode=it;prefs.mode=it},{personal=it;prefs.personalization=it},{page="Temas"})
                         "Temas"->ThemesScreen(theme,mode,{theme=it;prefs.theme=it},{mode=it;prefs.mode=it})
