@@ -1,3 +1,9 @@
+## Beta 3.0.2 · Monocromo y degradado
+
+- Nuevo tema **Monocromo**: blanco puro y tipografía negra en modo claro; negro AMOLED y tipografía blanca en modo oscuro.
+- El reproductor de Liquid Glass y Monocromo amplía la carátula y funde sus colores con un degradado hasta la parte inferior.
+- La estructura y organización de la biblioteca se mantienen.
+
 ## Beta 3.0.1 · Liquid Glass
 
 - Liquid Glass renovado: superficies translúcidas, reflejos finos y fondo visible a través de la navegación y el minirreproductor. Android 12 o posterior añade desenfoque del contenido; Android 8–11 conserva cristal translúcido y fondo de carátula difuminado.
@@ -59,7 +65,7 @@
 
 # Prisma Music
 
-Reproductor de música local para Android, gratuito y de código abierto. Beta actual: **3.0.1**. Android 8.0 o posterior.
+Reproductor de música local para Android, gratuito y de código abierto. Beta actual: **3.0.2**. Android 8.0 o posterior.
 
 ## Beta 1.0.2 — experiencia visual
 
@@ -90,7 +96,7 @@ Reproductor de música local para Android, gratuito y de código abierto. Beta a
 
 ## Instalar
 
-**[⬇ Descargar Prisma Music para Android (APK)](https://github.com/nexlibre/prisma-music/releases/download/v3.0.1-beta/Prisma-Music-3.0.1-beta.apk)**
+**[⬇ Descargar Prisma Music para Android (APK)](https://github.com/nexlibre/prisma-music/releases/download/v3.0.2-beta/Prisma-Music-3.0.2-beta.apk)**
 
 Android 8.0 o posterior. Abre el enlace desde el teléfono, espera a que termine la descarga y abre el archivo `.apk`. Android puede pedir permitir instalaciones desde el navegador o gestor de archivos usado. No necesitas descargar el código ni entrar en Actions.
 
