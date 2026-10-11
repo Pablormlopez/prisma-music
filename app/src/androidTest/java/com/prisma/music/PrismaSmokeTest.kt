@@ -56,6 +56,9 @@ class PrismaSmokeTest {
         eq.queueEndOfStream();assertTrue(eq.isEnded);eq.reset()
     }
     @Test fun liquidGlassNavigationSupportsTapDragAndCancel() {
+        val prefs=Preferences(compose.activity)
+        val previousTheme=prefs.theme
+        try {
         nav("Inicio")
         compose.onNodeWithContentDescription("Abrir temas").performClick()
         compose.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Liquid Glass"))
@@ -73,6 +76,7 @@ class PrismaSmokeTest {
         nav("Listas")
         compose.onNode(hasText("Listas") and hasClickAction()).assertIsSelected()
         nav("Inicio")
+        } finally {prefs.theme=previousTheme}
     }
     @Test fun libraryOrderUsesDatesAndLocaleTitles() {
         fun song(id:String,title:String,date:Long)=Song(id,android.net.Uri.EMPTY,title,"","","","","",0,0,"",android.net.Uri.EMPTY,date)
