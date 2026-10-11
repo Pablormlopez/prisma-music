@@ -41,11 +41,6 @@ internal fun queueEntries(player:Player):List<QueueEntry> {
     }
     return result
 }
-internal fun moveQueueEntry(player:Player,index:Int,direction:Int) {
-    val ordered=queueEntries(player).map {it.index}.toMutableList()
-    val from=ordered.indexOf(index)
-    moveQueueEntryTo(player,index,from+direction)
-}
 internal fun moveQueueEntryTo(player:Player,index:Int,to:Int) {
     val ordered=queueEntries(player).map {it.index}.toMutableList()
     val from=ordered.indexOf(index)
@@ -65,14 +60,13 @@ internal fun moveQueueEntryTo(player:Player,index:Int,to:Int) {
 }
 
 @Composable fun PlaybackQueue(controller:MediaController,onDismiss:()->Unit) {
-    var snapshot by remember(controller) {mutableStateOf(controller.currentTimeline,referentialEqualityPolicy())}
     var entries by remember(controller) {mutableStateOf(queueEntries(controller))}
     var shuffled by remember(controller) {mutableStateOf(controller.shuffleModeEnabled)}
     var repeat by remember(controller) {mutableIntStateOf(controller.repeatMode)}
     DisposableEffect(controller) {
         val listener=object:Player.Listener {
             override fun onEvents(player:Player,events:Player.Events) {
-                snapshot=player.currentTimeline;entries=queueEntries(player);shuffled=player.shuffleModeEnabled;repeat=player.repeatMode
+                entries=queueEntries(player);shuffled=player.shuffleModeEnabled;repeat=player.repeatMode
             }
         }
         controller.addListener(listener)
@@ -84,7 +78,6 @@ internal fun moveQueueEntryTo(player:Player,index:Int,to:Int) {
     var target by remember {mutableIntStateOf(-1)}
     var dragTimeline by remember {mutableStateOf<Timeline?>(null)}
     val latestEntries by rememberUpdatedState(entries)
-    val expectedTimeline=snapshot
     val state=rememberLazyListState()
     LaunchedEffect(dragging) {
         while(dragging!=null && isActive) {
@@ -118,18 +111,20 @@ internal fun moveQueueEntryTo(player:Player,index:Int,to:Int) {
                         Text(entry.title,maxLines=1,overflow=TextOverflow.Ellipsis,fontWeight=FontWeight.SemiBold)
                         Text(entry.artist,maxLines=1,overflow=TextOverflow.Ellipsis,style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
                         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.End,verticalAlignment=Alignment.CenterVertically) {
-                            Icon(Icons.Rounded.DragHandle,"Mantén pulsado para arrastrar ${entry.title}",Modifier.size(48.dp).pointerInput(entry.index) {
+                            Icon(Icons.Rounded.DragHandle,"Mantén pulsado para arrastrar ${entry.title}",Modifier.size(48.dp).pointerInput(entry.index,index) {
                                 detectDragGesturesAfterLongPress(onDragStart={
                                     val item=state.layoutInfo.visibleItemsInfo.firstOrNull {it.index==index}
                                     dragging=entry.index;dragOffset=0f;dragCenter=(item?.offset ?: 0)+(item?.size ?: 0)/2f;target=index;dragTimeline=controller.currentTimeline
                                 },onDragCancel={dragging=null;dragOffset=0f},onDragEnd={
                                     if(controller.currentTimeline===dragTimeline && latestEntries.any {it.index==entry.index}) moveQueueEntryTo(controller,entry.index,target)
                                     dragging=null;dragOffset=0f
-                                }) {change,amount->change.consume();dragOffset+=amount.y;dragCenter+=amount.y}
+                                }) {change,amount->
+                                    change.consume();dragOffset+=amount.y;dragCenter+=amount.y
+                                    // Resolve the destination in the pointer event too: a quick release
+                                    // can arrive before the auto-scroll coroutine's next frame.
+                                    state.layoutInfo.visibleItemsInfo.minByOrNull {kotlin.math.abs(it.offset+it.size/2f-dragCenter)}?.let {target=it.index}
+                                }
                             })
-                            IconButton(enabled=index>0,onClick={if(controller.currentTimeline===expectedTimeline) moveQueueEntry(controller,entry.index,-1)}) {Icon(Icons.Rounded.ArrowUpward,"Subir canción ${index+1}")}
-                            IconButton(enabled=index<entries.lastIndex,onClick={if(controller.currentTimeline===expectedTimeline) moveQueueEntry(controller,entry.index,1)}) {Icon(Icons.Rounded.ArrowDownward,"Bajar canción ${index+1}")}
-                            IconButton(onClick={if(controller.currentTimeline===expectedTimeline && entry.index<controller.mediaItemCount) controller.removeMediaItem(entry.index)}) {Icon(Icons.Rounded.RemoveCircleOutline,"Quitar canción ${index+1} de la cola")}
                         }
                     }
                     Spacer(Modifier.height(6.dp))
