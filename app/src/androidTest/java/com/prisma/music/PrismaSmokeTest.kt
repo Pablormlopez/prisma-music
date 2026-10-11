@@ -352,7 +352,7 @@ class PrismaSmokeTest {
             compose.onNode(hasText("Personalización",substring=false) and hasClickAction()).performScrollTo().performClick()
             compose.onNode(hasText("Temas") and hasClickAction()).performScrollTo().performClick()
                 compose.onNode(hasScrollToIndexAction()).performScrollToIndex(0)
-            listOf("Chromatic Flow","Liquid Glass","Pure Minimal","Black Night","Studio","Sunset").forEachIndexed {index,title->
+            listOf("Chromatic Flow","Liquid Glass","Pure Minimal","Black Night","Studio","Sunset","Monocromo").forEachIndexed {index,title->
                 compose.onNode(hasScrollToIndexAction()).performScrollToNode(hasText(title))
                 compose.onNodeWithText(title).performClick()
                 compose.onNode(hasScrollToIndexAction()).performScrollToIndex(0)
@@ -388,7 +388,7 @@ class PrismaSmokeTest {
             compose.onNodeWithText("Según el sistema").performClick()
             val prefs=Preferences(context)
             assertEquals(LightMode.SYSTEM,prefs.mode)
-            assertEquals(VisualTheme.SUNSET,prefs.theme)
+            assertEquals(VisualTheme.MONOCHROME,prefs.theme)
             assertTrue(prefs.eq.enabled)
             // Only generated test audio is deleted. Exercise the native Android consent dialog.
             nav("Biblioteca")
