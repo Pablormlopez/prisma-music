@@ -81,7 +81,7 @@ Reproductor de música local para Android, gratuito y de código abierto. Beta a
 - Biblioteca de canciones, artistas, álbumes, géneros y carpetas; búsqueda, cola, repetición y aleatorio.
 - Listas locales: crear, añadir, quitar canciones y eliminar listas sin borrar archivos.
 - Exclusión predeterminada de audios/notas de voz de WhatsApp y WhatsApp Business. Carpetas registradas por MediaStore seleccionables.
-- Seis diseños en Ajustes → Temas: Chromatic Flow, Liquid Glass, Pure Minimal, Black Night, Studio y Sunset. Portadas protagonistas, paletas propias y líneas de tiempo distintas. Inicio independiente con canciones, álbumes e historial local.
+- Siete diseños en Ajustes → Temas: Chromatic Flow, Liquid Glass, Pure Minimal, Black Night, Studio, Sunset y Monocromo. Monocromo usa blanco puro en modo claro y negro AMOLED en modo oscuro, con iconos y tipografía en contraste. El reproductor de Liquid Glass y Monocromo funde la carátula a pantalla completa con un degradado de sus colores. Inicio independiente con canciones, álbumes e historial local.
 - Modo **claro, oscuro y según el sistema**, independiente del tema. Preferencias persistentes.
 - Ecualizador DSP original de diez bandas: 31, 63, 125, 250, 500 Hz; 1, 2, 4, 8, 16 kHz. Q global ajustable, preamplificador, graves, medios, agudos, presencia de voces y limitador de picos enlazado entre canales.
 - Letras incrustadas automáticas: MP3 ID3v2 (USLT/ULT, SYLT/SLT y TXXX de letras), FLAC/Vorbis y Ogg/Opus (LYRICS y variantes), M4A/MP4 (©lyr y campos libres de letras). Prioridad a letras incrustadas; TXT/LRC manual como alternativa. Letras sincronizadas cuando contienen tiempos, seguimiento y salto al pulsar una línea.
