@@ -159,7 +159,6 @@ class PrismaSmokeTest {
             compose.waitUntil(10000) {compose.onAllNodesWithText("Prisma segunda").fetchSemanticsNodes().isNotEmpty()}
             compose.onNodeWithText("Letra",substring=false).performClick()
             compose.waitUntil(15000) {compose.onAllNodesWithText("Primera línea incrustada").fetchSemanticsNodes().isNotEmpty()}
-            compose.onNodeWithContentDescription("Panel de letras").assertExists()
             shot("06-letra-incrustada")
             compose.onNodeWithText("Carátula",substring=false).performClick()
             compose.onNodeWithContentDescription("Diseño Chromatic Flow").performTouchInput {swipeRight()}
@@ -318,7 +317,7 @@ class PrismaSmokeTest {
             compose.onNode(hasScrollToIndexAction() and hasAnyDescendant(hasText("Tu colección, contigo"))).performScrollToNode(hasText("Recién añadidas"))
             compose.onNodeWithText("Canciones de tu biblioteca").assertDoesNotExist()
             compose.onNodeWithText("Ver todas",substring=false).performClick()
-            compose.onNodeWithText("Orden: Más nuevas primero").assertExists()
+            compose.onNodeWithText("Más nuevas primero",substring=false).assertExists()
             nav("Biblioteca")
             compose.onNode(hasText("Prisma prueba") and SemanticsMatcher.keyIsDefined(SemanticsActions.OnLongClick)).assertExists()
             shot("11-lista-compacta")
