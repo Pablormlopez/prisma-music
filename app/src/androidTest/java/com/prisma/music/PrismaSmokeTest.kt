@@ -100,7 +100,7 @@ class PrismaSmokeTest {
         compose.onNodeWithContentDescription("Contenido de Biblioteca").assertExists()
         compose.onNodeWithContentDescription("Ordenar canciones").performClick()
         compose.onNodeWithText("Z a A",substring=false).performClick()
-        compose.onNodeWithText("Orden: Z a A").assertExists()
+        compose.onNodeWithContentDescription("Ordenar canciones").assertExists()
         compose.onNodeWithContentDescription("Ordenar canciones").performClick()
         compose.onNodeWithText("A a Z",substring=false).performClick()
     }
@@ -303,7 +303,9 @@ class PrismaSmokeTest {
             compose.onNodeWithText("Añadir 1 canciones",substring=false).performClick()
             assertEquals(setOf(uri.lastPathSegment,second.lastPathSegment),Preferences(context).playlists().getValue("Prisma selección").toSet())
             nav("Biblioteca")
-            compose.onNodeWithText("Seleccionar varias",substring=false).performClick()
+            compose.onNodeWithText("Seleccionar varias",substring=false).assertDoesNotExist()
+            compose.onNode(hasText("Prisma prueba") and SemanticsMatcher.keyIsDefined(SemanticsActions.OnLongClick)).performTouchInput {longClick()}
+            compose.onNodeWithText("Seleccionar varias",substring=false).performScrollTo().performClick()
             compose.onNodeWithContentDescription("Seleccionar Prisma prueba").performClick()
             compose.onNodeWithContentDescription("Seleccionar Prisma segunda").performClick()
             shot("19-multiseleccion")
@@ -315,7 +317,7 @@ class PrismaSmokeTest {
             compose.onNode(hasScrollToIndexAction() and hasAnyDescendant(hasText("Tu colección, contigo"))).performScrollToNode(hasText("Recién añadidas"))
             compose.onNodeWithText("Canciones de tu biblioteca").assertDoesNotExist()
             compose.onNodeWithText("Ver todas",substring=false).performClick()
-            compose.onNodeWithText("Orden: Más nuevas primero").assertExists()
+            compose.onNodeWithText("Más nuevas primero",substring=false).assertExists()
             nav("Biblioteca")
             compose.onNode(hasText("Prisma prueba") and SemanticsMatcher.keyIsDefined(SemanticsActions.OnLongClick)).assertExists()
             shot("11-lista-compacta")
