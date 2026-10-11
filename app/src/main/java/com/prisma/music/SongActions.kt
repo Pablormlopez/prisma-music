@@ -62,16 +62,16 @@ import kotlinx.coroutines.withContext
     }
     if(info) {
         LaunchedEffect(song.id) {detail=withContext(Dispatchers.IO) {Library.details(context,song)}}
-        AlertDialog(onDismissRequest={info=false},title={Text("Información de la canción")},text={Column(Modifier.verticalScroll(rememberScrollState())) {Text(song.title);Text(song.artist);Text(song.album);Text(song.name);Text(song.folder);Spacer(Modifier.height(12.dp));Text(detail?.text ?: "Leyendo información…")}},confirmButton={TextButton(onClick={info=false}){Text("Volver")}})
-    } else if(confirmDelete) AlertDialog(onDismissRequest={if(!deleting) confirmDelete=false},title={Text("¿Eliminar del teléfono?")},text={Text("Se borrará el archivo «${song.name}» y se quitará de tus listas y de la cola. Esta acción no se puede deshacer.")},confirmButton={TextButton(onClick=::requestDelete,enabled=!deleting){Text(if(deleting) "Esperando a Android…" else "Eliminar archivo")}},dismissButton={TextButton(onClick={confirmDelete=false},enabled=!deleting){Text("Cancelar")}})
+        AlertDialog(onDismissRequest={info=false},title={Text("Información de la canción")},text={Column(Modifier.verticalScroll(rememberScrollState())) {Text(song.title);Text(song.artist);Text(song.album);Text(song.name);Text(song.folder);Spacer(Modifier.height(12.dp));Text(detail?.text ?: "Leyendo información…")}},confirmButton={PrismaTextButton(onClick={info=false}){Text("Volver")}})
+    } else if(confirmDelete) AlertDialog(onDismissRequest={if(!deleting) confirmDelete=false},title={Text("¿Eliminar del teléfono?")},text={Text("Se borrará el archivo «${song.name}» y se quitará de tus listas y de la cola. Esta acción no se puede deshacer.")},confirmButton={PrismaTextButton(onClick=::requestDelete,enabled=!deleting){Text(if(deleting) "Esperando a Android…" else "Eliminar archivo")}},dismissButton={PrismaTextButton(onClick={confirmDelete=false},enabled=!deleting){Text("Cancelar")}})
     else ModalBottomSheet(onDismissRequest=onDismiss) {
         Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal=24.dp)) {
             Text(song.title,style=MaterialTheme.typography.titleLarge)
             Text(song.artist,style=MaterialTheme.typography.bodySmall)
-            listOf("Reproducir ahora" to onPlay,"Reproducir a continuación" to onNext,"Añadir al final de la cola" to onQueue,"Añadir a una lista" to onList).forEach {(title,action)->TextButton(onClick={onDismiss();action()},modifier=Modifier.fillMaxWidth()){Text(title)}}
-            TextButton(onClick={runCatching {context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {type=song.mime.ifBlank {"audio/*"};putExtra(Intent.EXTRA_STREAM,song.uri);addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)},"Compartir canción"))}.onFailure {onError("No se pudo compartir este archivo.")};onDismiss()},modifier=Modifier.fillMaxWidth()){Text("Compartir archivo")}
-            TextButton(onClick={info=true},modifier=Modifier.fillMaxWidth()){Text("Información de la canción")}
-            TextButton(onClick={confirmDelete=true},modifier=Modifier.fillMaxWidth()){Text("Eliminar del teléfono",color=MaterialTheme.colorScheme.error)}
+            listOf("Reproducir ahora" to onPlay,"Reproducir a continuación" to onNext,"Añadir al final de la cola" to onQueue,"Añadir a una lista" to onList).forEach {(title,action)->PrismaTextButton(onClick={onDismiss();action()},modifier=Modifier.fillMaxWidth()){Text(title)}}
+            PrismaTextButton(onClick={runCatching {context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {type=song.mime.ifBlank {"audio/*"};putExtra(Intent.EXTRA_STREAM,song.uri);addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)},"Compartir canción"))}.onFailure {onError("No se pudo compartir este archivo.")};onDismiss()},modifier=Modifier.fillMaxWidth()){Text("Compartir archivo")}
+            PrismaTextButton(onClick={info=true},modifier=Modifier.fillMaxWidth()){Text("Información de la canción")}
+            PrismaTextButton(onClick={confirmDelete=true},modifier=Modifier.fillMaxWidth()){Text("Eliminar del teléfono",color=MaterialTheme.colorScheme.error)}
             Spacer(Modifier.height(24.dp))
         }
     }

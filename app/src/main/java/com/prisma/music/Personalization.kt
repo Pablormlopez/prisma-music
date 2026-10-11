@@ -28,18 +28,18 @@ fun accentColor(hex:String):Color? = hex.takeIf {it.matches(Regex("#[0-9a-fA-F]{
     Text("Mini temas de color")
     Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(8.dp)) {
         listOf("Tema" to "","Lavanda" to "#9D87E8","Océano" to "#46BDE8","Menta" to "#58CBA4","Rosa" to "#E98BAC","Ámbar" to "#EAB45E").forEach { (name,color)->
-            FilterChip(selected=value.accent==color,onClick={onChange(value.copy(accent=color))},label={Text(name)},leadingIcon={if(color.isNotEmpty()) Box(Modifier.size(16.dp).background(accentColor(color)!!,RoundedCornerShape(8.dp)))})
+            PrismaFilterChip(selected=value.accent==color,onClick={onChange(value.copy(accent=color))},label={Text(name)},leadingIcon={if(color.isNotEmpty()) Box(Modifier.size(16.dp).background(accentColor(color)!!,RoundedCornerShape(8.dp)))})
         }
     }
-    OutlinedButton(onClick={picker=true},modifier=Modifier.fillMaxWidth()) {Text("Elegir un color personalizado")}
+    PrismaOutlinedButton(onClick={picker=true},modifier=Modifier.fillMaxWidth()) {Text("Elegir un color personalizado")}
     if(picker) ColorPicker(value.accent,onDismiss={picker=false},onSave={onChange(value.copy(accent=it));picker=false})
     OutlinedTextField(hex,{hex=it},label={Text("Color manual · #RRGGBB")},singleLine=true,modifier=Modifier.fillMaxWidth(),isError=hex.isNotBlank() && accentColor(hex)==null,supportingText={Text("Ejemplo: #58CBA4. El contraste se adapta al modo claro u oscuro.")})
-    TextButton(onClick={onChange(value.copy(accent=hex.uppercase()))},enabled=accentColor(hex)!=null) {Text("Aplicar color")}
+    PrismaTextButton(onClick={onChange(value.copy(accent=hex.uppercase()))},enabled=accentColor(hex)!=null) {Text("Aplicar color")}
     Text("Vista de la biblioteca")
-    LibraryLayout.entries.forEach {layout->FilterChip(selected=value.layout==layout,onClick={onChange(value.copy(layout=layout))},label={Text(layout.title)})}
+    LibraryLayout.entries.forEach {layout->PrismaFilterChip(selected=value.layout==layout,onClick={onChange(value.copy(layout=layout))},label={Text(layout.title)})}
     Text("Información bajo el título")
-    SongInfoStyle.entries.forEach {style->FilterChip(selected=value.info==style,onClick={onChange(value.copy(info=style))},label={Text(style.title)})}
-    OutlinedButton(onClick={onChange(Personalization())},modifier=Modifier.fillMaxWidth()) {Text("Restablecer personalización")}
+    SongInfoStyle.entries.forEach {style->PrismaFilterChip(selected=value.info==style,onClick={onChange(value.copy(info=style))},label={Text(style.title)})}
+    PrismaOutlinedButton(onClick={onChange(Personalization())},modifier=Modifier.fillMaxWidth()) {Text("Restablecer personalización")}
 }
 
 @Composable fun ColorPicker(initial:String,onDismiss:()->Unit,onSave:(String)->Unit) {
@@ -53,28 +53,28 @@ fun accentColor(hex:String):Color? = hex.takeIf {it.matches(Regex("#[0-9a-fA-F]{
         Text("Tono");Slider(hue,{hue=it},valueRange=0f..360f)
         Text("Intensidad");Slider(saturation,{saturation=it})
         Text("Luminosidad");Slider(brightness,{brightness=it})
-    }},confirmButton={TextButton(onClick={onSave("#%06X".format(color and 0xffffff))}){Text("Usar este color")}},dismissButton={TextButton(onClick=onDismiss){Text("Cancelar")}})
+    }},confirmButton={PrismaTextButton(onClick={onSave("#%06X".format(color and 0xffffff))}){Text("Usar este color")}},dismissButton={PrismaTextButton(onClick=onDismiss){Text("Cancelar")}})
 }
 
 @Composable fun PersonalizationScreen(value:Personalization,mode:LightMode,onMode:(LightMode)->Unit,onChange:(Personalization)->Unit,onThemes:()->Unit) {
     var preview by remember {mutableStateOf(false)}
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
         SectionTitle("TEMAS","Elige tu ambiente")
-        OutlinedButton(onClick=onThemes,modifier=Modifier.fillMaxWidth()) {Text("Temas")}
+        PrismaOutlinedButton(onClick=onThemes,modifier=Modifier.fillMaxWidth()) {Text("Temas")}
         SectionTitle("MODO DE COLOR","La luz cambia. Tu música sigue.")
         Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(8.dp)) {
-            LightMode.entries.forEach {m->FilterChip(mode==m,{onMode(m)},label={Text(m.title)})}
+            LightMode.entries.forEach {m->PrismaFilterChip(mode==m,{onMode(m)},label={Text(m.title)})}
         }
         SectionTitle("ANIMACIONES","El movimiento también es tuyo")
         MotionStyle.entries.forEach {style->
-            FilterChip(value.motion==style,{onChange(value.copy(motion=style))},label={Text(style.title)})
+            PrismaFilterChip(value.motion==style,{onChange(value.copy(motion=style))},label={Text(style.title)})
             if(value.motion==style) Text(style.description,style=MaterialTheme.typography.bodySmall)
         }
         if(value.motion!=MotionStyle.NONE) {
             Text("Duración · ${value.motionDuration} ms")
             Slider(value.motionDuration.toFloat(),{onChange(value.copy(motionDuration=(it/50).toInt()*50))},valueRange=250f..900f,steps=12)
         }
-        OutlinedButton(onClick={preview=!preview},modifier=Modifier.fillMaxWidth()) {Text("Probar animación")}
+        PrismaOutlinedButton(onClick={preview=!preview},modifier=Modifier.fillMaxWidth()) {Text("Probar animación")}
         androidx.compose.animation.AnimatedContent(targetState=preview,transitionSpec={contentMotion(value.motion,value.motionDuration).using(null)},label="motionPreview") {alternate->
             Surface(color=if(alternate) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer,shape=RoundedCornerShape(24.dp),modifier=Modifier.fillMaxWidth()) {
                 Text(if(alternate) "Tu próxima canción" else "Tu música, a tu ritmo",modifier=Modifier.padding(24.dp))

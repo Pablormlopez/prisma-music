@@ -93,7 +93,7 @@ import kotlinx.coroutines.withContext
         SettingSwitch("Omitir silencios", "Salta tramos silenciosos; puede alterar pausas musicales", silence) { silence=it; prefs.skipSilence=it; onPlaybackChanged() }
         Text("Velocidad · %.2f×".format(speed),fontWeight=FontWeight.SemiBold)
         Slider(value=speed,onValueChange={speed=it},onValueChangeFinished={prefs.playbackSpeed=speed;onPlaybackChanged()},valueRange=.5f..2f,steps=5)
-        TextButton(onClick={speed=1f;prefs.playbackSpeed=1f;onPlaybackChanged()}) {Text("Velocidad normal")}
+        PrismaTextButton(onClick={speed=1f;prefs.playbackSpeed=1f;onPlaybackChanged()}) {Text("Velocidad normal")}
         SectionTitle("DESVANECIDOS","Entrada y salida de canciones")
         Text("Entrada · %.1f s".format(fadeIn),fontWeight=FontWeight.SemiBold)
         Slider(fadeIn,{fadeIn=it},modifier=Modifier.semantics {contentDescription="Duración de entrada"},valueRange=0f..12f,steps=23,onValueChangeFinished={prefs.fadeInSeconds=fadeIn;onPlaybackChanged()})
@@ -103,15 +103,15 @@ import kotlinx.coroutines.withContext
         SectionTitle("TEMPORIZADOR","Pausar automáticamente")
         Text(if(deadline>0) "Se pausará en ${((deadline-System.currentTimeMillis()).coerceAtLeast(0)+59999)/60000} min" else "Desactivado",style=MaterialTheme.typography.bodySmall)
         Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(8.dp)) {
-            listOf(15,30,60,90).forEach { minutes -> OutlinedButton(onClick={deadline=System.currentTimeMillis()+minutes*60000L;prefs.sleepDeadline=deadline;onPlaybackChanged()}) {Text("$minutes min")} }
+            listOf(15,30,60,90).forEach { minutes -> PrismaOutlinedButton(onClick={deadline=System.currentTimeMillis()+minutes*60000L;prefs.sleepDeadline=deadline;onPlaybackChanged()}) {Text("$minutes min")} }
         }
-        if(deadline>0) TextButton(onClick={deadline=0;prefs.sleepDeadline=0;onPlaybackChanged()}) {Text("Cancelar temporizador")}
+        if(deadline>0) PrismaTextButton(onClick={deadline=0;prefs.sleepDeadline=0;onPlaybackChanged()}) {Text("Cancelar temporizador")}
         SectionTitle("BIBLIOTECA","Solo lo que quieres escuchar")
         Text("Duración mínima · $minimum s",fontWeight=FontWeight.SemiBold)
         Slider(value=minimum.toFloat(),onValueChange={minimum=it.toInt()},onValueChangeFinished={prefs.minimumDuration=minimum;onLibraryChanged()},valueRange=0f..120f,steps=7)
         Text("Oculta audios cortos sin borrar archivos. 0 s incluye todas las duraciones.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
         Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {Column(Modifier.weight(1f)) {Text("Excluir audios de WhatsApp",fontWeight=FontWeight.SemiBold);Text("También notas de voz y WhatsApp Business",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)};Switch(checked=hide,onCheckedChange={hide=it;prefs.hideWhatsApp=it;onLibraryChanged()})}
-        OutlinedButton(onClick={foldersDialog=true},modifier=Modifier.fillMaxWidth(),shape=RoundedCornerShape(16.dp)) {Icon(Icons.Rounded.FolderOpen,null);Text("Elegir carpetas · ${excluded.size} excluidas",Modifier.padding(8.dp))}
+        PrismaOutlinedButton(onClick={foldersDialog=true},modifier=Modifier.fillMaxWidth(),shape=RoundedCornerShape(16.dp)) {Icon(Icons.Rounded.FolderOpen,null);Text("Elegir carpetas · ${excluded.size} excluidas",Modifier.padding(8.dp))}
         Text("Se muestran las carpetas que Android ha registrado con archivos de audio. Las carpetas privadas de otras apps pueden no ser accesibles.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
         SectionTitle("PRISMA MUSIC","${BuildConfig.VERSION_NAME} · Código abierto")
         Text("Sin anuncios, sin cuenta y sin subir tu música. Las letras incrustadas se leen automáticamente. Puedes importar LRC o TXT si el archivo no contiene letra. El motor usa PCM de 16 bits para aplicar el ecualizador; los datos mostrados describen el archivo original.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
@@ -120,7 +120,7 @@ import kotlinx.coroutines.withContext
     if(foldersDialog) AlertDialog(onDismissRequest={foldersDialog=false},title={Text("Carpetas de música")},text={Column {
         Text("Marca las carpetas que quieres incluir. La exclusión de WhatsApp tiene prioridad.",style=MaterialTheme.typography.bodySmall)
         LazyColumn(Modifier.heightIn(max=360.dp)) {items(songs.map {it.folder}.distinct().sorted()) {folder->Row(Modifier.fillMaxWidth().clickable {excluded=if(folder in excluded) excluded-folder else excluded+folder;prefs.excluded=excluded;onLibraryChanged()},verticalAlignment=Alignment.CenterVertically) {Checkbox(checked=folder !in excluded,onCheckedChange={included->excluded=if(included) excluded-folder else excluded+folder;prefs.excluded=excluded;onLibraryChanged()});Text(folder.ifBlank {"Sin carpeta"},maxLines=3,overflow=TextOverflow.Ellipsis,style=MaterialTheme.typography.bodySmall)}}}
-    }},confirmButton={TextButton(onClick={foldersDialog=false}){Text("Listo")}})
+    }},confirmButton={PrismaTextButton(onClick={foldersDialog=false}){Text("Listo")}})
 }
 @Composable fun SettingSwitch(title:String,description:String,checked:Boolean,onChange:(Boolean)->Unit) {
     Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {
@@ -139,20 +139,20 @@ import kotlinx.coroutines.withContext
     var replaceName by remember {mutableStateOf<String?>(null)}
     fun save(name:String) {presets=presets+(name to config);prefs.saveEqPresets(presets);saving=false;replaceName=null}
     fun applyPreset(value:DspEngine.Config) {config=value;onChange(config);showPresets=false}
-    if(saving) AlertDialog(onDismissRequest={saving=false},title={Text("Guardar preset")},text={OutlinedTextField(presetName,{presetName=it.take(40)},label={Text("Nombre del preset")},singleLine=true)},confirmButton={TextButton(enabled=presetName.trim().isNotEmpty(),onClick={val name=presetName.trim();if(name in presets) {saving=false;replaceName=name} else save(name)}){Text("Guardar")}},dismissButton={TextButton(onClick={saving=false}){Text("Cancelar")}})
-    replaceName?.let {name->AlertDialog(onDismissRequest={replaceName=null},title={Text("¿Reemplazar «$name»?")},text={Text("Se guardarán las bandas, Q, preamplificador, tono, voces y estado del ecualizador actuales.")},confirmButton={TextButton(onClick={save(name)}){Text("Reemplazar")}},dismissButton={TextButton(onClick={replaceName=null}){Text("Cancelar")}})}
+    if(saving) AlertDialog(onDismissRequest={saving=false},title={Text("Guardar preset")},text={OutlinedTextField(presetName,{presetName=it.take(40)},label={Text("Nombre del preset")},singleLine=true)},confirmButton={PrismaTextButton(enabled=presetName.trim().isNotEmpty(),onClick={val name=presetName.trim();if(name in presets) {saving=false;replaceName=name} else save(name)}){Text("Guardar")}},dismissButton={PrismaTextButton(onClick={saving=false}){Text("Cancelar")}})
+    replaceName?.let {name->AlertDialog(onDismissRequest={replaceName=null},title={Text("¿Reemplazar «$name»?")},text={Text("Se guardarán las bandas, Q, preamplificador, tono, voces y estado del ecualizador actuales.")},confirmButton={PrismaTextButton(onClick={save(name)}){Text("Reemplazar")}},dismissButton={PrismaTextButton(onClick={replaceName=null}){Text("Cancelar")}})}
     if(showPresets) ModalBottomSheet(onDismissRequest={showPresets=false}) {
         Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(24.dp)) {
             Text("Mis presets",style=MaterialTheme.typography.titleLarge)
             if(presets.isEmpty()) Text("Ajusta el sonido y pulsa Guardar preset para crear el primero.",modifier=Modifier.padding(vertical=16.dp))
             presets.toSortedMap().forEach {(name,value)->
                 Row(verticalAlignment=Alignment.CenterVertically) {
-                    TextButton(onClick={applyPreset(value)},modifier=Modifier.weight(1f)) {Text(name)}
-                    IconButton(onClick={presetName=name;showPresets=false;saving=true}) {Icon(Icons.Rounded.Save,"Actualizar $name con el sonido actual")}
-                    IconButton(onClick={presets=presets-name;prefs.saveEqPresets(presets)}) {Icon(Icons.Rounded.DeleteOutline,"Eliminar preset $name")}
+                    PrismaTextButton(onClick={applyPreset(value)},modifier=Modifier.weight(1f)) {Text(name)}
+                    PrismaIconButton(onClick={presetName=name;showPresets=false;saving=true}) {Icon(Icons.Rounded.Save,"Actualizar $name con el sonido actual")}
+                    PrismaIconButton(onClick={presets=presets-name;prefs.saveEqPresets(presets)}) {Icon(Icons.Rounded.DeleteOutline,"Eliminar preset $name")}
                 }
             }
-            TextButton(onClick={showPresets=false}) {Text("Cerrar")}
+            PrismaTextButton(onClick={showPresets=false}) {Text("Cerrar")}
         }
     }
     fun update(enabled:Boolean=config.enabled,gains:DoubleArray=config.gains,q:Double=config.q,preamp:Double=config.preamp,bass:Double=config.bass,mids:Double=config.mids,treble:Double=config.treble,voice:Double=config.voice) {config=DspEngine.Config(enabled,gains,q,preamp,bass,mids,treble,voice);onChange(config)}
@@ -160,11 +160,11 @@ import kotlinx.coroutines.withContext
         Row(verticalAlignment=Alignment.CenterVertically,modifier=Modifier.fillMaxWidth()) {Column(Modifier.weight(1f)) {Text("Escucha los detalles",fontWeight=FontWeight.Bold,fontSize=21.sp);Text("10 bandas · procesamiento propio",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)};Switch(config.enabled,{update(enabled=it)})}
         Text("Los controles se aplican a la música reproducida en Prisma. Con el ecualizador activo, el limitador controla los picos.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant,modifier=Modifier.padding(vertical=12.dp))
         Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(8.dp)) {
-            builtInEqPresets.forEach {(name,value)->OutlinedButton(onClick={applyPreset(value)}) {Text(name)}}
+            builtInEqPresets.forEach {(name,value)->PrismaOutlinedButton(onClick={applyPreset(value)}) {Text(name)}}
         }
         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)) {
-            OutlinedButton(onClick={showPresets=true},modifier=Modifier.weight(1f)) {Text("Mis presets · ${presets.size}")}
-            Button(onClick={presetName="";saving=true},modifier=Modifier.weight(1f)) {Text("Guardar preset")}
+            PrismaOutlinedButton(onClick={showPresets=true},modifier=Modifier.weight(1f)) {Text("Mis presets · ${presets.size}")}
+            PrismaButton(onClick={presetName="";saving=true},modifier=Modifier.weight(1f)) {Text("Guardar preset")}
         }
 
         SectionTitle("ECUALIZADOR","Bandas de frecuencia")
@@ -178,7 +178,7 @@ import kotlinx.coroutines.withContext
         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) {Text("Ancho de banda · Q");Text("%.2f".format(config.q),color=MaterialTheme.colorScheme.primary)}
         Slider(value=config.q.toFloat(),onValueChange={update(q=it.toDouble())},valueRange=.3f..4f,enabled=config.enabled)
         Text("Q bajo: ajuste más amplio. Q alto: ajuste más preciso. Realzar voces modifica su zona de frecuencias; no separa la voz de los instrumentos.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
-        OutlinedButton(onClick={config=DspEngine.Config.flat();onChange(config)},modifier=Modifier.fillMaxWidth().padding(vertical=18.dp)) {Text("Restablecer sonido")}
+        PrismaOutlinedButton(onClick={config=DspEngine.Config.flat();onChange(config)},modifier=Modifier.fillMaxWidth().padding(vertical=18.dp)) {Text("Restablecer sonido")}
     }
 }
 @Composable fun SoundSlider(label:String,value:Double,unit:String,enabled:Boolean,onChange:(Double)->Unit) {Column {Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) {Text(label,style=MaterialTheme.typography.bodyMedium);Text("%+.1f %s".format(value,unit),style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.primary)};Slider(value=value.toFloat(),onValueChange={onChange(it.toDouble())},valueRange=-12f..12f,enabled=enabled,modifier=Modifier.height(38.dp))}}
@@ -236,17 +236,17 @@ import kotlinx.coroutines.withContext
         Box(Modifier.fillMaxWidth().height(20.dp).semantics {contentDescription="Deslizar hacia abajo para cerrar"}.pointerInput(Unit) {
             detectVerticalDragGestures(onDragStart={isDragging=true;verticalDrag=0f},onDragCancel={isDragging=false;verticalDrag=0f},onDragEnd={isDragging=false;if(verticalDrag>closeThreshold) closing=true;verticalDrag=0f}) {change,amount->change.consume();verticalDrag=(verticalDrag+amount).coerceAtLeast(0f)}
         },contentAlignment=Alignment.Center) {Box(Modifier.width(40.dp).height(4.dp).clip(RoundedCornerShape(8.dp)).background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha=.45f)))}
-        Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.Center,verticalAlignment=Alignment.CenterVertically) {FilterChip(!lyricsVisible,{lyricsVisible=false},label={Text("Carátula")});Spacer(Modifier.width(8.dp));FilterChip(lyricsVisible,{lyricsVisible=true},label={Text("Letra")});IconButton(onClick={metadataVisible=!metadataVisible;prefs.showMetadata=metadataVisible}) {Icon(Icons.Rounded.Info,if(metadataVisible) "Ocultar metadatos" else "Mostrar metadatos",tint=if(metadataVisible) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)};IconButton(enabled=controller!=null,onClick={queueVisible=true}) {Icon(Icons.Rounded.QueueMusic,"Ver cola de reproducción")}}
+        Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.Center,verticalAlignment=Alignment.CenterVertically) {PrismaFilterChip(!lyricsVisible,{lyricsVisible=false},label={Text("Carátula")});Spacer(Modifier.width(8.dp));PrismaFilterChip(lyricsVisible,{lyricsVisible=true},label={Text("Letra")});PrismaIconButton(onClick={metadataVisible=!metadataVisible;prefs.showMetadata=metadataVisible}) {Icon(Icons.Rounded.Info,if(metadataVisible) "Ocultar metadatos" else "Mostrar metadatos",tint=if(metadataVisible) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)};PrismaIconButton(enabled=controller!=null,onClick={queueVisible=true}) {Icon(Icons.Rounded.QueueMusic,"Ver cola de reproducción")}}
         Box(Modifier.weight(1f).fillMaxWidth().then(if(lyricsVisible) Modifier else swipe),contentAlignment=Alignment.Center) {
             if(lyricsVisible) {
                 val lines=remember(lyricText) {Lyrics.parse(lyricText)}
-                if(lines.isEmpty()) Column(horizontalAlignment=Alignment.CenterHorizontally) {Icon(Icons.Rounded.Lyrics,null,Modifier.size(64.dp),tint=MaterialTheme.colorScheme.primary);Spacer(Modifier.height(16.dp));Text(if(details==null) "Leyendo letra incrustada…" else "No se encontró una letra incrustada",fontWeight=FontWeight.Bold);Text("También puedes importar un archivo LRC o TXT.",style=MaterialTheme.typography.bodySmall,modifier=Modifier.padding(vertical=10.dp));Button(onClick={importId=song.id;import.launch(arrayOf("text/*","application/octet-stream"))}){Text("Importar letra")}}
+                if(lines.isEmpty()) Column(horizontalAlignment=Alignment.CenterHorizontally) {Icon(Icons.Rounded.Lyrics,null,Modifier.size(64.dp),tint=MaterialTheme.colorScheme.primary);Spacer(Modifier.height(16.dp));Text(if(details==null) "Leyendo letra incrustada…" else "No se encontró una letra incrustada",fontWeight=FontWeight.Bold);Text("También puedes importar un archivo LRC o TXT.",style=MaterialTheme.typography.bodySmall,modifier=Modifier.padding(vertical=10.dp));PrismaButton(onClick={importId=song.id;import.launch(arrayOf("text/*","application/octet-stream"))}){Text("Importar letra")}}
                 else {
                     val active=lines.indexOfLast {it.time!=null && it.time<=position}
                     val state=rememberLazyListState()
                     var follow by remember(song.id) {mutableStateOf(true)}
                     LaunchedEffect(active,follow,lyricText) {if(follow && active>=0) state.animateScrollToItem(active,0)}
-                    Column {Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) {FilterChip(follow,{follow=!follow},label={Text(if(follow) "Seguir canción" else "Leer libremente")});Text(if(embedded) "Del archivo" else "Importada",color=MaterialTheme.colorScheme.onSurfaceVariant,fontSize=11.sp)}
+                    Column {Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) {PrismaFilterChip(follow,{follow=!follow},label={Text(if(follow) "Seguir canción" else "Leer libremente")});Text(if(embedded) "Del archivo" else "Importada",color=MaterialTheme.colorScheme.onSurfaceVariant,fontSize=11.sp)}
                         LazyColumn(state=state,modifier=Modifier.fillMaxSize(),contentPadding=PaddingValues(top=16.dp,bottom=130.dp),verticalArrangement=Arrangement.spacedBy(22.dp)) {itemsIndexed(lines) {index,line ->
                             val color by animateColorAsState(if(active==index || line.time==null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,label="lyricColor")
                             val scale by animateFloatAsState(if(active==index && theme!=VisualTheme.MINIMAL) 1.035f else 1f,label="lyricScale")
@@ -281,12 +281,12 @@ import kotlinx.coroutines.withContext
         }
         ThemeTimeline(theme,seeking ?: smoothPosition,end.toFloat().coerceAtLeast(1f),end>0,onChange={seeking=it},onFinished={seeking?.let {controller?.seekTo(it.toLong())};seeking=null})
         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) {Text(time((seeking?.toLong() ?: position)),fontSize=11.sp,color=MaterialTheme.colorScheme.onSurfaceVariant);Text(time(end),fontSize=11.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)}
-        Row(Modifier.fillMaxWidth().padding(vertical=12.dp).then(if(theme==VisualTheme.GLASS) Modifier.crystal().background(MaterialTheme.colorScheme.surface.copy(alpha=.55f)).padding(vertical=8.dp) else Modifier.clip(RoundedCornerShape(32.dp)).background(MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha=.8f)).padding(vertical=8.dp)),horizontalArrangement=Arrangement.SpaceEvenly,verticalAlignment=Alignment.CenterVertically) {
-            IconButton(onClick={controller?.shuffleModeEnabled=!shuffle}) {Icon(Icons.Rounded.Shuffle,if(shuffle) "Desactivar aleatorio" else "Activar aleatorio",tint=if(shuffle) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)}
-            IconButton(onClick={controller?.seekToPrevious()}) {Icon(Icons.Rounded.SkipPrevious,"Anterior",Modifier.size(34.dp))}
-            FilledIconButton(onClick={controller?.let {if(it.isPlaying) it.pause() else it.play()}},modifier=Modifier.size(72.dp),shape=if(theme==VisualTheme.STUDIO) RoundedCornerShape(20.dp) else CircleShape) {Icon(if(playing) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,if(playing) "Pausar" else "Reproducir",Modifier.size(38.dp))}
-            IconButton(onClick={controller?.seekToNextMediaItem()}) {Icon(Icons.Rounded.SkipNext,"Siguiente",Modifier.size(34.dp))}
-            IconButton(onClick={controller?.repeatMode=when(repeat){Player.REPEAT_MODE_OFF->Player.REPEAT_MODE_ALL;Player.REPEAT_MODE_ALL->Player.REPEAT_MODE_ONE;else->Player.REPEAT_MODE_OFF}}) {Icon(if(repeat==Player.REPEAT_MODE_ONE) Icons.Rounded.RepeatOne else Icons.Rounded.Repeat,"Cambiar repetición",tint=if(repeat!=Player.REPEAT_MODE_OFF) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)}
+        Row(Modifier.fillMaxWidth().padding(vertical=12.dp).then(if(theme==VisualTheme.GLASS) Modifier.liquidSurface(32f,MaterialTheme.colorScheme.surface.copy(alpha=.16f)).padding(vertical=8.dp) else Modifier.clip(RoundedCornerShape(32.dp)).background(MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha=.8f)).padding(vertical=8.dp)),horizontalArrangement=Arrangement.SpaceEvenly,verticalAlignment=Alignment.CenterVertically) {
+            PrismaIconButton(onClick={controller?.shuffleModeEnabled=!shuffle}) {Icon(Icons.Rounded.Shuffle,if(shuffle) "Desactivar aleatorio" else "Activar aleatorio",tint=if(shuffle) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)}
+            PrismaIconButton(onClick={controller?.seekToPrevious()}) {Icon(Icons.Rounded.SkipPrevious,"Anterior",Modifier.size(34.dp))}
+            PrismaPlayButton(onClick={controller?.let {if(it.isPlaying) it.pause() else it.play()}},modifier=Modifier.size(72.dp),shape=if(theme==VisualTheme.STUDIO) RoundedCornerShape(20.dp) else CircleShape) {Icon(if(playing) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,if(playing) "Pausar" else "Reproducir",Modifier.size(38.dp))}
+            PrismaIconButton(onClick={controller?.seekToNextMediaItem()}) {Icon(Icons.Rounded.SkipNext,"Siguiente",Modifier.size(34.dp))}
+            PrismaIconButton(onClick={controller?.repeatMode=when(repeat){Player.REPEAT_MODE_OFF->Player.REPEAT_MODE_ALL;Player.REPEAT_MODE_ALL->Player.REPEAT_MODE_ONE;else->Player.REPEAT_MODE_OFF}}) {Icon(if(repeat==Player.REPEAT_MODE_ONE) Icons.Rounded.RepeatOne else Icons.Rounded.Repeat,"Cambiar repetición",tint=if(repeat!=Player.REPEAT_MODE_OFF) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)}
         }
     }
 }

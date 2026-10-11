@@ -35,10 +35,10 @@ fun recentlyAdded(songs:List<Song>):List<Song> = songs.sortedWith(compareByDesce
         Text(artist,style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Bold)
         Text("${collection.size} canciones · ${albums.size} álbumes en tu teléfono",style=MaterialTheme.typography.bodySmall,modifier=Modifier.padding(vertical=8.dp))
         if(album!=null) {
-            TextButton(onClick={album=null;tab="Álbumes"}) {Icon(Icons.Rounded.ArrowBack,null);Text("Todos los álbumes")}
+            PrismaTextButton(onClick={album=null;tab="Álbumes"}) {Icon(Icons.Rounded.ArrowBack,null);Text("Todos los álbumes")}
             Text(album!!,style=MaterialTheme.typography.titleLarge,modifier=Modifier.padding(vertical=8.dp))
         } else Row(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
-            listOf("Canciones","Álbumes").forEach {label->FilterChip(tab==label,{tab=label},label={Text(label)})}
+            listOf("Canciones","Álbumes").forEach {label->PrismaFilterChip(tab==label,{tab=label},label={Text(label)})}
         }
         if(collection.isEmpty() || album!=null && queue.isEmpty()) EmptyCard("No hay canciones de este artista","Actualiza la biblioteca o revisa las carpetas excluidas.",Icons.Rounded.Person)
         else if(tab=="Álbumes" && album==null) LazyColumn(contentPadding=PaddingValues(bottom=20.dp)) {
@@ -47,8 +47,8 @@ fun recentlyAdded(songs:List<Song>):List<Song> = songs.sortedWith(compareByDesce
             }
         } else {
             Row(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
-                Button(onClick={onPlay(queue,queue.first())}) {Icon(Icons.Rounded.PlayArrow,null);Text("Reproducir")}
-                OutlinedButton(onClick={onAdd(queue)}) {Icon(Icons.Rounded.PlaylistAdd,null);Text("Añadir a una lista")}
+                PrismaButton(onClick={onPlay(queue,queue.first())}) {Icon(Icons.Rounded.PlayArrow,null);Text("Reproducir")}
+                PrismaOutlinedButton(onClick={onAdd(queue)}) {Icon(Icons.Rounded.PlaylistAdd,null);Text("Añadir a una lista")}
             }
             LazyColumn(contentPadding=PaddingValues(bottom=20.dp)) {items(queue,key={it.id}) {song->SongRow(song,currentId,{onPlay(queue,song)},onOptions={onOptions(song)})}}
         }
@@ -70,7 +70,7 @@ fun recentlyAdded(songs:List<Song>):List<Song> = songs.sortedWith(compareByDesce
             OutlinedTextField(search,{search=it},label={Text("Buscar canciones para añadir")},singleLine=true,leadingIcon={Icon(Icons.Rounded.Search,null)},modifier=Modifier.fillMaxWidth())
             Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {
                 Text("${selection.size} seleccionadas",Modifier.weight(1f))
-                TextButton(enabled=filtered.isNotEmpty(),onClick={val ids=filtered.map {it.id}.toSet();chosen=if(chosen.containsAll(ids)) chosen-ids else chosen+ids}) {Text("Seleccionar visibles")}
+                PrismaTextButton(enabled=filtered.isNotEmpty(),onClick={val ids=filtered.map {it.id}.toSet();chosen=if(chosen.containsAll(ids)) chosen-ids else chosen+ids}) {Text("Seleccionar visibles")}
             }
             if(filtered.isEmpty()) Box(Modifier.weight(1f).fillMaxWidth(),contentAlignment=Alignment.Center) {Text(if(available.isEmpty()) "Todas las canciones de tu biblioteca ya están en esta lista." else "No hay coincidencias.")}
             else LazyColumn(Modifier.weight(1f),contentPadding=PaddingValues(vertical=8.dp)) {
@@ -82,8 +82,8 @@ fun recentlyAdded(songs:List<Song>):List<Song> = songs.sortedWith(compareByDesce
                     }
                 }
             }
-            Button(enabled=selection.isNotEmpty(),onClick={onAdd(selection);onDismiss()},modifier=Modifier.fillMaxWidth()) {Text("Añadir ${selection.size} canciones")}
-            TextButton(onClick=onDismiss,modifier=Modifier.fillMaxWidth()) {Text("Cancelar")}
+            PrismaButton(enabled=selection.isNotEmpty(),onClick={onAdd(selection);onDismiss()},modifier=Modifier.fillMaxWidth()) {Text("Añadir ${selection.size} canciones")}
+            PrismaTextButton(onClick=onDismiss,modifier=Modifier.fillMaxWidth()) {Text("Cancelar")}
             Spacer(Modifier.height(16.dp))
         }
     }

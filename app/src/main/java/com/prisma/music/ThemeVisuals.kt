@@ -59,7 +59,7 @@ val LocalVisualTheme=staticCompositionLocalOf { VisualTheme.CHROMATIC }
             Cover(song,Modifier.fillMaxWidth().aspectRatio(1f).clip(RoundedCornerShape(if(theme==VisualTheme.GLASS)22.dp else 14.dp)))
             Text(song.title,color=c.onSurface,fontWeight=FontWeight.Bold,maxLines=2,overflow=TextOverflow.Ellipsis,modifier=Modifier.padding(top=10.dp))
             Text(song.subtitle(LocalPersonalization.current.info),color=c.onSurfaceVariant,fontSize=11.sp,maxLines=1,overflow=TextOverflow.Ellipsis)
-            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=Alignment.CenterVertically) {Text(time(song.duration),fontSize=10.sp,color=c.onSurfaceVariant);IconButton(onClick=onAdd,modifier=Modifier.size(32.dp)) {Icon(Icons.Rounded.MoreVert,"Opciones de ${song.title}",Modifier.size(20.dp))}}
+            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=Alignment.CenterVertically) {Text(time(song.duration),fontSize=10.sp,color=c.onSurfaceVariant);PrismaIconButton(onClick=onAdd,modifier=Modifier.size(32.dp)) {Icon(Icons.Rounded.MoreVert,"Opciones de ${song.title}",Modifier.size(20.dp))}}
         }
     }
 }

@@ -29,8 +29,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable fun FloatingNavigation(page:String,onPage:(String)->Unit) {
+    if(LocalVisualTheme.current==VisualTheme.GLASS) {LiquidNavigation(page,onPage);return}
     val c=MaterialTheme.colorScheme
-    val glass=LocalVisualTheme.current==VisualTheme.GLASS
+    val glass=false
     Surface(shape=RoundedCornerShape(38.dp),color=c.surface.copy(alpha=if(glass) .78f else .97f),border=BorderStroke(1.dp,c.outlineVariant.copy(alpha=.4f)),shadowElevation=if(glass) 12.dp else 5.dp,modifier=Modifier.navigationBarsPadding().padding(horizontal=14.dp,vertical=8.dp).fillMaxWidth().then(if(glass) Modifier.crystal() else Modifier)) {
         Row(Modifier.padding(6.dp),verticalAlignment=Alignment.CenterVertically) {
             listOf("Inicio" to Icons.Rounded.Home,"Biblioteca" to Icons.Rounded.LibraryMusic,"Listas" to Icons.Rounded.QueueMusic,"Sonido" to Icons.Rounded.Equalizer,"Ajustes" to Icons.Rounded.Tune).forEach { (route,icon)->
@@ -52,11 +53,11 @@ import androidx.compose.ui.unit.sp
     val featured=(listOfNotNull(current?.takeIf {it in songs})+recent+songs).distinctBy {it.id}.take(8)
     val added=recentlyAdded(songs)
     val albums=songs.distinctBy {it.album to it.artist}.take(12)
-    LazyColumn(Modifier.fillMaxSize(),contentPadding=PaddingValues(bottom=24.dp),verticalArrangement=Arrangement.spacedBy(24.dp)) {
+    LazyColumn(Modifier.fillMaxSize(),contentPadding=PaddingValues(bottom=LocalCollectionBottomPadding.current),verticalArrangement=Arrangement.spacedBy(24.dp)) {
         item {
             Row(Modifier.padding(horizontal=24.dp),verticalAlignment=Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {Text("Tu colección, contigo",fontSize=22.sp,fontWeight=FontWeight.Bold);Text("${songs.size} canciones · sin conexión",fontSize=13.sp,color=c.onSurfaceVariant,modifier=Modifier.padding(top=4.dp))}
-                IconButton(onClick=onLibrary) {Icon(Icons.Rounded.ArrowForward,"Explorar biblioteca")}
+                PrismaIconButton(onClick=onLibrary) {Icon(Icons.Rounded.ArrowForward,"Explorar biblioteca")}
             }
         }
         item {
@@ -82,7 +83,7 @@ import androidx.compose.ui.unit.sp
         item {
             Row(Modifier.fillMaxWidth().padding(horizontal=24.dp),verticalAlignment=Alignment.CenterVertically) {
                 Text("Recién añadidas",fontSize=20.sp,fontWeight=FontWeight.Bold,modifier=Modifier.weight(1f))
-                TextButton(onClick=onRecent) {Text("Ver todas")}
+                PrismaTextButton(onClick=onRecent) {Text("Ver todas")}
             }
             LazyRow(contentPadding=PaddingValues(horizontal=24.dp),horizontalArrangement=Arrangement.spacedBy(16.dp)) {
                 items(added.take(16),key={it.id}) {song->HomeSongCard(song,{onPlay(added,song)},{onOptions(song)})}
@@ -94,7 +95,7 @@ import androidx.compose.ui.unit.sp
                 items(albums,key={"${it.album}\u0000${it.artist}"}) {song->HomeSongCard(song,{onPlay(songs.filter {it.album==song.album && it.artist==song.artist},song)},{onOptions(song)},album=true)}
             }
         }
-        item {TextButton(onClick=onLibrary,modifier=Modifier.padding(horizontal=16.dp)) {Text("Ver toda la biblioteca");Icon(Icons.Rounded.ChevronRight,null)}}
+        item {PrismaTextButton(onClick=onLibrary,modifier=Modifier.padding(horizontal=16.dp)) {Text("Ver toda la biblioteca");Icon(Icons.Rounded.ChevronRight,null)}}
     }
 }
 @Composable private fun HomeSongCard(song:Song,onPlay:()->Unit,onOptions:()->Unit,album:Boolean=false) {
@@ -125,7 +126,7 @@ fun VisualTheme.description():String = when(this) {
     val c=MaterialTheme.colorScheme
     LazyColumn(Modifier.fillMaxSize(),contentPadding=PaddingValues(horizontal=20.dp,vertical=8.dp),verticalArrangement=Arrangement.spacedBy(16.dp)) {
         item {Text("Un reproductor con tu estilo",fontSize=21.sp,fontWeight=FontWeight.SemiBold);Text("Elige un diseño. Tu color personalizado se conserva; puedes restablecerlo en Ajustes para usar la paleta del tema.",fontSize=13.sp,color=c.onSurfaceVariant,modifier=Modifier.padding(top=6.dp))}
-        item {Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(6.dp)) {LightMode.entries.forEach {m->FilterChip(selected=mode==m,onClick={onMode(m)},label={Text(m.title,fontSize=11.sp)})}}}
+        item {Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(6.dp)) {LightMode.entries.forEach {m->PrismaFilterChip(selected=mode==m,onClick={onMode(m)},label={Text(m.title,fontSize=11.sp)})}}}
         items(VisualTheme.entries,key={it.name}) {v->
             Surface(onClick={onTheme(v)},shape=RoundedCornerShape(24.dp),color=c.surface.copy(alpha=.88f),border=BorderStroke(if(theme==v)2.dp else 1.dp,if(theme==v)c.primary else c.outlineVariant.copy(alpha=.4f)),modifier=Modifier.fillMaxWidth()) {
                 Row(Modifier.padding(16.dp),verticalAlignment=Alignment.CenterVertically) {
