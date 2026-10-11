@@ -273,7 +273,7 @@ import kotlinx.coroutines.withContext
                 lyricError?.let {Text(it,color=MaterialTheme.colorScheme.error,modifier=Modifier.align(Alignment.BottomCenter))}
             } else {
                 AnimatedContent(targetState=Pair(song,theme),contentKey={it.first.id to it.second},transitionSpec={contentMotion(motion.motion,motion.motionDuration,swipeDirection).using(null)},modifier=Modifier.graphicsLayer {translationX=artworkOffset},label="themedCover") { target ->
-                    if(target.second==VisualTheme.GLASS || target.second==VisualTheme.MONOCHROME) Spacer(Modifier.fillMaxSize())
+                    if(target.second==VisualTheme.GLASS || target.second==VisualTheme.MONOCHROME) Spacer(Modifier.fillMaxSize().semantics {contentDescription="Diseño ${target.second.title}"})
                     else ThemeArtwork(target.first,if(target.first.id==song.id) details else null,target.second)
                 }
 
