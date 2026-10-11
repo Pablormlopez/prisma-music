@@ -180,7 +180,7 @@ fun PrismaApp() {
             }) { padding ->
                 val glassCollection=theme==VisualTheme.GLASS && (page=="Inicio" || page=="Biblioteca")
                 CompositionLocalProvider(LocalCollectionBottomPadding provides if(glassCollection) padding.calculateBottomPadding()+24.dp else 24.dp) {
-                Column(Modifier.fillMaxSize().padding(top=padding.calculateTopPadding(),bottom=if(glassCollection) 0.dp else padding.calculateBottomPadding()).then(if(theme==VisualTheme.GLASS) Modifier.captureGlassScene(glassScene) else Modifier)) {
+                Column(Modifier.fillMaxSize().padding(start=padding.calculateStartPadding(androidx.compose.ui.platform.LocalLayoutDirection.current),end=padding.calculateEndPadding(androidx.compose.ui.platform.LocalLayoutDirection.current),top=padding.calculateTopPadding(),bottom=if(glassCollection) 0.dp else padding.calculateBottomPadding()).then(if(theme==VisualTheme.GLASS) Modifier.captureGlassScene(glassScene) else Modifier)) {
                     Row(Modifier.fillMaxWidth().padding(horizontal=22.dp,vertical=if(page=="Reproduciendo") 4.dp else 14.dp),verticalAlignment=Alignment.CenterVertically) {
                         if(page=="Reproduciendo") PrismaIconButton(onClick={page=playerReturn}) { Icon(Icons.Rounded.KeyboardArrowDown,if(playerReturn=="Biblioteca") "Volver a la biblioteca" else "Cerrar reproductor") }
                         if(page=="Artista") PrismaIconButton(onClick={page="Reproduciendo"}) {Icon(Icons.Rounded.ArrowBack,"Volver al reproductor")}

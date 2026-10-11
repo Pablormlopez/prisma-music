@@ -58,17 +58,26 @@ fun Modifier.sampleGlassBackdrop(radius:Float)=composed {
     val sample=rememberGraphicsLayer()
     var origin by remember {mutableStateOf(Offset.Zero)}
     val blur=with(LocalDensity.current) {7.dp.toPx()}
+    val backdrop=MaterialTheme.colorScheme.background
     if(scene==null) this else this.onGloballyPositioned {origin=it.positionInRoot()}.clip(RoundedCornerShape(radius.dp)).drawWithContent {
-        sample.renderEffect=if(android.os.Build.VERSION.SDK_INT>=31) BlurEffect(blur,blur,TileMode.Clamp) else null
-        sample.record {
-            translate(scene.origin.x-origin.x,scene.origin.y-origin.y) {drawLayer(scene.layer)}
+        if(android.os.Build.VERSION.SDK_INT>=31) {
+            sample.renderEffect=BlurEffect(blur,blur,TileMode.Clamp)
+            sample.record {
+                // Composite an opaque scene before blurring, so original sharp text
+                // cannot bleed through transparent pixels of the blurred sample.
+                drawRect(backdrop)
+                translate(scene.origin.x-origin.x,scene.origin.y-origin.y) {drawLayer(scene.layer)}
+            }
+            drawLayer(sample)
+        } else {
+            // Older Android versions keep the translucent tint without duplicating text.
+            drawRect(backdrop.copy(alpha=.92f))
         }
-        drawLayer(sample)
         drawContent()
     }
 }
 
-/** Static optics, animated geometry: no bitmap allocations or blur work during a gesture. */
+/** Static optics, animated geometry: no CPU bitmap allocations during a gesture. */
 fun Modifier.liquidSurface(radius:Float=28f, tint:Color=Color.Transparent, pressure:Float=0f):Modifier =
     clip(RoundedCornerShape(radius.dp)).drawWithCache {
         val corner=androidx.compose.ui.geometry.CornerRadius(radius.dp.toPx())
