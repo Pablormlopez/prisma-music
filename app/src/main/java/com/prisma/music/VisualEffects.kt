@@ -118,6 +118,10 @@ fun Modifier.crystal() = liquidSurface()
                     val step=size.width/40
                     for(i in 0 until 40) drawRoundRect(if((i+.5f)/40<=progress) primary else inactive,Offset(i*step,mid-3.dp.toPx()),Size((step-2.dp.toPx()).coerceAtLeast(1f),6.dp.toPx()),CornerRadius(1.dp.toPx()))
                 }
+                VisualTheme.MONOCHROME->{
+                    drawLine(inactive,Offset(0f,mid),Offset(size.width,mid),2.dp.toPx(),StrokeCap.Round)
+                    drawLine(primary,Offset(0f,mid),Offset(size.width*progress,mid),2.dp.toPx(),StrokeCap.Round)
+                }
             }
         }}
     )

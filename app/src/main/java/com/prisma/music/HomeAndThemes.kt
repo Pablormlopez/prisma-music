@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -113,6 +114,7 @@ fun VisualTheme.palette():List<Color> = when(this) {
     VisualTheme.NIGHT->listOf(Color(0xff121f1b),Color(0xff334c42),Color(0xff66e2ac))
     VisualTheme.STUDIO->listOf(Color(0xff302c3a),Color(0xff807193),Color(0xffc8b5ff))
     VisualTheme.SUNSET->listOf(Color(0xffffd3aa),Color(0xfff0a582),Color(0xff9b3d14))
+    VisualTheme.MONOCHROME->listOf(Color.White,Color(0xff808080),Color.Black)
 }
 fun VisualTheme.description():String = when(this) {
     VisualTheme.CHROMATIC->"Carátulas, color y movimiento"
@@ -121,6 +123,7 @@ fun VisualTheme.description():String = when(this) {
     VisualTheme.NIGHT->"Profundidad y contraste verde"
     VisualTheme.STUDIO->"Paneles definidos y pulso visual"
     VisualTheme.SUNSET->"Luz cálida y formas suaves"
+    VisualTheme.MONOCHROME->"Blanco puro y negro AMOLED"
 }
 @Composable fun ThemesScreen(theme:VisualTheme,mode:LightMode,onTheme:(VisualTheme)->Unit,onMode:(LightMode)->Unit) {
     val c=MaterialTheme.colorScheme
@@ -130,9 +133,9 @@ fun VisualTheme.description():String = when(this) {
         items(VisualTheme.entries,key={it.name}) {v->
             Surface(onClick={onTheme(v)},shape=RoundedCornerShape(24.dp),color=c.surface.copy(alpha=.88f),border=BorderStroke(if(theme==v)2.dp else 1.dp,if(theme==v)c.primary else c.outlineVariant.copy(alpha=.4f)),modifier=Modifier.fillMaxWidth()) {
                 Row(Modifier.padding(16.dp),verticalAlignment=Alignment.CenterVertically) {
-                    ThemePreview(v)
+                    ThemePreview(v,mode)
                     Column(Modifier.weight(1f).padding(horizontal=16.dp)) {
-                        if(v==VisualTheme.STUDIO || v==VisualTheme.SUNSET) Text("NUEVO",fontSize=9.sp,letterSpacing=1.sp,color=c.primary,fontWeight=FontWeight.Bold)
+                        if(v==VisualTheme.STUDIO || v==VisualTheme.SUNSET || v==VisualTheme.MONOCHROME) Text("NUEVO",fontSize=9.sp,letterSpacing=1.sp,color=c.primary,fontWeight=FontWeight.Bold)
                         Text(v.title,fontSize=19.sp,fontWeight=FontWeight.Bold)
                         Text(v.description(),fontSize=12.sp,color=c.onSurfaceVariant,modifier=Modifier.padding(top=5.dp))
                         Text(if(theme==v)"En uso" else "Aplicar tema",fontSize=11.sp,color=c.primary,modifier=Modifier.padding(top=8.dp))
@@ -144,14 +147,16 @@ fun VisualTheme.description():String = when(this) {
         item {Spacer(Modifier.height(10.dp))}
     }
 }
-@Composable private fun ThemePreview(theme:VisualTheme) {
+@Composable private fun ThemePreview(theme:VisualTheme,mode:LightMode) {
     val palette=theme.palette()
-    val dark=theme==VisualTheme.NIGHT || theme==VisualTheme.STUDIO
-    val fg=if(dark)Color.White else Color(0xff292532)
-    Column(Modifier.width(72.dp).height(112.dp).clip(RoundedCornerShape(15.dp)).background(if(dark)palette.first() else palette.first().copy(alpha=.55f)).padding(8.dp),horizontalAlignment=Alignment.CenterHorizontally) {
+    val dark=if(theme==VisualTheme.MONOCHROME) when(mode) {LightMode.DARK->true;LightMode.LIGHT->false;LightMode.SYSTEM->isSystemInDarkTheme()} else theme==VisualTheme.NIGHT || theme==VisualTheme.STUDIO
+    val background=if(theme==VisualTheme.MONOCHROME) if(dark) Color.Black else Color.White else if(dark) palette.first() else palette.first().copy(alpha=.55f)
+    val foreground=if(theme==VisualTheme.MONOCHROME) if(dark) Color.White else Color.Black else if(dark) Color.White else Color(0xff292532)
+    val fg=foreground
+    Column(Modifier.width(72.dp).height(112.dp).clip(RoundedCornerShape(15.dp)).background(background).padding(8.dp),horizontalAlignment=Alignment.CenterHorizontally) {
         Box(Modifier.fillMaxWidth().weight(1f).clip(RoundedCornerShape(if(theme==VisualTheme.MINIMAL)2.dp else 9.dp)).background(Brush.linearGradient(palette)),contentAlignment=Alignment.Center) {Icon(Icons.Rounded.GraphicEq,null,Modifier.size(28.dp),tint=fg.copy(alpha=.65f))}
         Box(Modifier.padding(top=8.dp).fillMaxWidth(.8f).height(3.dp).background(fg.copy(alpha=.65f),RoundedCornerShape(2.dp)))
         Box(Modifier.padding(top=4.dp).fillMaxWidth(.55f).height(2.dp).background(fg.copy(alpha=.3f),RoundedCornerShape(2.dp)))
-        Row(Modifier.padding(top=7.dp),verticalAlignment=Alignment.CenterVertically) {Icon(Icons.Rounded.SkipPrevious,null,Modifier.size(12.dp),tint=fg);Icon(Icons.Rounded.PlayCircle,null,Modifier.size(21.dp),tint=palette.last());Icon(Icons.Rounded.SkipNext,null,Modifier.size(12.dp),tint=fg)}
+        Row(Modifier.padding(top=7.dp),verticalAlignment=Alignment.CenterVertically) {Icon(Icons.Rounded.SkipPrevious,null,Modifier.size(12.dp),tint=foreground);Icon(Icons.Rounded.PlayCircle,null,Modifier.size(21.dp),tint=if(theme==VisualTheme.MONOCHROME) foreground else palette.last());Icon(Icons.Rounded.SkipNext,null,Modifier.size(12.dp),tint=foreground)}
     }
 }

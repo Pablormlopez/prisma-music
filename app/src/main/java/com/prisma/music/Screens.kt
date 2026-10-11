@@ -232,7 +232,23 @@ import kotlinx.coroutines.withContext
     }}
     val end=if(duration>0) duration else song.duration
     var seeking by remember(song.id) {mutableStateOf<Float?>(null)}
-    Column(Modifier.fillMaxSize().graphicsLayer {translationY=offset;alpha=1f-(offset/screenHeight).coerceIn(0f,.7f)}.padding(horizontal=24.dp)) {
+    Box(Modifier.fillMaxSize().graphicsLayer {translationY=offset;alpha=1f-(offset/screenHeight).coerceIn(0f,.7f)}) {
+    if(theme==VisualTheme.GLASS) {
+        val background=MaterialTheme.colorScheme.background
+        val artColor=Color(details?.color ?: 0xff55415c.toInt())
+        val blend=androidx.compose.ui.graphics.lerp(background,artColor,.58f)
+        AnimatedContent(targetState=song,contentKey={it.id},transitionSpec={contentMotion(motion.motion,motion.motionDuration,swipeDirection).using(null)},label="liquidPlayerBackdrop") { target ->
+            ActualArtwork(target,if(target.id==song.id) details else null,Modifier.fillMaxSize())
+        }
+        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(colorStops=arrayOf(
+            0f to Color.Transparent,
+            .56f to Color.Transparent,
+            .76f to blend.copy(alpha=.72f),
+            .92f to background.copy(alpha=.96f),
+            1f to background
+        ))))
+    }
+    Column(Modifier.fillMaxSize().padding(horizontal=24.dp)) {
         Box(Modifier.fillMaxWidth().height(20.dp).semantics {contentDescription="Deslizar hacia abajo para cerrar"}.pointerInput(Unit) {
             detectVerticalDragGestures(onDragStart={isDragging=true;verticalDrag=0f},onDragCancel={isDragging=false;verticalDrag=0f},onDragEnd={isDragging=false;if(verticalDrag>closeThreshold) closing=true;verticalDrag=0f}) {change,amount->change.consume();verticalDrag=(verticalDrag+amount).coerceAtLeast(0f)}
         },contentAlignment=Alignment.Center) {Box(Modifier.width(40.dp).height(4.dp).clip(RoundedCornerShape(8.dp)).background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha=.45f)))}
@@ -257,7 +273,8 @@ import kotlinx.coroutines.withContext
                 lyricError?.let {Text(it,color=MaterialTheme.colorScheme.error,modifier=Modifier.align(Alignment.BottomCenter))}
             } else {
                 AnimatedContent(targetState=Pair(song,theme),contentKey={it.first.id to it.second},transitionSpec={contentMotion(motion.motion,motion.motionDuration,swipeDirection).using(null)},modifier=Modifier.graphicsLayer {translationX=artworkOffset},label="themedCover") { target ->
-                    ThemeArtwork(target.first,if(target.first.id==song.id) details else null,target.second)
+                    if(target.second==VisualTheme.GLASS) Spacer(Modifier.fillMaxSize())
+                    else ThemeArtwork(target.first,if(target.first.id==song.id) details else null,target.second)
                 }
 
             }
@@ -288,5 +305,6 @@ import kotlinx.coroutines.withContext
             PrismaIconButton(onClick={controller?.seekToNextMediaItem()}) {Icon(Icons.Rounded.SkipNext,"Siguiente",Modifier.size(34.dp))}
             PrismaIconButton(onClick={controller?.repeatMode=when(repeat){Player.REPEAT_MODE_OFF->Player.REPEAT_MODE_ALL;Player.REPEAT_MODE_ALL->Player.REPEAT_MODE_ONE;else->Player.REPEAT_MODE_OFF}}) {Icon(if(repeat==Player.REPEAT_MODE_ONE) Icons.Rounded.RepeatOne else Icons.Rounded.Repeat,"Cambiar repetición",tint=if(repeat!=Player.REPEAT_MODE_OFF) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)}
         }
+    }
     }
 }
