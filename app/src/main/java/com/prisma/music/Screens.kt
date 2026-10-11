@@ -233,7 +233,7 @@ import kotlinx.coroutines.withContext
     val end=if(duration>0) duration else song.duration
     var seeking by remember(song.id) {mutableStateOf<Float?>(null)}
     Box(Modifier.fillMaxSize().graphicsLayer {translationY=offset;alpha=1f-(offset/screenHeight).coerceIn(0f,.7f)}) {
-    if(theme==VisualTheme.GLASS) {
+    if(theme==VisualTheme.GLASS || theme==VisualTheme.MONOCHROME) {
         val background=MaterialTheme.colorScheme.background
         val artColor=Color(details?.color ?: 0xff55415c.toInt())
         val blend=androidx.compose.ui.graphics.lerp(background,artColor,.58f)
@@ -273,7 +273,7 @@ import kotlinx.coroutines.withContext
                 lyricError?.let {Text(it,color=MaterialTheme.colorScheme.error,modifier=Modifier.align(Alignment.BottomCenter))}
             } else {
                 AnimatedContent(targetState=Pair(song,theme),contentKey={it.first.id to it.second},transitionSpec={contentMotion(motion.motion,motion.motionDuration,swipeDirection).using(null)},modifier=Modifier.graphicsLayer {translationX=artworkOffset},label="themedCover") { target ->
-                    if(target.second==VisualTheme.GLASS) Spacer(Modifier.fillMaxSize())
+                    if(target.second==VisualTheme.GLASS || target.second==VisualTheme.MONOCHROME) Spacer(Modifier.fillMaxSize())
                     else ThemeArtwork(target.first,if(target.first.id==song.id) details else null,target.second)
                 }
 

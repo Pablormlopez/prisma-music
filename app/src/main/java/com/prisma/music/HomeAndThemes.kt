@@ -128,7 +128,7 @@ fun VisualTheme.description():String = when(this) {
 @Composable fun ThemesScreen(theme:VisualTheme,mode:LightMode,onTheme:(VisualTheme)->Unit,onMode:(LightMode)->Unit) {
     val c=MaterialTheme.colorScheme
     LazyColumn(Modifier.fillMaxSize(),contentPadding=PaddingValues(horizontal=20.dp,vertical=8.dp),verticalArrangement=Arrangement.spacedBy(16.dp)) {
-        item {Text("Un reproductor con tu estilo",fontSize=21.sp,fontWeight=FontWeight.SemiBold);Text("Elige un diseño. Tu color personalizado se conserva; puedes restablecerlo en Ajustes para usar la paleta del tema.",fontSize=13.sp,color=c.onSurfaceVariant,modifier=Modifier.padding(top=6.dp))}
+        item {Text("Un reproductor con tu estilo",fontSize=21.sp,fontWeight=FontWeight.SemiBold);Text("Elige un diseño. Tu color personalizado se conserva; Monocromo mantiene el blanco y negro puros.",fontSize=13.sp,color=c.onSurfaceVariant,modifier=Modifier.padding(top=6.dp))}
         item {Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(6.dp)) {LightMode.entries.forEach {m->PrismaFilterChip(selected=mode==m,onClick={onMode(m)},label={Text(m.title,fontSize=11.sp)})}}}
         items(VisualTheme.entries,key={it.name}) {v->
             Surface(onClick={onTheme(v)},shape=RoundedCornerShape(24.dp),color=c.surface.copy(alpha=.88f),border=BorderStroke(if(theme==v)2.dp else 1.dp,if(theme==v)c.primary else c.outlineVariant.copy(alpha=.4f)),modifier=Modifier.fillMaxWidth()) {
