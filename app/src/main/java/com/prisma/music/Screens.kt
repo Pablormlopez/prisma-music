@@ -240,13 +240,13 @@ import kotlinx.coroutines.withContext
         AnimatedContent(targetState=song,contentKey={it.id},transitionSpec={contentMotion(motion.motion,motion.motionDuration,swipeDirection).using(null)},label="liquidPlayerBackdrop") { target ->
             ActualArtwork(target,if(target.id==song.id) details else null,Modifier.fillMaxSize())
         }
-        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(colorStops=arrayOf(
+        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(
             0f to Color.Transparent,
             .56f to Color.Transparent,
             .76f to blend.copy(alpha=.72f),
             .92f to background.copy(alpha=.96f),
             1f to background
-        ))))
+        )))
     }
     Column(Modifier.fillMaxSize().padding(horizontal=24.dp)) {
         Box(Modifier.fillMaxWidth().height(20.dp).semantics {contentDescription="Deslizar hacia abajo para cerrar"}.pointerInput(Unit) {
