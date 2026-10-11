@@ -118,7 +118,12 @@ internal fun moveQueueEntryTo(player:Player,index:Int,to:Int) {
                                 },onDragCancel={dragging=null;dragOffset=0f},onDragEnd={
                                     if(controller.currentTimeline===dragTimeline && latestEntries.any {it.index==entry.index}) moveQueueEntryTo(controller,entry.index,target)
                                     dragging=null;dragOffset=0f
-                                }) {change,amount->change.consume();dragOffset+=amount.y;dragCenter+=amount.y}
+                                }) {change,amount->
+                                    change.consume();dragOffset+=amount.y;dragCenter+=amount.y
+                                    // Resolve the destination in the pointer event too: a quick release
+                                    // can arrive before the auto-scroll coroutine's next frame.
+                                    state.layoutInfo.visibleItemsInfo.minByOrNull {kotlin.math.abs(it.offset+it.size/2f-dragCenter)}?.let {target=it.index}
+                                }
                             })
                         }
                     }

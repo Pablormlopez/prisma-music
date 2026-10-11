@@ -88,7 +88,9 @@ class PrismaSmokeTest {
         handles[from].performTouchInput {
             down(center)
             advanceEventTime(700)
-            moveTo(center + androidx.compose.ui.geometry.Offset(0f,destination.center.y-source.center.y),300)
+            val start=center
+            val offset=androidx.compose.ui.geometry.Offset(0f,destination.center.y-source.center.y)
+            repeat(20) {step->moveTo(start + offset*((step+1)/20f),16)}
             up()
         }
         compose.waitForIdle()
