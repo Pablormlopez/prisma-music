@@ -100,7 +100,7 @@ class PrismaSmokeTest {
         compose.onNodeWithContentDescription("Contenido de Biblioteca").assertExists()
         compose.onNodeWithContentDescription("Ordenar canciones").performClick()
         compose.onNodeWithText("Z a A",substring=false).performClick()
-        compose.onNodeWithText("Orden: Z a A").assertExists()
+        assertEquals(SongSort.TITLE_DESC,Preferences(compose.activity).librarySort)
         compose.onNodeWithContentDescription("Ordenar canciones").performClick()
         compose.onNodeWithText("A a Z",substring=false).performClick()
     }
