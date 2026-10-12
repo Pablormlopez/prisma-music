@@ -236,36 +236,27 @@ import kotlinx.coroutines.withContext
     if(theme==VisualTheme.GLASS || theme==VisualTheme.MONOCHROME) {
         val background=MaterialTheme.colorScheme.background
         val artColor=Color(details?.color ?: 0xff55415c.toInt())
-        val blend=androidx.compose.ui.graphics.lerp(background,artColor,.58f)
-        AnimatedContent(targetState=song,contentKey={it.id},transitionSpec={contentMotion(motion.motion,motion.motionDuration,swipeDirection).using(null)},label="liquidPlayerBackdrop") { target ->
-            ActualArtwork(target,if(target.id==song.id) details else null,Modifier.fillMaxSize())
-        }
-        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(
-            0f to Color.Transparent,
-            .56f to Color.Transparent,
-            .76f to blend.copy(alpha=.72f),
-            .92f to background.copy(alpha=.96f),
-            1f to background
-        )))
+        val ambient by animateColorAsState(androidx.compose.ui.graphics.lerp(background,artColor,if(lyricsVisible) .08f else .24f),animationSpec=tween(450),label="albumAmbient")
+        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(background,ambient,background))))
     }
     Column(Modifier.fillMaxSize().padding(horizontal=24.dp)) {
         Box(Modifier.fillMaxWidth().height(20.dp).semantics {contentDescription="Deslizar hacia abajo para cerrar"}.pointerInput(Unit) {
             detectVerticalDragGestures(onDragStart={isDragging=true;verticalDrag=0f},onDragCancel={isDragging=false;verticalDrag=0f},onDragEnd={isDragging=false;if(verticalDrag>closeThreshold) closing=true;verticalDrag=0f}) {change,amount->change.consume();verticalDrag=(verticalDrag+amount).coerceAtLeast(0f)}
         },contentAlignment=Alignment.Center) {Box(Modifier.width(40.dp).height(4.dp).clip(RoundedCornerShape(8.dp)).background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha=.45f)))}
         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.Center,verticalAlignment=Alignment.CenterVertically) {PrismaFilterChip(!lyricsVisible,{lyricsVisible=false},label={Text("Carátula")});Spacer(Modifier.width(8.dp));PrismaFilterChip(lyricsVisible,{lyricsVisible=true},label={Text("Letra")});PrismaIconButton(onClick={metadataVisible=!metadataVisible;prefs.showMetadata=metadataVisible}) {Icon(Icons.Rounded.Info,if(metadataVisible) "Ocultar metadatos" else "Mostrar metadatos",tint=if(metadataVisible) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)};PrismaIconButton(enabled=controller!=null,onClick={queueVisible=true}) {Icon(Icons.Rounded.QueueMusic,"Ver cola de reproducción")}}
-        Box(Modifier.weight(1f).fillMaxWidth().then(if(lyricsVisible) Modifier else swipe),contentAlignment=Alignment.Center) {
+        Box(Modifier.weight(1f).fillMaxWidth().then(if(lyricsVisible) Modifier.clip(RoundedCornerShape(24.dp)).background(MaterialTheme.colorScheme.background.copy(alpha=.96f)).padding(horizontal=16.dp,vertical=8.dp) else swipe),contentAlignment=Alignment.Center) {
             if(lyricsVisible) {
                 val lines=remember(lyricText) {Lyrics.parse(lyricText)}
                 if(lines.isEmpty()) Column(horizontalAlignment=Alignment.CenterHorizontally) {Icon(Icons.Rounded.Lyrics,null,Modifier.size(64.dp),tint=MaterialTheme.colorScheme.primary);Spacer(Modifier.height(16.dp));Text(if(details==null) "Leyendo letra incrustada…" else "No se encontró una letra incrustada",fontWeight=FontWeight.Bold);Text("También puedes importar un archivo LRC o TXT.",style=MaterialTheme.typography.bodySmall,modifier=Modifier.padding(vertical=10.dp));PrismaButton(onClick={importId=song.id;import.launch(arrayOf("text/*","application/octet-stream"))}){Text("Importar letra")}}
                 else {
                     val active=lines.indexOfLast {it.time!=null && it.time<=position}
-                    val state=rememberLazyListState()
+                    val state=key(song.id,lyricText) {rememberLazyListState()}
                     var follow by remember(song.id) {mutableStateOf(true)}
                     LaunchedEffect(active,follow,lyricText) {if(follow && active>=0) state.animateScrollToItem(active,0)}
-                    Column {Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) {PrismaFilterChip(follow,{follow=!follow},label={Text(if(follow) "Seguir canción" else "Leer libremente")});Text(if(embedded) "Del archivo" else "Importada",color=MaterialTheme.colorScheme.onSurfaceVariant,fontSize=11.sp)}
+                    Column {Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=Alignment.CenterVertically) {PrismaFilterChip(follow,{follow=!follow},label={Text(if(follow) "Seguir canción" else "Leer libremente")});Text(if(embedded) "Del archivo" else "Importada",color=MaterialTheme.colorScheme.onSurfaceVariant,fontSize=11.sp)}
                         LazyColumn(state=state,modifier=Modifier.fillMaxSize(),contentPadding=PaddingValues(top=16.dp,bottom=130.dp),verticalArrangement=Arrangement.spacedBy(22.dp)) {itemsIndexed(lines) {index,line ->
-                            val color by animateColorAsState(if(active==index || line.time==null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,label="lyricColor")
-                            val scale by animateFloatAsState(if(active==index && theme!=VisualTheme.MINIMAL) 1.035f else 1f,label="lyricScale")
+                            val color by animateColorAsState(if(active==index || line.time==null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha=.65f),label="lyricColor")
+                            val scale=1f
                             Text(line.text.ifBlank {"♪"},color=color,fontSize=if(theme==VisualTheme.MINIMAL) 22.sp else 26.sp,fontWeight=if(active==index) FontWeight.Bold else FontWeight.Medium,modifier=Modifier.fillMaxWidth().scale(scale).clip(RoundedCornerShape(12.dp)).then(if(theme==VisualTheme.GLASS && active==index) Modifier.background(MaterialTheme.colorScheme.primary.copy(alpha=.08f)) else Modifier).clickable(enabled=line.time!=null) {line.time?.let {controller?.seekTo(it)}}.padding(8.dp))
                         }}
                     }
@@ -273,8 +264,7 @@ import kotlinx.coroutines.withContext
                 lyricError?.let {Text(it,color=MaterialTheme.colorScheme.error,modifier=Modifier.align(Alignment.BottomCenter))}
             } else {
                 AnimatedContent(targetState=Pair(song,theme),contentKey={it.first.id to it.second},transitionSpec={contentMotion(motion.motion,motion.motionDuration,swipeDirection).using(null)},modifier=Modifier.graphicsLayer {translationX=artworkOffset},label="themedCover") { target ->
-                    if(target.second==VisualTheme.GLASS || target.second==VisualTheme.MONOCHROME) Spacer(Modifier.fillMaxSize().semantics {contentDescription="Diseño ${target.second.title}"})
-                    else ThemeArtwork(target.first,if(target.first.id==song.id) details else null,target.second)
+                    ThemeArtwork(target.first,if(target.first.id==song.id) details else null,target.second)
                 }
 
             }
