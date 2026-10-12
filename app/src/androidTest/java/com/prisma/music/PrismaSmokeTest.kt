@@ -200,6 +200,9 @@ class PrismaSmokeTest {
             compose.onNodeWithContentDescription("Abrir reproductor").assertExists()
             // A long press opens actions without replacing playback; deletion can be canceled.
             compose.onNode(hasText("Prisma prueba") and SemanticsMatcher.keyIsDefined(SemanticsActions.OnLongClick)).performTouchInput {longClick()}
+            compose.onNodeWithText("Seleccionar",substring=false).assertExists()
+            compose.onNodeWithText("Seleccionar varias",substring=false).assertExists()
+            compose.onNodeWithText("Más opciones de canción").performClick()
             compose.onNodeWithText("Reproducir a continuación").assertExists()
             shot("09-menu-cancion")
             compose.onNodeWithText("Eliminar del teléfono").performScrollTo().performClick()
