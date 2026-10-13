@@ -26,6 +26,15 @@ class PlaybackService:MediaSessionService() {
     private var incoming:ExoPlayer?=null
     private var mix:AutoMix?=null
     private var interruptions:AudioInterruptions?=null
+    private var noisyRegistered=false
+    private val noisyReceiver=object:android.content.BroadcastReceiver() {
+        override fun onReceive(context:android.content.Context?,intent:Intent?) {
+            if(intent?.action==android.media.AudioManager.ACTION_AUDIO_BECOMING_NOISY) {
+                // ExoPlayer disables its noisy receiver while paused. Invalidate pending resume too.
+                interruptions?.explicitCommand();mix?.cancel();primary?.pause()
+            }
+        }
+    }
     @Volatile private var options=AdvancedSettings()
     @Volatile private var eqConfig=DspEngine.Config.flat()
     private var fadeIn=0f;private var fadeOut=0f
@@ -112,6 +121,10 @@ class PlaybackService:MediaSessionService() {
             {mix?.cancel();primary?.pause()},{primary?.play()})
         mix=AutoMix(p,second) {interruptions?.gain ?: 1f}
         interruptions?.start()
+        val noisyFilter=android.content.IntentFilter(android.media.AudioManager.ACTION_AUDIO_BECOMING_NOISY)
+        if(android.os.Build.VERSION.SDK_INT>=33) registerReceiver(noisyReceiver,noisyFilter,android.content.Context.RECEIVER_NOT_EXPORTED)
+        else @Suppress("DEPRECATION") registerReceiver(noisyReceiver,noisyFilter)
+        noisyRegistered=true
         readSettings()
         val activity=PendingIntent.getActivity(this,0,Intent(this,MainActivity::class.java),PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         session=MediaSession.Builder(this,p).setSessionActivity(activity).setCallback(object:MediaSession.Callback {
@@ -141,6 +154,6 @@ class PlaybackService:MediaSessionService() {
         handler.post(tick);handler.post(sleepCheck)
     }
     override fun onGetSession(controllerInfo:MediaSession.ControllerInfo)=session
-    override fun onDestroy() {handler.removeCallbacksAndMessages(null);interruptions?.close();mix?.cancel();incoming?.release();session?.release();primary?.release();session=null;primary=null;incoming=null;super.onDestroy()}
+    override fun onDestroy() {handler.removeCallbacksAndMessages(null);if(noisyRegistered)unregisterReceiver(noisyReceiver);interruptions?.close();mix?.cancel();incoming?.release();session?.release();primary?.release();session=null;primary=null;incoming=null;super.onDestroy()}
     override fun onTaskRemoved(rootIntent:Intent?) {if(options.stopOnDismiss || primary?.playWhenReady!=true) {interruptions?.explicitCommand();primary?.pause();mix?.cancel();stopSelf()}}
 }
