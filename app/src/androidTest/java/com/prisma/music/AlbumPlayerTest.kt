@@ -9,7 +9,7 @@ import android.provider.MediaStore
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.semantics.SemanticsActions
@@ -37,6 +37,28 @@ class AlbumPlayerTest {
         val uri=resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI,values)!!
         resolver.openOutputStream(uri)!!.use {compose.onRoot().captureToImage().asAndroidBitmap().compress(Bitmap.CompressFormat.PNG,100,it)}
         resolver.update(uri,ContentValues().apply {put(MediaStore.Downloads.IS_PENDING,0)},null,null)
+    }
+    @Test fun allThemesShareAtmosphereAndRestoreTheirOwnLayout() {
+        val prefs=Preferences(context)
+        var selected by mutableStateOf(VisualTheme.GLASS)
+        var immersive by mutableStateOf(true)
+        compose.setContent {MaterialTheme {CompositionLocalProvider(
+            LocalVisualTheme provides selected,
+            LocalAdvanced provides AdvancedSettings(immersiveAllThemes=immersive),
+            LocalPersonalization provides Personalization(motion=MotionStyle.NONE)
+        ) {Box(Modifier.size(360.dp,700.dp)) {
+            PlayerScreen(song,null,selected,prefs,0,180000,false,false,0,null,{},{},{})
+        }}}}
+        VisualTheme.entries.forEach {theme ->
+            compose.runOnIdle {selected=theme;immersive=true}
+            compose.onNodeWithContentDescription("Diseño ${theme.title}").assertExists()
+            compose.onNodeWithContentDescription("Volumen multimedia").performScrollTo().assertIsDisplayed()
+            compose.onNodeWithContentDescription("Cerrar reproductor").performScrollTo().assertIsDisplayed()
+            if(theme!=VisualTheme.GLASS && theme!=VisualTheme.CHROMATIC) {
+                compose.runOnIdle {immersive=false}
+                compose.onNodeWithText("Carátula",substring=false).performScrollTo().assertIsDisplayed()
+            }
+        }
     }
     @Test fun glassArtworkLyricsAndSmallScreenRemainUsable() {
         val prefs=Preferences(context);val previous=prefs.showMetadata;prefs.showMetadata=false
