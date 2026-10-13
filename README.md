@@ -2,22 +2,22 @@
 
 ## Instalar
 
-**[⬇ Descargar Prisma Music para Android (APK)](https://github.com/nexlibre/prisma-music/releases/download/v5.0.1-beta/Prisma-Music-5.0.1-beta.apk)**
+**[⬇ Descargar Prisma Music para Android (APK)](https://github.com/nexlibre/prisma-music/releases/download/v5.0.2-beta/Prisma-Music-5.0.2-beta.apk)**
 
 Android 8.0 o posterior. Abre el enlace desde el teléfono, espera a que termine la descarga y abre el archivo `.apk`. Android puede pedir permitir instalaciones desde el navegador o gestor de archivos usado. No necesitas descargar el código ni entrar en Actions.
 
 [Ver versiones y notas de publicación](https://github.com/nexlibre/prisma-music/releases).
 
-**Actualización 5.0.1:** si ya tienes 4.0.1 o 3.0.4, instala encima para conservar listas y ajustes; se mantiene la misma firma.
+**Actualización 5.0.2:** si ya tienes 5.0.1, 4.0.1 o 3.0.4, instala encima para conservar listas y ajustes; se mantiene la misma firma.
 
 **Cambio de firma en 3.0.4:** esta beta inicia una nueva identidad de firma. Si tienes 3.0.3 o una versión anterior, debes desinstalarla antes de instalar 3.0.4; esto elimina las listas y ajustes locales, pero conserva los archivos de música. La clave de firma de 3.0.4 cuenta con un respaldo privado para las futuras actualizaciones. Nunca publiques ni compartas la clave privada.
 
 
-## Mejoras de apariencia en preparación
+## Beta 5.0.2 · Animaciones en todos los temas
 
 - Ambiente del álbum, portada inmersiva y transiciones compartidas entre los siete temas, con opción para recuperar las composiciones originales.
 - Respuesta táctil con muelle en botones y selectores de todos los temas; Liquid Glass conserva su acabado.
-- Descarga pública al principio del README. El APK enlazado sigue siendo la beta 5.0.1 publicada, hasta distribuir estas mejoras.
+- APK 5.0.2 firmado y publicado, con descarga al principio del README. Firma y actualización desde 5.0.1 verificadas antes de publicar.
 
 ## Beta 5.0.1 · Audio y apariencia
 
