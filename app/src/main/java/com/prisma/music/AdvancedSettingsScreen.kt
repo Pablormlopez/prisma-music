@@ -69,6 +69,9 @@ private fun spatialStatus(context:Context,details:Library.Details?):String {
     Text("La opción permite a Android espacializar cuando el contenido y los auriculares son compatibles; no convierte una pista estéreo en Dolby Atmos.",style=MaterialTheme.typography.bodySmall)
     AdvancedSlider("Amplitud estéreo",options.stereoWidth,0f..1.8f,"×") {prefs.setAdvanced("stereoWidth",it);onPlaybackChanged()}
     Text("1× conserva el estéreo; 0× lo centra. El efecto de amplitud funciona en pistas de dos canales y es independiente del audio espacial.",style=MaterialTheme.typography.bodySmall)
+    SettingSwitch("Pausar al grabar", "Pausa ambas pistas cuando Android informa una grabación activa. No usa el micrófono ni lee mensajes; la detección depende del sistema.",options.pauseRecording) {prefs.setAdvanced("pauseRecording",it);onPlaybackChanged()}
+    SettingSwitch("Pausar con notificaciones", "Si el sonido de una notificación solicita foco, pausa. Desactivado baja temporalmente el volumen de ambas pistas. Los mensajes silenciosos no interrumpen.",options.pauseNotifications) {prefs.setAdvanced("pauseNotifications",it);onPlaybackChanged()}
+    SettingSwitch("Reanudar tras interrupciones", "Vuelve a reproducir si estaba sonando, termina la interrupción y se recupera el foco. Una pausa manual, desconectar auriculares o el temporizador lo impiden.",options.resumeInterruptions) {prefs.setAdvanced("resumeInterruptions",it);onPlaybackChanged()}
     SettingSwitch("Detener al cerrar desde recientes", "Pausa la música y cierra el servicio al quitar Prisma de recientes. Ir a Inicio o apagar la pantalla conserva la reproducción.",options.stopOnDismiss) {prefs.setAdvanced("stopOnDismiss",it);onPlaybackChanged()}
 }
 @Composable private fun AdvancedSlider(title:String,value:Float,range:ClosedFloatingPointRange<Float>,unit:String,onSave:(Float)->Unit) {
@@ -79,7 +82,7 @@ private fun spatialStatus(context:Context,details:Library.Details?):String {
 @Composable internal fun AdvancedAppearanceSettings(prefs:Preferences) {
     val options=rememberAdvanced(prefs);val context=LocalContext.current
     SectionTitle("APARIENCIA AVANZADA","Portada y fluidez")
-    SettingSwitch("Modo de alto rendimiento", "Reduce el movimiento, usa un fondo sencillo y solicita la menor frecuencia compatible para ahorrar recursos.",options.performance) {prefs.setAdvanced("performance",it)}
+    SettingSwitch("Modo ligero", "Reduce el movimiento, usa un fondo sencillo y solicita la menor frecuencia compatible para ahorrar recursos.",options.performance) {prefs.setAdvanced("performance",it)}
     Text("Frecuencia de actualización")
     val activity=LocalActivity.current
     val rates=remember(activity) {activity?.let {refreshRates(it)} ?: emptyList()}
