@@ -86,7 +86,7 @@
 
 # Prisma Music
 
-Reproductor de música local para Android, gratuito y de código abierto. Beta actual: **3.0.4**. Android 8.0 o posterior.
+Reproductor de música local para Android, gratuito y de código abierto. Beta actual: **4.0.1**. Android 8.0 o posterior.
 
 ## Beta 1.0.2 — experiencia visual
 
@@ -108,20 +108,22 @@ Reproductor de música local para Android, gratuito y de código abierto. Beta a
 - Biblioteca de canciones, artistas, álbumes, géneros y carpetas; búsqueda, cola, repetición y aleatorio.
 - Listas locales: crear, añadir, quitar canciones y eliminar listas sin borrar archivos.
 - Exclusión predeterminada de audios/notas de voz de WhatsApp y WhatsApp Business. Carpetas registradas por MediaStore seleccionables.
-- Siete diseños en Ajustes → Temas: Chromatic Flow, Liquid Glass, Pure Minimal, Black Night, Studio, Sunset y Monocromo. Monocromo usa blanco puro en modo claro y negro AMOLED en modo oscuro, con iconos y tipografía en contraste. El reproductor de Liquid Glass y Monocromo muestra una carátula centrada sobre un degradado ambiental suave. Inicio independiente con canciones, álbumes e historial local.
+- Siete diseños en Ajustes → Temas: Chromatic Flow, Liquid Glass, Pure Minimal, Black Night, Studio, Sunset y Monocromo. Monocromo usa blanco puro en modo claro y negro AMOLED en modo oscuro, con iconos y tipografía en contraste. Liquid Glass y Chromatic Flow funden la portada con el fondo del álbum; Monocromo conserva su carátula centrada y el ambiente discreto. Inicio independiente con canciones, álbumes e historial local.
 - Modo **claro, oscuro y según el sistema**, independiente del tema. Preferencias persistentes.
 - Ecualizador DSP original de diez bandas: 31, 63, 125, 250, 500 Hz; 1, 2, 4, 8, 16 kHz. Q global ajustable, preamplificador, graves, medios, agudos, presencia de voces y limitador de picos enlazado entre canales.
 - Letras incrustadas automáticas: MP3 ID3v2 (USLT/ULT, SYLT/SLT y TXXX de letras), FLAC/Vorbis y Ogg/Opus (LYRICS y variantes), M4A/MP4 (©lyr y campos libres de letras). Prioridad a letras incrustadas; TXT/LRC manual como alternativa. Letras sincronizadas cuando contienen tiempos, seguimiento y salto al pulsar una línea.
-- Deslizar a la izquierda/derecha sobre la carátula o letra cambia de canción. No interfiere con la búsqueda de posición ni con el desplazamiento vertical de las letras.
+- Deslizar a la izquierda/derecha sobre la carátula cambia de canción. Las letras se desplazan verticalmente. No interfiere con la búsqueda de posición ni con el desplazamiento vertical de las letras.
 - Metadatos de formato, códec, bitrate, frecuencia de muestreo, canales y profundidad de bits cuando el extractor los informa. Estimaciones de bitrate etiquetadas.
 
 ## Instalar
 
-**[⬇ Descargar Prisma Music para Android (APK)](https://github.com/nexlibre/prisma-music/releases/download/v3.0.4-beta/Prisma-Music-3.0.4-beta.apk)**
+**[⬇ Descargar Prisma Music para Android (APK)](https://github.com/nexlibre/prisma-music/releases/download/v4.0.1-beta/Prisma-Music-4.0.1-beta.apk)**
 
 Android 8.0 o posterior. Abre el enlace desde el teléfono, espera a que termine la descarga y abre el archivo `.apk`. Android puede pedir permitir instalaciones desde el navegador o gestor de archivos usado. No necesitas descargar el código ni entrar en Actions.
 
 [Ver versiones y notas de publicación](https://github.com/nexlibre/prisma-music/releases).
+
+**Actualización 4.0.1:** si ya tienes 3.0.4, instala encima para conservar listas y ajustes; ambas usan la misma firma.
 
 **Cambio de firma en 3.0.4:** esta beta inicia una nueva identidad de firma. Si tienes 3.0.3 o una versión anterior, debes desinstalarla antes de instalar 3.0.4; esto elimina las listas y ajustes locales, pero conserva los archivos de música. La clave de firma de 3.0.4 cuenta con un respaldo privado para las futuras actualizaciones. Nunca publiques ni compartas la clave privada.
 
