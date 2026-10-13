@@ -1,0 +1,12 @@
+{
+  "repository": "nexlibre/prisma-music",
+  "version": "5.0.2-beta",
+  "target": "c23b3fcf24ace806e9a638fe4bd8b86ee0dd2a64",
+  "sha256": "beae47e9da92f5c60060f584ce1b116241fbb194b6fb05cf250e670ebf302ccb",
+  "blobs": [
+    "d28bd65f884c4914d00060bc3477991096f9f54c",
+    "793f2ab8aeabc10b7904e9d1147284df67271a20",
+    "8302d1cd40b17b35e41c90ce47cd919e0543b284"
+  ],
+  "notes": "## Beta 5.0.2 · Animaciones para todos los temas\n\n- Ambiente del álbum y portada inmersiva en los siete temas, conservando el acabado de Liquid Glass.\n- Nuevo ajuste «Ambiente del álbum en todos los temas» en Personalización → Apariencia avanzada. Desactivarlo recupera las composiciones originales de los otros temas.\n- Respuesta táctil con muelle en botones y selectores de todos los temas.\n- Conserva portada animada, importación GIF/WebP, normalización, mezcla entre canciones y ajustes de fluidez de 5.0.1.\n- Descarga del APK al principio del repositorio.\n\nInstala encima de 5.0.1, 4.0.1 o 3.0.4 para conservar listas y ajustes. Versiones 3.0.3 o anteriores usan otra firma.\n\nValidación: pruebas de código e interfaz en Android sobre la implementación integrada; compilación de distribución 5.0.2 con pruebas unitarias y lint; firma y checksum verificados; instalación y actualización desde 5.0.1 verificadas antes de publicar."
+}
