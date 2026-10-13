@@ -1,3 +1,24 @@
+# Prisma Music
+
+## Instalar
+
+**[⬇ Descargar Prisma Music para Android (APK)](https://github.com/nexlibre/prisma-music/releases/download/v5.0.1-beta/Prisma-Music-5.0.1-beta.apk)**
+
+Android 8.0 o posterior. Abre el enlace desde el teléfono, espera a que termine la descarga y abre el archivo `.apk`. Android puede pedir permitir instalaciones desde el navegador o gestor de archivos usado. No necesitas descargar el código ni entrar en Actions.
+
+[Ver versiones y notas de publicación](https://github.com/nexlibre/prisma-music/releases).
+
+**Actualización 5.0.1:** si ya tienes 4.0.1 o 3.0.4, instala encima para conservar listas y ajustes; se mantiene la misma firma.
+
+**Cambio de firma en 3.0.4:** esta beta inicia una nueva identidad de firma. Si tienes 3.0.3 o una versión anterior, debes desinstalarla antes de instalar 3.0.4; esto elimina las listas y ajustes locales, pero conserva los archivos de música. La clave de firma de 3.0.4 cuenta con un respaldo privado para las futuras actualizaciones. Nunca publiques ni compartas la clave privada.
+
+
+## Mejoras de apariencia en preparación
+
+- Ambiente del álbum, portada inmersiva y transiciones compartidas entre los siete temas, con opción para recuperar las composiciones originales.
+- Respuesta táctil con muelle en botones y selectores de todos los temas; Liquid Glass conserva su acabado.
+- Descarga pública al principio del README. El APK enlazado sigue siendo la beta 5.0.1 publicada, hasta distribuir estas mejoras.
+
 ## Beta 5.0.1 · Audio y apariencia
 
 - Salida PCM flotante: el DSP opera sobre muestras float y conserva muestras PCM de 24 bits antes de la salida. Sigue disponible el modo compatible de 16 bits. Android, el DAC y Bluetooth determinan la salida final; los efectos modifican la señal y no se promete bit-perfect.
@@ -126,18 +147,6 @@ Reproductor de música local para Android, gratuito y de código abierto. Beta a
 - Deslizar a la izquierda/derecha sobre la carátula cambia de canción. Las letras se desplazan verticalmente. No interfiere con la búsqueda de posición ni con el desplazamiento vertical de las letras.
 - Metadatos de formato, códec, bitrate, frecuencia de muestreo, canales y profundidad de bits cuando el extractor los informa. Estimaciones de bitrate etiquetadas.
 
-## Instalar
-
-**[⬇ Descargar Prisma Music para Android (APK)](https://github.com/nexlibre/prisma-music/releases/download/v5.0.1-beta/Prisma-Music-5.0.1-beta.apk)**
-
-Android 8.0 o posterior. Abre el enlace desde el teléfono, espera a que termine la descarga y abre el archivo `.apk`. Android puede pedir permitir instalaciones desde el navegador o gestor de archivos usado. No necesitas descargar el código ni entrar en Actions.
-
-[Ver versiones y notas de publicación](https://github.com/nexlibre/prisma-music/releases).
-
-**Actualización 5.0.1:** si ya tienes 4.0.1 o 3.0.4, instala encima para conservar listas y ajustes; se mantiene la misma firma.
-
-**Cambio de firma en 3.0.4:** esta beta inicia una nueva identidad de firma. Si tienes 3.0.3 o una versión anterior, debes desinstalarla antes de instalar 3.0.4; esto elimina las listas y ajustes locales, pero conserva los archivos de música. La clave de firma de 3.0.4 cuenta con un respaldo privado para las futuras actualizaciones. Nunca publiques ni compartas la clave privada.
-
 ## Compilar y verificar
 
 JDK 17, SDK Android 35, Gradle 8.11.1. El proyecto incluye Gradle Wrapper. Configura el SDK mediante `ANDROID_HOME` o `local.properties`.
@@ -151,7 +160,7 @@ Salida: `app/build/outputs/apk/debug/app-debug.apk`. GitHub Actions ejecuta prue
 ## Límites de esta beta
 
 - La biblioteca depende de MediaStore: archivos ocultos con `.nomedia`, carpetas privadas de apps o archivos aún no indexados pueden no aparecer. No hay exploración SAF recursiva en esta versión.
-- El procesamiento usa PCM de 16 bits. Reproducir FLAC no implica salida bit-perfect o sin pérdida por Bluetooth. No se promete salida de alta resolución.
+- La salida ofrece PCM flotante o el modo compatible de 16 bits. Android, el DAC y Bluetooth determinan la salida final; no se promete bit-perfect.
 - La presencia de voces realza una zona de frecuencias; no separa voces e instrumentos. Q es común a las diez bandas en esta versión. A frecuencias de muestreo bajas se limita la frecuencia de los filtros a menos de Nyquist.
 - Liquid Glass usa una carátula difuminada precalculada, transparencias y reflejos en los bordes. Es una interpretación propia: no reproduce la refracción óptica del sistema de Apple. Los temas cambian también la composición del reproductor y de la biblioteca.
 - No se buscan letras en internet. Las etiquetas comprimidas/cifradas, Lyrics3, APE y letras de servicios externos no están cubiertas. SYLT con tiempos expresados en frames se muestra sin sincronización. Metadatos limitados a 16 MB por etiqueta y letra a 1 MB. Un archivo de alta calidad puede no incluir letras ni tiempos.
