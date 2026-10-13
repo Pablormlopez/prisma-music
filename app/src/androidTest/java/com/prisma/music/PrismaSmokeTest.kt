@@ -143,24 +143,24 @@ class PrismaSmokeTest {
             compose.waitUntil(5000) {compose.onAllNodesWithText("Reproduciendo").fetchSemanticsNodes().isNotEmpty()}
             compose.onNodeWithContentDescription("Abrir reproductor").assertDoesNotExist()
             compose.onAllNodesWithContentDescription("Pausar").assertCountEquals(1)
-            compose.onNodeWithContentDescription("Pausar").performClick()
+            compose.onNodeWithContentDescription("Pausar").performScrollTo().performClick()
             compose.waitUntil(5000) {compose.onAllNodesWithContentDescription("Reproducir").fetchSemanticsNodes().isNotEmpty()}
-            compose.onNodeWithContentDescription("Reproducir").performClick()
+            compose.onNodeWithContentDescription("Reproducir").performScrollTo().performClick()
             compose.waitUntil(5000) {compose.onAllNodesWithContentDescription("Pausar").fetchSemanticsNodes().isNotEmpty()}
             compose.onNodeWithContentDescription("Línea de tiempo Chromatic Flow").assertExists()
-            compose.onNodeWithContentDescription("Ocultar metadatos").performClick()
+            compose.onNodeWithContentDescription("Ocultar metadatos").performScrollTo().performClick()
             compose.onNodeWithContentDescription("Información técnica de la canción").assertDoesNotExist()
             assertFalse(Preferences(context).showMetadata)
-            compose.onNodeWithContentDescription("Mostrar metadatos").performClick()
+            compose.onNodeWithContentDescription("Mostrar metadatos").performScrollTo().performClick()
             compose.onNodeWithContentDescription("Información técnica de la canción").assertExists()
             assertTrue(Preferences(context).showMetadata)
             shot("02-reproductor")
             compose.onNodeWithContentDescription("Diseño Chromatic Flow").performTouchInput {swipeLeft()}
             compose.waitUntil(10000) {compose.onAllNodesWithText("Prisma segunda").fetchSemanticsNodes().isNotEmpty()}
-            compose.onNodeWithText("Letra",substring=false).performClick()
+            compose.onNodeWithContentDescription("Ver letra").performScrollTo().performClick()
             compose.waitUntil(15000) {compose.onAllNodesWithText("Primera línea incrustada").fetchSemanticsNodes().isNotEmpty()}
             shot("06-letra-incrustada")
-            compose.onNodeWithText("Carátula",substring=false).performClick()
+            compose.onNodeWithContentDescription("Ver carátula").performScrollTo().performClick()
             compose.onNodeWithContentDescription("Diseño Chromatic Flow").performTouchInput {swipeRight()}
             compose.waitUntil(10000) {compose.onAllNodesWithText("Prisma prueba").fetchSemanticsNodes().isNotEmpty()}
             var connection:com.google.common.util.concurrent.ListenableFuture<MediaController>?=null
@@ -184,7 +184,7 @@ class PrismaSmokeTest {
             compose.runOnIdle {assertEquals(beforeArtist,Triple(observer.currentMediaItem?.mediaId,observer.currentPosition,observer.mediaItemCount));assertFalse(observer.playWhenReady)}
             compose.onNodeWithContentDescription("Volver al reproductor").performClick()
             compose.onNodeWithContentDescription("Ver álbum ${fixture.album}").assertDoesNotExist()
-            compose.onNodeWithContentDescription("Volver a la biblioteca").performClick()
+            compose.onNodeWithContentDescription("Cerrar reproductor").performScrollTo().performClick()
             nav("Ajustes")
             compose.onNodeWithContentDescription("Mostrar nombre del álbum").performScrollTo().performClick()
             assertTrue(Preferences(context).showPlayerAlbum)
@@ -192,7 +192,7 @@ class PrismaSmokeTest {
             compose.onNodeWithContentDescription("Ver álbum ${fixture.album}").assertExists().performClick()
             compose.onNodeWithText("Todos los álbumes",substring=false).assertExists()
             compose.onNodeWithContentDescription("Volver al reproductor").performClick()
-            compose.onNodeWithContentDescription("Cerrar reproductor").performClick()
+            compose.onNodeWithContentDescription("Cerrar reproductor").performScrollTo().performClick()
             nav("Ajustes")
             compose.onNodeWithContentDescription("Mostrar nombre del álbum").performScrollTo().performClick()
             assertFalse(Preferences(context).showPlayerAlbum)
@@ -371,7 +371,7 @@ class PrismaSmokeTest {
                 compose.onNodeWithContentDescription("Línea de tiempo $title").assertExists()
                 compose.onNodeWithContentDescription("Línea de tiempo $title").performSemanticsAction(SemanticsActions.SetProgress) { it(1000f) }
                 shot("07-reproductor-$index-oscuro")
-                compose.onNodeWithContentDescription("Cerrar reproductor").performClick()
+                compose.onNodeWithContentDescription("Cerrar reproductor").performScrollTo().performClick()
                 nav("Biblioteca")
                 shot("08-biblioteca-$index-oscuro")
                 nav("Ajustes")
@@ -383,7 +383,7 @@ class PrismaSmokeTest {
                 shot("05-tema-$index-claro")
                 compose.onNodeWithContentDescription("Abrir reproductor").performClick()
                 shot("15-reproductor-$index-claro")
-                compose.onNodeWithContentDescription("Cerrar reproductor").performClick()
+                compose.onNodeWithContentDescription("Cerrar reproductor").performScrollTo().performClick()
                 nav("Inicio")
                 shot("16-inicio-$index-claro")
                 nav("Ajustes")

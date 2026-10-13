@@ -1,3 +1,11 @@
+## Beta 4.0.1 · Liquid Glass y portada inmersiva
+
+- Liquid Glass y Chromatic Flow: portada a todo el ancho, fundida en un fondo difuminado de la propia carátula; transición al cambiar de canción y controles blancos con contraste estable.
+- Letras sobre el ambiente del álbum, progreso fino, controles de reproducción sin panel grande y accesos a letra, importación y cola.
+- Volumen multimedia del teléfono, independiente de los desvanecidos. Los botones físicos se reflejan en el control.
+- El contenido se puede desplazar en pantallas cortas o con texto grande. Se conservan gestos de canción, cierre, artista, álbum, letras locales y listas ordenables.
+- Sin animaciones también desactiva la transición del fondo. Los otros cinco temas siguen disponibles.
+
 ## Beta 3.0.4 · Orden manual de listas
 
 - Cada canción de una lista tiene un tirador ≡: mantenlo pulsado y arrastra hacia arriba o abajo. Los bordes desplazan la lista automáticamente y la posición de destino se resalta.

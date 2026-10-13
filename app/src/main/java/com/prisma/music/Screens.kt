@@ -184,12 +184,23 @@ import kotlinx.coroutines.withContext
 @Composable fun SoundSlider(label:String,value:Double,unit:String,enabled:Boolean,onChange:(Double)->Unit) {Column {Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) {Text(label,style=MaterialTheme.typography.bodyMedium);Text("%+.1f %s".format(value,unit),style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.primary)};Slider(value=value.toFloat(),onValueChange={onChange(it.toDouble())},valueRange=-12f..12f,enabled=enabled,modifier=Modifier.height(38.dp))}}
 
 @Composable fun PlayerScreen(song:Song,details:Library.Details?,theme:VisualTheme,prefs:Preferences,position:Long,duration:Long,playing:Boolean,shuffle:Boolean,repeat:Int,controller:MediaController?,onDismiss:()->Unit,onArtist:(Song)->Unit,onAlbum:(Song)->Unit) {
+    val ambient=theme.hasAlbumAtmosphere()
+    val colors=if(ambient) darkColorScheme(primary=Color.White,onPrimary=Color.Black,onSurface=Color.White,onBackground=Color.White,onSurfaceVariant=Color.White.copy(alpha=.72f),background=Color(0xff38353a),surface=Color(0xff38353a),surfaceContainerHigh=Color(0xff454248)) else MaterialTheme.colorScheme
+    MaterialTheme(colorScheme=colors) {
+        CompositionLocalProvider(LocalContentColor provides colors.onSurface) {
+            PlayerContent(song,details,theme,prefs,position,duration,playing,shuffle,repeat,controller,onDismiss,onArtist,onAlbum)
+        }
+    }
+}
+
+@Composable fun PlayerContent(song:Song,details:Library.Details?,theme:VisualTheme,prefs:Preferences,position:Long,duration:Long,playing:Boolean,shuffle:Boolean,repeat:Int,controller:MediaController?,onDismiss:()->Unit,onArtist:(Song)->Unit,onAlbum:(Song)->Unit) {
     val view=androidx.compose.ui.platform.LocalView.current
     DisposableEffect(view,prefs.keepScreenOn) {
         val previous=view.keepScreenOn
         view.keepScreenOn=prefs.keepScreenOn
         onDispose {view.keepScreenOn=previous}
     }
+    val immersive=theme.hasAlbumAtmosphere()
     val motion=LocalPersonalization.current
     var swipeDirection by remember {mutableIntStateOf(1)}
     var isDragging by remember {mutableStateOf(false)}
@@ -233,18 +244,25 @@ import kotlinx.coroutines.withContext
     val end=if(duration>0) duration else song.duration
     var seeking by remember(song.id) {mutableStateOf<Float?>(null)}
     Box(Modifier.fillMaxSize().graphicsLayer {translationY=offset;alpha=1f-(offset/screenHeight).coerceIn(0f,.7f)}) {
-    if(theme==VisualTheme.GLASS || theme==VisualTheme.MONOCHROME) {
+    if(immersive) AlbumAtmosphere(details)
+    else if(theme==VisualTheme.MONOCHROME) {
         val background=MaterialTheme.colorScheme.background
         val artColor=Color(details?.color ?: 0xff55415c.toInt())
         val ambient by animateColorAsState(androidx.compose.ui.graphics.lerp(background,artColor,if(lyricsVisible) .08f else .24f),animationSpec=tween(450),label="albumAmbient")
         Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(background,ambient,background))))
     }
-    Column(Modifier.fillMaxSize().padding(horizontal=24.dp)) {
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+    val coverHeight=if(immersive) (maxHeight-400.dp).coerceIn(120.dp,maxWidth*1.18f) else (maxHeight*.50f).coerceAtLeast(120.dp)
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal=if(immersive) 0.dp else 24.dp)) {
         Box(Modifier.fillMaxWidth().height(20.dp).semantics {contentDescription="Deslizar hacia abajo para cerrar"}.pointerInput(Unit) {
             detectVerticalDragGestures(onDragStart={isDragging=true;verticalDrag=0f},onDragCancel={isDragging=false;verticalDrag=0f},onDragEnd={isDragging=false;if(verticalDrag>closeThreshold) closing=true;verticalDrag=0f}) {change,amount->change.consume();verticalDrag=(verticalDrag+amount).coerceAtLeast(0f)}
         },contentAlignment=Alignment.Center) {Box(Modifier.width(40.dp).height(4.dp).clip(RoundedCornerShape(8.dp)).background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha=.45f)))}
-        Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.Center,verticalAlignment=Alignment.CenterVertically) {PrismaFilterChip(!lyricsVisible,{lyricsVisible=false},label={Text("Carátula")});Spacer(Modifier.width(8.dp));PrismaFilterChip(lyricsVisible,{lyricsVisible=true},label={Text("Letra")});PrismaIconButton(onClick={metadataVisible=!metadataVisible;prefs.showMetadata=metadataVisible}) {Icon(Icons.Rounded.Info,if(metadataVisible) "Ocultar metadatos" else "Mostrar metadatos",tint=if(metadataVisible) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)};PrismaIconButton(enabled=controller!=null,onClick={queueVisible=true}) {Icon(Icons.Rounded.QueueMusic,"Ver cola de reproducción")}}
-        Box(Modifier.weight(1f).fillMaxWidth().then(if(lyricsVisible) Modifier.clip(RoundedCornerShape(24.dp)).background(MaterialTheme.colorScheme.background.copy(alpha=.96f)).padding(horizontal=16.dp,vertical=8.dp) else swipe),contentAlignment=Alignment.Center) {
+        if(immersive) Row(Modifier.fillMaxWidth().padding(horizontal=12.dp),verticalAlignment=Alignment.CenterVertically) {
+            IconButton(onClick=onDismiss) {Icon(Icons.Rounded.KeyboardArrowDown,"Cerrar reproductor")}
+            Text("Reproduciendo",style=MaterialTheme.typography.labelSmall,color=Color.White.copy(alpha=.70f))
+        }
+        if(!immersive) Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.Center,verticalAlignment=Alignment.CenterVertically) {PrismaFilterChip(!lyricsVisible,{lyricsVisible=false},label={Text("Carátula")});Spacer(Modifier.width(8.dp));PrismaFilterChip(lyricsVisible,{lyricsVisible=true},label={Text("Letra")});PrismaIconButton(onClick={metadataVisible=!metadataVisible;prefs.showMetadata=metadataVisible}) {Icon(Icons.Rounded.Info,if(metadataVisible) "Ocultar metadatos" else "Mostrar metadatos",tint=if(metadataVisible) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)};PrismaIconButton(enabled=controller!=null,onClick={queueVisible=true}) {Icon(Icons.Rounded.QueueMusic,"Ver cola de reproducción")}}
+        Box(Modifier.height(coverHeight).fillMaxWidth().then(if(lyricsVisible) Modifier.clip(RoundedCornerShape(24.dp)).then(if(immersive) Modifier else Modifier.background(MaterialTheme.colorScheme.background.copy(alpha=.96f))).padding(horizontal=24.dp,vertical=8.dp) else swipe),contentAlignment=Alignment.Center) {
             if(lyricsVisible) {
                 val lines=remember(lyricText) {Lyrics.parse(lyricText)}
                 if(lines.isEmpty()) Column(horizontalAlignment=Alignment.CenterHorizontally) {Icon(Icons.Rounded.Lyrics,null,Modifier.size(64.dp),tint=MaterialTheme.colorScheme.primary);Spacer(Modifier.height(16.dp));Text(if(details==null) "Leyendo letra incrustada…" else "No se encontró una letra incrustada",fontWeight=FontWeight.Bold);Text("También puedes importar un archivo LRC o TXT.",style=MaterialTheme.typography.bodySmall,modifier=Modifier.padding(vertical=10.dp));PrismaButton(onClick={importId=song.id;import.launch(arrayOf("text/*","application/octet-stream"))}){Text("Importar letra")}}
@@ -256,7 +274,7 @@ import kotlinx.coroutines.withContext
                     Column {Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=Alignment.CenterVertically) {PrismaFilterChip(follow,{follow=!follow},label={Text(if(follow) "Seguir canción" else "Leer libremente")});Text(if(embedded) "Del archivo" else "Importada",color=MaterialTheme.colorScheme.onSurfaceVariant,fontSize=11.sp)}
                         LazyColumn(state=state,modifier=Modifier.fillMaxSize(),contentPadding=PaddingValues(top=16.dp,bottom=130.dp),verticalArrangement=Arrangement.spacedBy(22.dp)) {itemsIndexed(lines) {index,line ->
                             val color by animateColorAsState(if(active==index || line.time==null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha=.65f),label="lyricColor")
-                            Text(line.text.ifBlank {"♪"},color=color,fontSize=if(theme==VisualTheme.MINIMAL) 22.sp else 26.sp,fontWeight=if(active==index) FontWeight.Bold else FontWeight.Medium,modifier=Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).then(if(theme==VisualTheme.GLASS && active==index) Modifier.background(MaterialTheme.colorScheme.primary.copy(alpha=.08f)) else Modifier).clickable(enabled=line.time!=null) {line.time?.let {controller?.seekTo(it)}}.padding(8.dp))
+                            Text(line.text.ifBlank {"♪"},color=color,fontSize=if(theme==VisualTheme.MINIMAL) 22.sp else 26.sp,fontWeight=if(active==index) FontWeight.Bold else FontWeight.Medium,modifier=Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).then(if(!immersive && active==index) Modifier.background(MaterialTheme.colorScheme.primary.copy(alpha=.08f)) else Modifier).clickable(enabled=line.time!=null) {line.time?.let {controller?.seekTo(it)}}.padding(8.dp))
                         }}
                     }
                 }
@@ -268,15 +286,20 @@ import kotlinx.coroutines.withContext
 
             }
         }
+        Column(Modifier.padding(horizontal=if(immersive) 24.dp else 0.dp)) {
         AnimatedContent(targetState=song,contentKey={it.id},transitionSpec={contentMotion(motion.motion,motion.motionDuration,swipeDirection).using(null)},label="songCaption") {caption->
             Column {
-                Text(caption.title,fontSize=if(theme==VisualTheme.MINIMAL) 30.sp else 27.sp,fontWeight=FontWeight.Bold,maxLines=2,overflow=TextOverflow.Ellipsis,modifier=Modifier.padding(top=16.dp))
-                Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable(onClickLabel="Ver artista",onClick={onArtist(caption)}).semantics {contentDescription="Ver artista ${caption.artist}"}.padding(vertical=10.dp),verticalAlignment=Alignment.CenterVertically) {
+                Text(caption.title,fontSize=if(immersive) 22.sp else if(theme==VisualTheme.MINIMAL) 30.sp else 27.sp,fontWeight=FontWeight.Bold,maxLines=2,overflow=TextOverflow.Ellipsis,modifier=Modifier.padding(top=if(immersive) 0.dp else 16.dp))
+                Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable(onClickLabel="Ver artista",onClick={onArtist(caption)}).semantics {contentDescription="Ver artista ${caption.artist}"}.padding(vertical=if(immersive) 4.dp else 10.dp),verticalAlignment=Alignment.CenterVertically) {
                     Text(caption.artist,color=MaterialTheme.colorScheme.primary,maxLines=1,overflow=TextOverflow.Ellipsis,modifier=Modifier.weight(1f))
                     Icon(Icons.Rounded.ChevronRight,null,Modifier.size(20.dp),tint=MaterialTheme.colorScheme.primary)
                 }
                 if(prefs.showPlayerAlbum) Text(caption.album,color=MaterialTheme.colorScheme.onSurfaceVariant,maxLines=1,overflow=TextOverflow.Ellipsis,modifier=Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).clickable(onClickLabel="Ver álbum",onClick={onAlbum(caption)}).semantics {contentDescription="Ver álbum ${caption.album}"}.padding(bottom=8.dp))
             }
+        }
+        if(immersive) Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=Alignment.CenterVertically) {
+            Text(if(lyricsVisible) "Letra" else Lyrics.parse(lyricText).lastOrNull {it.time!=null && it.time<=position}?.text ?: "Letra",maxLines=1,overflow=TextOverflow.Ellipsis,style=MaterialTheme.typography.labelSmall,modifier=Modifier.weight(1f).clickable {lyricsVisible=!lyricsVisible})
+            IconButton(onClick={metadataVisible=!metadataVisible;prefs.showMetadata=metadataVisible}) {Icon(Icons.Rounded.Info,if(metadataVisible) "Ocultar metadatos" else "Mostrar metadatos")}
         }
         AnimatedVisibility(metadataVisible,enter=fadeIn(tween(220))+expandVertically(tween(280)),exit=fadeOut(tween(150))+shrinkVertically(tween(280))) {
             Text(details?.text ?: "Leyendo información del archivo…",fontSize=10.sp,maxLines=2,overflow=TextOverflow.Ellipsis,color=MaterialTheme.colorScheme.primary,modifier=Modifier.padding(top=7.dp).semantics {contentDescription="Información técnica de la canción"})
@@ -287,13 +310,24 @@ import kotlinx.coroutines.withContext
         }
         ThemeTimeline(theme,seeking ?: smoothPosition,end.toFloat().coerceAtLeast(1f),end>0,onChange={seeking=it},onFinished={seeking?.let {controller?.seekTo(it.toLong())};seeking=null})
         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) {Text(time((seeking?.toLong() ?: position)),fontSize=11.sp,color=MaterialTheme.colorScheme.onSurfaceVariant);Text(time(end),fontSize=11.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)}
-        Row(Modifier.fillMaxWidth().padding(vertical=12.dp).then(if(theme==VisualTheme.GLASS) Modifier.liquidSurface(32f,MaterialTheme.colorScheme.surface.copy(alpha=.16f)).padding(vertical=8.dp) else Modifier.clip(RoundedCornerShape(32.dp)).background(MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha=.8f)).padding(vertical=8.dp)),horizontalArrangement=Arrangement.SpaceEvenly,verticalAlignment=Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth().padding(vertical=if(immersive) 4.dp else 12.dp).then(if(immersive) Modifier else Modifier.clip(RoundedCornerShape(32.dp)).background(MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha=.8f)).padding(vertical=8.dp)),horizontalArrangement=Arrangement.SpaceEvenly,verticalAlignment=Alignment.CenterVertically) {
             PrismaIconButton(onClick={controller?.shuffleModeEnabled=!shuffle}) {Icon(Icons.Rounded.Shuffle,if(shuffle) "Desactivar aleatorio" else "Activar aleatorio",tint=if(shuffle) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)}
-            PrismaIconButton(onClick={controller?.seekToPrevious()}) {Icon(Icons.Rounded.SkipPrevious,"Anterior",Modifier.size(34.dp))}
-            PrismaPlayButton(onClick={controller?.let {if(it.isPlaying) it.pause() else it.play()}},modifier=Modifier.size(72.dp),shape=if(theme==VisualTheme.STUDIO) RoundedCornerShape(20.dp) else CircleShape) {Icon(if(playing) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,if(playing) "Pausar" else "Reproducir",Modifier.size(38.dp))}
-            PrismaIconButton(onClick={controller?.seekToNextMediaItem()}) {Icon(Icons.Rounded.SkipNext,"Siguiente",Modifier.size(34.dp))}
+            IconButton(onClick={controller?.seekToPrevious()}) {Icon(Icons.Rounded.SkipPrevious,"Anterior",Modifier.size(34.dp))}
+            if(immersive) IconButton(onClick={controller?.let {if(it.isPlaying) it.pause() else it.play()}},modifier=Modifier.size(72.dp)) {Icon(if(playing) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,if(playing) "Pausar" else "Reproducir",Modifier.size(52.dp))}
+            else PrismaPlayButton(onClick={controller?.let {if(it.isPlaying) it.pause() else it.play()}},modifier=Modifier.size(72.dp),shape=if(theme==VisualTheme.STUDIO) RoundedCornerShape(20.dp) else CircleShape) {Icon(if(playing) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,if(playing) "Pausar" else "Reproducir",Modifier.size(38.dp))}
+            IconButton(onClick={controller?.seekToNextMediaItem()}) {Icon(Icons.Rounded.SkipNext,"Siguiente",Modifier.size(34.dp))}
             PrismaIconButton(onClick={controller?.repeatMode=when(repeat){Player.REPEAT_MODE_OFF->Player.REPEAT_MODE_ALL;Player.REPEAT_MODE_ALL->Player.REPEAT_MODE_ONE;else->Player.REPEAT_MODE_OFF}}) {Icon(if(repeat==Player.REPEAT_MODE_ONE) Icons.Rounded.RepeatOne else Icons.Rounded.Repeat,"Cambiar repetición",tint=if(repeat!=Player.REPEAT_MODE_OFF) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)}
         }
+        if(immersive) {
+            MusicVolume()
+            Row(Modifier.fillMaxWidth().padding(bottom=16.dp),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=Alignment.CenterVertically) {
+                PrismaIconButton(onClick={lyricsVisible=!lyricsVisible}) {Icon(Icons.Rounded.Lyrics,if(lyricsVisible) "Ver carátula" else "Ver letra")}
+                PrismaOutlinedButton(onClick={importId=song.id;import.launch(arrayOf("text/*","application/octet-stream"))}) {Icon(Icons.Rounded.FileOpen,"Importar letra",Modifier.size(20.dp))}
+                PrismaIconButton(enabled=controller!=null,onClick={queueVisible=true}) {Icon(Icons.Rounded.QueueMusic,"Ver cola de reproducción")}
+            }
+        }
+        } // caption and controls
     }
+    } // constraints
     }
 }

@@ -79,13 +79,17 @@ fun Modifier.crystal() = liquidSurface()
         thumb={
             val shape=if(theme==VisualTheme.NIGHT) RoundedCornerShape(3.dp) else CircleShape
             val width=if(theme==VisualTheme.MINIMAL) 6.dp else if(theme==VisualTheme.GLASS) 24.dp else 16.dp
-            if(theme==VisualTheme.GLASS) Box(Modifier.size(32.dp,24.dp).graphicsLayer {scaleX=1f+pressure*.22f;scaleY=1f+pressure*.12f}.liquidSurface(16f,colors.surface.copy(alpha=.35f),pressure))
+            if(theme.hasAlbumAtmosphere()) Box(Modifier.size(8.dp,8.dp).clip(CircleShape).background(Color.White))
+            else if(theme==VisualTheme.GLASS) Box(Modifier.size(32.dp,24.dp).graphicsLayer {scaleX=1f+pressure*.22f;scaleY=1f+pressure*.12f}.liquidSurface(16f,colors.surface.copy(alpha=.35f),pressure))
             else Box(Modifier.size(width,if(theme==VisualTheme.MINIMAL) 18.dp else 24.dp).clip(shape).background(if(theme==VisualTheme.GLASS) colors.surface.copy(alpha=.9f) else primary).border(1.dp,if(theme==VisualTheme.GLASS) primary.copy(alpha=.65f) else primary,shape))
         },
         track={state->Canvas(Modifier.fillMaxWidth().height(28.dp)) {
             val progress=((state.value-state.valueRange.start)/(state.valueRange.endInclusive-state.valueRange.start)).coerceIn(0f,1f)
             val mid=size.height/2
-            when(theme) {
+            if(theme.hasAlbumAtmosphere()) {
+                drawLine(inactive,Offset(0f,mid),Offset(size.width,mid),3.dp.toPx(),StrokeCap.Round)
+                drawLine(Color.White,Offset(0f,mid),Offset(size.width*progress,mid),3.dp.toPx(),StrokeCap.Round)
+            } else when(theme) {
                 VisualTheme.CHROMATIC->{
                     val path=Path()
                     for(i in 0..160) {val x=size.width*i/160f;val y=mid+sin(i/160f*8*Math.PI).toFloat()*4.dp.toPx();if(i==0) path.moveTo(x,y) else path.lineTo(x,y)}

@@ -33,6 +33,10 @@ val LocalVisualTheme=staticCompositionLocalOf { VisualTheme.CHROMATIC }
     if(details?.art!=null) Image(details.art.asImageBitmap(),"Carátula de ${song.album}",contentScale=ContentScale.Crop,modifier=modifier) else Cover(song,modifier)
 }
 @Composable fun ThemeArtwork(song:Song,details:Library.Details?,theme:VisualTheme) {
+    if(theme.hasAlbumAtmosphere()) {
+        IntegratedArtwork(song,details,Modifier.fillMaxSize().semantics {contentDescription="Diseño ${theme.title}"})
+        return
+    }
     val c=MaterialTheme.colorScheme
     val corner=when(theme) {VisualTheme.MINIMAL->4.dp;VisualTheme.MONOCHROME->16.dp;VisualTheme.NIGHT->12.dp;VisualTheme.STUDIO->32.dp;VisualTheme.SUNSET->40.dp;else->28.dp}
     BoxWithConstraints(Modifier.fillMaxSize().semantics {contentDescription="Diseño ${theme.title}"},contentAlignment=Alignment.Center) {
