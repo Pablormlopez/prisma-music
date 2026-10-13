@@ -117,8 +117,8 @@ fun VisualTheme.palette():List<Color> = when(this) {
     VisualTheme.MONOCHROME->listOf(Color.White,Color(0xff808080),Color.Black)
 }
 fun VisualTheme.description():String = when(this) {
-    VisualTheme.CHROMATIC->"Carátulas, color y movimiento"
-    VisualTheme.GLASS->"Cristal limpio y navegación flotante"
+    VisualTheme.CHROMATIC->"Portada inmersiva y colores del álbum"
+    VisualTheme.GLASS->"Cristal, portada integrada y fondo del álbum"
     VisualTheme.MINIMAL->"Portadas grandes y líneas puras"
     VisualTheme.NIGHT->"Profundidad y contraste verde"
     VisualTheme.STUDIO->"Paneles definidos y pulso visual"
