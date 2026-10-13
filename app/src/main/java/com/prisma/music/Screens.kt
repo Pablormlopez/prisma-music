@@ -258,13 +258,10 @@ import kotlinx.coroutines.withContext
         Box(Modifier.fillMaxWidth().height(20.dp).semantics {contentDescription="Deslizar hacia abajo para cerrar"}.pointerInput(Unit) {
             detectVerticalDragGestures(onDragStart={isDragging=true;verticalDrag=0f},onDragCancel={isDragging=false;verticalDrag=0f},onDragEnd={isDragging=false;if(verticalDrag>closeThreshold) closing=true;verticalDrag=0f}) {change,amount->change.consume();verticalDrag=(verticalDrag+amount).coerceAtLeast(0f)}
         },contentAlignment=Alignment.Center) {Box(Modifier.width(40.dp).height(4.dp).clip(RoundedCornerShape(8.dp)).background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha=.45f)))}
-        if(immersive) Row(Modifier.fillMaxWidth().padding(horizontal=12.dp),verticalAlignment=Alignment.CenterVertically) {
-            IconButton(onClick=onDismiss) {Icon(Icons.Rounded.KeyboardArrowDown,"Cerrar reproductor")}
-            Text("Reproduciendo",style=MaterialTheme.typography.labelSmall,color=Color.White.copy(alpha=.70f))
-        }
         if(!immersive) Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.Center,verticalAlignment=Alignment.CenterVertically) {PrismaFilterChip(!lyricsVisible,{lyricsVisible=false},label={Text("Carátula")});Spacer(Modifier.width(8.dp));PrismaFilterChip(lyricsVisible,{lyricsVisible=true},label={Text("Letra")});PrismaIconButton(onClick={metadataVisible=!metadataVisible;prefs.showMetadata=metadataVisible}) {Icon(Icons.Rounded.Info,if(metadataVisible) "Ocultar metadatos" else "Mostrar metadatos",tint=if(metadataVisible) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)};PrismaIconButton(enabled=controller!=null,onClick={queueVisible=true}) {Icon(Icons.Rounded.QueueMusic,"Ver cola de reproducción")}}
-        Box(Modifier.height(coverHeight).fillMaxWidth().then(if(lyricsVisible) Modifier.clip(RoundedCornerShape(24.dp)).then(if(immersive) Modifier else Modifier.background(MaterialTheme.colorScheme.background.copy(alpha=.96f))).padding(horizontal=24.dp,vertical=8.dp) else swipe),contentAlignment=Alignment.Center) {
-            if(lyricsVisible) {
+        Box(Modifier.height(coverHeight).fillMaxWidth().then(if(lyricsVisible) Modifier.clip(RoundedCornerShape(24.dp)).then(if(immersive) Modifier else Modifier.background(MaterialTheme.colorScheme.background.copy(alpha=.96f))).padding(start=24.dp,end=24.dp,top=if(immersive) 48.dp else 8.dp,bottom=8.dp) else swipe),contentAlignment=Alignment.Center) {
+            AnimatedContent(targetState=lyricsVisible,transitionSpec={fadeIn(tween(motionMs)) togetherWith fadeOut(tween(motionMs))},label="artworkLyrics",modifier=Modifier.fillMaxSize()) {showLyrics ->
+            if(showLyrics) {
                 val lines=parsedLyrics
                 if(lines.isEmpty()) Column(horizontalAlignment=Alignment.CenterHorizontally) {Icon(Icons.Rounded.Lyrics,null,Modifier.size(64.dp),tint=MaterialTheme.colorScheme.primary);Spacer(Modifier.height(16.dp));Text(if(details==null) "Leyendo letra incrustada…" else "No se encontró una letra incrustada",fontWeight=FontWeight.Bold);Text("También puedes importar un archivo LRC o TXT.",style=MaterialTheme.typography.bodySmall,modifier=Modifier.padding(vertical=10.dp));PrismaButton(onClick={importId=song.id;import.launch(arrayOf("text/*","application/octet-stream"))}){Text("Importar letra")}}
                 else {
@@ -286,6 +283,8 @@ import kotlinx.coroutines.withContext
                 }
 
             }
+            }
+            if(immersive) IconButton(onClick=onDismiss,modifier=Modifier.align(Alignment.TopStart).padding(start=8.dp)) {Icon(Icons.Rounded.KeyboardArrowDown,"Cerrar reproductor")}
         }
         Column(Modifier.padding(horizontal=if(immersive) 24.dp else 0.dp)) {
         AnimatedContent(targetState=song,contentKey={it.id},transitionSpec={contentMotion(motion.motion,motion.motionDuration,swipeDirection).using(null)},label="songCaption") {caption->

@@ -33,6 +33,11 @@ class PrismaSmokeTest {
     @get:Rule(order=0) val permissions:GrantPermissionRule = GrantPermissionRule.grant(Manifest.permission.READ_MEDIA_AUDIO,Manifest.permission.POST_NOTIFICATIONS)
     @get:Rule(order=1) val compose = createAndroidComposeRule<MainActivity>()
     private fun nav(text:String) {compose.onNode(hasText(text) and hasClickAction()).performClick();compose.waitForIdle()}
+    private fun closePlayer() {
+        val button=compose.onNodeWithContentDescription("Cerrar reproductor")
+        if(Preferences(compose.activity).theme.hasAlbumAtmosphere()) button.performScrollTo()
+        button.performClick()
+    }
     private fun shot(name:String) {
         // Public test output survives Gradle uninstalling the app after tests.
         val resolver=compose.activity.contentResolver
@@ -140,7 +145,7 @@ class PrismaSmokeTest {
             compose.onNodeWithText("Prisma prueba").performClick()
             compose.waitUntil(15000) {compose.onAllNodesWithContentDescription("Pausar").fetchSemanticsNodes().isNotEmpty()}
             compose.onNodeWithContentDescription("Abrir reproductor").performClick()
-            compose.waitUntil(5000) {compose.onAllNodesWithText("Reproduciendo").fetchSemanticsNodes().isNotEmpty()}
+            compose.waitUntil(5000) {compose.onAllNodesWithContentDescription("Diseño Chromatic Flow").fetchSemanticsNodes().isNotEmpty()}
             compose.onNodeWithContentDescription("Abrir reproductor").assertDoesNotExist()
             compose.onAllNodesWithContentDescription("Pausar").assertCountEquals(1)
             compose.onNodeWithContentDescription("Pausar").performScrollTo().performClick()
@@ -184,7 +189,7 @@ class PrismaSmokeTest {
             compose.runOnIdle {assertEquals(beforeArtist,Triple(observer.currentMediaItem?.mediaId,observer.currentPosition,observer.mediaItemCount));assertFalse(observer.playWhenReady)}
             compose.onNodeWithContentDescription("Volver al reproductor").performClick()
             compose.onNodeWithContentDescription("Ver álbum ${fixture.album}").assertDoesNotExist()
-            compose.onNodeWithContentDescription("Cerrar reproductor").performScrollTo().performClick()
+            closePlayer()
             nav("Ajustes")
             compose.onNodeWithContentDescription("Mostrar nombre del álbum").performScrollTo().performClick()
             assertTrue(Preferences(context).showPlayerAlbum)
@@ -192,7 +197,7 @@ class PrismaSmokeTest {
             compose.onNodeWithContentDescription("Ver álbum ${fixture.album}").assertExists().performClick()
             compose.onNodeWithText("Todos los álbumes",substring=false).assertExists()
             compose.onNodeWithContentDescription("Volver al reproductor").performClick()
-            compose.onNodeWithContentDescription("Cerrar reproductor").performScrollTo().performClick()
+            closePlayer()
             nav("Ajustes")
             compose.onNodeWithContentDescription("Mostrar nombre del álbum").performScrollTo().performClick()
             assertFalse(Preferences(context).showPlayerAlbum)
@@ -371,7 +376,7 @@ class PrismaSmokeTest {
                 compose.onNodeWithContentDescription("Línea de tiempo $title").assertExists()
                 compose.onNodeWithContentDescription("Línea de tiempo $title").performSemanticsAction(SemanticsActions.SetProgress) { it(1000f) }
                 shot("07-reproductor-$index-oscuro")
-                compose.onNodeWithContentDescription("Cerrar reproductor").performScrollTo().performClick()
+                closePlayer()
                 nav("Biblioteca")
                 shot("08-biblioteca-$index-oscuro")
                 nav("Ajustes")
@@ -383,7 +388,7 @@ class PrismaSmokeTest {
                 shot("05-tema-$index-claro")
                 compose.onNodeWithContentDescription("Abrir reproductor").performClick()
                 shot("15-reproductor-$index-claro")
-                compose.onNodeWithContentDescription("Cerrar reproductor").performScrollTo().performClick()
+                closePlayer()
                 nav("Inicio")
                 shot("16-inicio-$index-claro")
                 nav("Ajustes")

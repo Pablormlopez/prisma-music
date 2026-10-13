@@ -49,9 +49,11 @@ class AlbumPlayerTest {
             compose.onNodeWithContentDescription("Diseño Liquid Glass").assertExists()
             compose.onNodeWithContentDescription("Línea de tiempo Liquid Glass").performScrollTo().performSemanticsAction(SemanticsActions.SetProgress) {it(5000f)}
             compose.onNodeWithContentDescription("Volumen multimedia").performScrollTo().assertIsDisplayed()
+            compose.onNodeWithContentDescription("Cerrar reproductor").performScrollTo()
             shot("40-liquid-glass-album")
             compose.onNodeWithContentDescription("Ver letra").performScrollTo().performClick()
             compose.onNodeWithText("Luz entre los colores").assertExists()
+            compose.onNodeWithContentDescription("Cerrar reproductor").performScrollTo()
             shot("41-liquid-glass-lyrics")
             compose.onNodeWithContentDescription("Ver carátula").performScrollTo().performClick()
             compose.onNodeWithContentDescription("Ver artista Prisma").performScrollTo().performClick()
