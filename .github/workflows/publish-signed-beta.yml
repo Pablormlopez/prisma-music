@@ -1,0 +1,82 @@
+name: Publicar beta firmada
+on:
+  push:
+    branches: ['distribution/4.0.1-beta']
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: publish-4.0.1-beta
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Reconstruir y verificar APK firmada
+        run: |
+          cat dist/apk.part1 dist/apk.part2 > Prisma-Music-4.0.1-beta.apk
+          sha256sum -c dist/Prisma-Music-4.0.1-beta.apk.sha256
+          curl --fail --location --retry 3 https://dl.google.com/android/repository/build-tools_r35_linux.zip -o "$RUNNER_TEMP/build-tools.zip"
+          unzip -p "$RUNNER_TEMP/build-tools.zip" android-15/lib/apksigner.jar > "$RUNNER_TEMP/apksigner.jar"
+          java -jar "$RUNNER_TEMP/apksigner.jar" verify --verbose --print-certs Prisma-Music-4.0.1-beta.apk | tee certificate.txt
+          grep -F 'Signer #1 certificate SHA-256 digest: c6d69799f5e7d94c6ba48b92e267a3b647170276753d9791bd5402676b2780ca' certificate.txt
+          curl --fail --location --retry 3 https://github.com/nexlibre/prisma-music/releases/download/v3.0.4-beta/Prisma-Music-3.0.4-beta.apk -o previous.apk
+          java -jar "$RUNNER_TEMP/apksigner.jar" verify --print-certs previous.apk > previous-certificate.txt
+          diff <(grep 'certificate SHA-256 digest' previous-certificate.txt) <(grep 'certificate SHA-256 digest' certificate.txt)
+      - name: Habilitar KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 33
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          script: |
+            adb install previous.apk
+            adb shell pm grant com.prisma.music android.permission.READ_MEDIA_AUDIO
+            adb shell am start -W -n com.prisma.music/.MainActivity
+            adb install -r Prisma-Music-4.0.1-beta.apk
+            adb shell dumpsys package com.prisma.music > installed-package.txt
+            grep 'versionName=4.0.1-beta' installed-package.txt
+            adb logcat -c
+            adb shell am start -W -n com.prisma.music/.MainActivity
+            sleep 5
+            adb shell pidof com.prisma.music
+            adb logcat -d -s AndroidRuntime:E > crash-log.txt
+            ! grep -q 'FATAL EXCEPTION' crash-log.txt
+      - name: Esperar pruebas de interfaz del código compilado
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          status=""
+          for attempt in $(seq 1 30); do
+            status=$(gh api -X GET repos/nexlibre/prisma-music/actions/runs -f head_sha="$(cat dist/tested-sha)" -f event=pull_request --jq '.workflow_runs[] | select(.name == "Probar interfaz Android") | .conclusion' | head -n 1)
+            if [ "$status" = "success" ]; then break; fi
+            if [ "$status" = "failure" ] || [ "$status" = "cancelled" ] || [ "$status" = "timed_out" ]; then exit 1; fi
+            sleep 20
+          done
+          test "$status" = "success"
+      - name: Publicar descarga
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create v4.0.1-beta Prisma-Music-4.0.1-beta.apk dist/Prisma-Music-4.0.1-beta.apk.sha256 --repo nexlibre/prisma-music --target "$(cat dist/source-sha)" --prerelease --title 'Prisma Music 4.0.1 beta · Liquid Glass' --notes-file dist/notes.md
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Verificacion-APK-4.0.1
+          path: |
+            certificate.txt
+            previous-certificate.txt
+            installed-package.txt
+            crash-log.txt
