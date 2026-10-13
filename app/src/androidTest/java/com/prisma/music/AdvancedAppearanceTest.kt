@@ -42,7 +42,7 @@ class AdvancedAppearanceTest {
             compose.onNodeWithContentDescription("Portada a pantalla completa").performScrollTo().performClick()
             assertEquals(!previous.fullCover,prefs.advanced.fullCover)
             compose.onNodeWithContentDescription("Reducir desenfoque").performScrollTo().performClick()
-            compose.onNodeWithContentDescription("Modo de alto rendimiento").performScrollTo().performClick()
+            compose.onNodeWithContentDescription("Modo ligero").performScrollTo().performClick()
             screenshot("51-apariencia-rendimiento")
         } finally {
             prefs.setAdvanced("animatedCover",previous.animatedCover);prefs.setAdvanced("coverMotion",previous.coverMotion)
