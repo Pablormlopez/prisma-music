@@ -68,6 +68,13 @@ internal fun VisualTheme.hasAlbumAtmosphere() = this == VisualTheme.GLASS || thi
                 runCatching {audio.setStreamVolume(AudioManager.STREAM_MUSIC,value.toInt(),0)}.onSuccess {volume=value;blocked=false}.onFailure {blocked=true}
             },onValueChangeFinished={changing=false},valueRange=0f..maximum.toFloat(),enabled=!audio.isVolumeFixed,
                 modifier=Modifier.weight(1f).semantics {contentDescription="Volumen multimedia"},
+                thumb={Box(Modifier.size(8.dp).clip(androidx.compose.foundation.shape.CircleShape).background(Color.White))},
+                track={state->Canvas(Modifier.fillMaxWidth().height(12.dp)) {
+                    val progress=(state.value/maximum).coerceIn(0f,1f)
+                    val center=size.height/2
+                    drawLine(Color.White.copy(alpha=.24f),androidx.compose.ui.geometry.Offset(0f,center),androidx.compose.ui.geometry.Offset(size.width,center),3.dp.toPx(),StrokeCap.Round)
+                    drawLine(Color.White,androidx.compose.ui.geometry.Offset(0f,center),androidx.compose.ui.geometry.Offset(size.width*progress,center),3.dp.toPx(),StrokeCap.Round)
+                }},
                 colors=SliderDefaults.colors(activeTrackColor=Color.White,inactiveTrackColor=Color.White.copy(alpha=.24f),thumbColor=Color.White))
             Icon(Icons.Rounded.VolumeUp,null,Modifier.size(18.dp),tint=Color.White.copy(alpha=.65f))
         }

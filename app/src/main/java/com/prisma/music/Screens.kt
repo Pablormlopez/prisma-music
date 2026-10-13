@@ -263,7 +263,7 @@ import kotlinx.coroutines.withContext
             AnimatedContent(targetState=lyricsVisible,transitionSpec={fadeIn(tween(motionMs)) togetherWith fadeOut(tween(motionMs))},label="artworkLyrics",modifier=Modifier.fillMaxSize()) {showLyrics ->
             if(showLyrics) {
                 val lines=parsedLyrics
-                if(lines.isEmpty()) Column(horizontalAlignment=Alignment.CenterHorizontally) {Icon(Icons.Rounded.Lyrics,null,Modifier.size(64.dp),tint=MaterialTheme.colorScheme.primary);Spacer(Modifier.height(16.dp));Text(if(details==null) "Leyendo letra incrustada…" else "No se encontró una letra incrustada",fontWeight=FontWeight.Bold);Text("También puedes importar un archivo LRC o TXT.",style=MaterialTheme.typography.bodySmall,modifier=Modifier.padding(vertical=10.dp));PrismaButton(onClick={importId=song.id;import.launch(arrayOf("text/*","application/octet-stream"))}){Text("Importar letra")}}
+                if(lines.isEmpty()) Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()),horizontalAlignment=Alignment.CenterHorizontally) {Icon(Icons.Rounded.Lyrics,null,Modifier.size(64.dp),tint=MaterialTheme.colorScheme.primary);Spacer(Modifier.height(16.dp));Text(if(details==null) "Leyendo letra incrustada…" else "No se encontró una letra incrustada",fontWeight=FontWeight.Bold);Text("También puedes importar un archivo LRC o TXT.",style=MaterialTheme.typography.bodySmall,modifier=Modifier.padding(vertical=10.dp));PrismaButton(onClick={importId=song.id;import.launch(arrayOf("text/*","application/octet-stream"))}){Text("Importar letra")}}
                 else {
                     val active=lines.indexOfLast {it.time!=null && it.time<=position}
                     val state=key(song.id,lyricText) {rememberLazyListState()}
@@ -284,7 +284,7 @@ import kotlinx.coroutines.withContext
 
             }
             }
-            if(immersive) IconButton(onClick=onDismiss,modifier=Modifier.align(Alignment.TopStart).padding(start=8.dp)) {Icon(Icons.Rounded.KeyboardArrowDown,"Cerrar reproductor")}
+            if(immersive && !lyricsVisible) IconButton(onClick=onDismiss,modifier=Modifier.align(Alignment.TopStart).padding(start=8.dp)) {Icon(Icons.Rounded.KeyboardArrowDown,"Cerrar reproductor")}
         }
         Column(Modifier.padding(horizontal=if(immersive) 24.dp else 0.dp)) {
         AnimatedContent(targetState=song,contentKey={it.id},transitionSpec={contentMotion(motion.motion,motion.motionDuration,swipeDirection).using(null)},label="songCaption") {caption->
