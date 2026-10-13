@@ -53,7 +53,7 @@ class AlbumPlayerTest {
             shot("40-liquid-glass-album")
             compose.onNodeWithContentDescription("Ver letra").performScrollTo().performClick()
             compose.onNodeWithText("Luz entre los colores").assertExists()
-            compose.onNodeWithContentDescription("Cerrar reproductor").performScrollTo()
+            compose.onNodeWithContentDescription("Deslizar hacia abajo para cerrar").performScrollTo()
             shot("41-liquid-glass-lyrics")
             compose.onNodeWithContentDescription("Ver carátula").performScrollTo().performClick()
             compose.onNodeWithContentDescription("Ver artista Prisma").performScrollTo().performClick()
