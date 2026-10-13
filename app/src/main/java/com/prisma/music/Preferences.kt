@@ -13,6 +13,20 @@ data class Personalization(val accent:String="",val layout:LibraryLayout=Library
 
 class Preferences(context: Context) {
     private val prefs = context.getSharedPreferences("prisma", Context.MODE_PRIVATE)
+    internal val advanced:AdvancedSettings get()=AdvancedSettings(
+        prefs.getBoolean("normalize",false),prefs.getFloat("targetDb",-18f).coerceIn(-24f,-14f),prefs.getFloat("crossfade",0f).coerceIn(0f,12f),
+        prefs.getFloat("stereoWidth",1f).coerceIn(0f,1.8f),prefs.getBoolean("spatial",false),prefs.getBoolean("floatOutput",true),
+        prefs.getFloat("refreshHz",0f).coerceAtLeast(0f),prefs.getBoolean("performance",false),prefs.getBoolean("reduceBlur",false),
+        prefs.getBoolean("animatedCover",false),prefs.getString("coverMotion","Respirar")!!,prefs.getBoolean("fullCover",true),
+        prefs.getBoolean("meshGradient",false),prefs.getBoolean("syncLyrics",true),prefs.getBoolean("blurLyrics",false),
+        prefs.getBoolean("showVolume",true),prefs.getBoolean("stopOnDismiss",false),prefs.getInt("artworkRevision",0))
+    internal fun setAdvanced(key:String,value:Boolean) {prefs.edit().putBoolean(key,value).apply()}
+    internal fun setAdvanced(key:String,value:Float) {prefs.edit().putFloat(key,value).apply()}
+    internal fun setAdvanced(key:String,value:String) {prefs.edit().putString(key,value).apply()}
+    internal fun listen(listener:android.content.SharedPreferences.OnSharedPreferenceChangeListener) = prefs.registerOnSharedPreferenceChangeListener(listener)
+    internal fun unlisten(listener:android.content.SharedPreferences.OnSharedPreferenceChangeListener) = prefs.unregisterOnSharedPreferenceChangeListener(listener)
+    fun animatedArtwork(id:String):String?=prefs.getString("animatedArtwork:$id",null)
+    fun saveAnimatedArtwork(id:String,uri:String?) {prefs.edit().apply {if(uri==null) remove("animatedArtwork:$id") else putString("animatedArtwork:$id",uri);putInt("artworkRevision",prefs.getInt("artworkRevision",0)+1)}.apply()}
     var personalization: Personalization
         get() = runCatching { val j=JSONObject(prefs.getString("personalization","{}")!!); Personalization(j.optString("accent"),LibraryLayout.valueOf(j.optString("layout","THEME")),SongInfoStyle.valueOf(j.optString("info","ARTIST")),runCatching {MotionStyle.valueOf(j.optString("motion","SOFT"))}.getOrDefault(MotionStyle.SOFT),j.optInt("motionDuration",550).coerceIn(250,900)) }.getOrDefault(Personalization())
         set(v) { prefs.edit().putString("personalization",JSONObject().put("accent",v.accent).put("layout",v.layout.name).put("info",v.info.name).put("motion",v.motion.name).put("motionDuration",v.motionDuration.coerceIn(250,900)).toString()).apply() }

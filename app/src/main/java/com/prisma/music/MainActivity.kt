@@ -83,6 +83,8 @@ class MainActivity : ComponentActivity() {
 fun PrismaApp() {
     val context=LocalContext.current
     val prefs=remember { Preferences(context) }
+    val advanced=rememberAdvanced(prefs)
+    AdvancedWindowOptions(advanced)
     var personal by remember { mutableStateOf(prefs.personalization) }
     var actionSong by remember { mutableStateOf<Song?>(null) }
     var theme by remember { mutableStateOf(prefs.theme) }
@@ -147,7 +149,7 @@ fun PrismaApp() {
     }
     val visible=remember(songs,libraryVersion) { Library.visible(songs,prefs) }
     val current=songs.find { it.id==currentId }
-    LaunchedEffect(currentId) { if(currentId.isNotBlank()) {prefs.rememberSong(currentId);recentIds=prefs.recentIds()}; details=null; current?.let { s -> details=withContext(Dispatchers.IO) { Library.details(context,s) } } }
+    LaunchedEffect(currentId,advanced.artworkRevision) { if(currentId.isNotBlank()) {prefs.rememberSong(currentId);recentIds=prefs.recentIds()}; details=null; current?.let { s -> details=withContext(Dispatchers.IO) { Library.details(context,s) } } }
     val dark=when(mode) { LightMode.DARK->true; LightMode.LIGHT->false; LightMode.SYSTEM->isSystemInDarkTheme() }
     SideEffect { (context as? ComponentActivity)?.window?.let { window -> androidx.core.view.WindowCompat.getInsetsController(window,window.decorView).apply {isAppearanceLightStatusBars=!(dark || (page=="Reproduciendo" && theme.hasAlbumAtmosphere()));isAppearanceLightNavigationBars=!(dark || (page=="Reproduciendo" && theme.hasAlbumAtmosphere()))} } }
     val baseAccent=if(theme==VisualTheme.MONOCHROME) {if(dark) Color.White else Color.Black} else accentColor(personal.accent) ?: when(theme) { VisualTheme.CHROMATIC->Color(details?.color ?: 0xffb0a2ff.toInt()); VisualTheme.GLASS->Color(details?.color ?: 0xff8bd6f8.toInt()); VisualTheme.MINIMAL->if(dark) Color(0xffc6c5ce) else Color(0xff494650); VisualTheme.NIGHT->if(dark) Color(0xff66e2ac) else Color(0xff006c43); VisualTheme.STUDIO->if(dark) Color(0xffc8b5ff) else Color(0xff6446a6); VisualTheme.SUNSET->if(dark) Color(0xffffbd91) else Color(0xff9b3d14); VisualTheme.MONOCHROME->Color.Black }
@@ -164,10 +166,11 @@ fun PrismaApp() {
         if(Build.VERSION.SDK_INT>=33 && ContextCompat.checkSelfPermission(context,Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED) notifications.launch(Manifest.permission.POST_NOTIFICATIONS)
         controller?.run { setMediaItems(queue.map { it.mediaItem() },queue.indexOf(song).coerceAtLeast(0),0); prepare(); play() }
     }
+    val effectivePersonal=if(advanced.performance) personal.copy(motion=MotionStyle.NONE) else personal
     val glassLayer=androidx.compose.ui.graphics.rememberGraphicsLayer()
     val glassScene=remember(glassLayer) {GlassScene(glassLayer)}
     MaterialTheme(colorScheme=colors) {
-        CompositionLocalProvider(LocalVisualTheme provides theme, LocalPersonalization provides personal, LocalGlassScene provides if(theme==VisualTheme.GLASS) glassScene else null) {
+        CompositionLocalProvider(LocalVisualTheme provides theme, LocalPersonalization provides effectivePersonal, LocalAdvanced provides advanced, LocalGlassScene provides if(theme==VisualTheme.GLASS) glassScene else null) {
         Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(if(theme!=VisualTheme.MONOCHROME && (theme==VisualTheme.CHROMATIC || theme==VisualTheme.GLASS || personal.accent.isNotEmpty())) androidx.compose.ui.graphics.lerp(bg,accent,if(dark) .16f else .08f) else bg,bg)))) {
             if(theme==VisualTheme.GLASS) GlassBackdrop(details?.glassBackdrop,bg)
             Scaffold(containerColor=Color.Transparent,contentColor=colors.onBackground,bottomBar={
@@ -197,7 +200,7 @@ fun PrismaApp() {
                         if(page=="Biblioteca" || page=="Inicio") PrismaIconButton(onClick={libraryVersion++}) { Icon(Icons.Rounded.Refresh,"Actualizar biblioteca") }
                     }
                     error?.let { message -> Surface(color=colors.errorContainer,shape=RoundedCornerShape(16.dp),modifier=Modifier.padding(horizontal=16.dp)) { Row(Modifier.padding(12.dp),verticalAlignment=Alignment.CenterVertically) { Text(message,Modifier.weight(1f),color=colors.onErrorContainer,style=MaterialTheme.typography.bodySmall); PrismaIconButton(onClick={error=null}) { Icon(Icons.Rounded.Close,"Cerrar mensaje") } } } }
-                    AnimatedContent(targetState=page,transitionSpec={contentMotion(personal.motion,personal.motionDuration).using(null)},label="page",modifier=Modifier.weight(1f).semantics {contentDescription="Contenido de $page"}.pointerInput(page,swipeThreshold) {
+                    AnimatedContent(targetState=page,transitionSpec={contentMotion(effectivePersonal.motion,effectivePersonal.motionDuration).using(null)},label="page",modifier=Modifier.weight(1f).semantics {contentDescription="Contenido de $page"}.pointerInput(page,swipeThreshold) {
                         if(page in mainPages) {
                             var distance=0f
                             detectHorizontalDragGestures(onDragStart={distance=0f},onDragCancel={distance=0f},onDragEnd={
@@ -206,13 +209,13 @@ fun PrismaApp() {
                         }
                     }) { route -> pageStates.SaveableStateProvider(if(route=="Biblioteca") "$route:$libraryCategory" else route) {when(route) {
                         "Inicio"->if(!granted) PermissionCard {requestPermission.launch(permission)} else HomeScreen(visible,busy,current,recentIds,onPlay={queue,song->play(queue,song);openPlayer()},onLibrary={libraryCategory="Canciones";page="Biblioteca"},onRecent={libraryCategory="Recién añadidas";page="Biblioteca"},onOptions={actionSong=it})
-                        "Personalización"->PersonalizationScreen(personal,mode,{mode=it;prefs.mode=it},{personal=it;prefs.personalization=it},{page="Temas"})
+                        "Personalización"->PersonalizationScreen(personal,mode,{mode=it;prefs.mode=it},{personal=it;prefs.personalization=it},{page="Temas"},prefs)
                         "Temas"->ThemesScreen(theme,mode,{theme=it;prefs.theme=it},{mode=it;prefs.mode=it})
                         "Biblioteca"->if(!granted) PermissionCard { requestPermission.launch(permission) } else LibraryScreen(visible,busy,currentId,onPlay=::play,onAdd={addToList=it},onOptions={actionSong=it},initialCategory=libraryCategory)
                         "Listas"->PlaylistScreen(lists,visible,currentId,onCreate={newListDialog=true},onDelete={key->lists=lists-key; prefs.savePlaylists(lists)},onRemove={key,id->lists=lists+(key to lists.getValue(key).filterNot { it==id }); prefs.savePlaylists(lists)},onPlay=::play,onOptions={actionSong=it},onReorder={name,expected,id,target->lists[name]?.let {current->if(current==expected) {lists=lists+(name to movePlaylistSong(current,id,target));prefs.savePlaylists(lists)}}},onAddSongs={name,selection->lists=lists+(name to (lists[name].orEmpty()+selection.map {it.id}).distinct());prefs.savePlaylists(lists)})
                         "Artista"->ArtistScreen(artistName,artistAlbum,visible,currentId,onPlay=::play,onAdd={addToList=it},onOptions={actionSong=it})
                         "Sonido"->EqScreen(prefs) { config->prefs.eq=config; controller?.sendCustomCommand(SessionCommand("prisma.eq",Bundle.EMPTY),Bundle.EMPTY) }
-                        "Ajustes"->SettingsScreen(prefs,songs,{libraryVersion++}, { controller?.sendCustomCommand(SessionCommand("prisma.settings",Bundle.EMPTY),Bundle.EMPTY) },onThemes={page="Personalización"})
+                        "Ajustes"->SettingsScreen(prefs,songs,{libraryVersion++}, { controller?.sendCustomCommand(SessionCommand("prisma.settings",Bundle.EMPTY),Bundle.EMPTY) },onThemes={page="Personalización"},details=details)
                         "Reproduciendo"->if(current!=null) PlayerScreen(current,details,theme,prefs,position,duration,playing,shuffled,repeat,controller,onDismiss={page=playerReturn},onArtist={openArtist(it)},onAlbum={openArtist(it,true)}) else EmptyCard("Selecciona una canción","Tu música local aparecerá aquí.",Icons.Rounded.MusicNote)
                     } } }
                 }

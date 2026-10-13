@@ -58,7 +58,7 @@ object FrostedArtwork {
             drawRect(Brush.radialGradient(listOf(Color(0xff569cd9).copy(alpha=.30f),Color.Transparent),center=Offset(size.width*.12f,size.height*.22f),radius=size.width*1.15f))
             drawRect(Brush.radialGradient(listOf(Color(0xffbd8ddb).copy(alpha=.24f),Color.Transparent),center=Offset(size.width*.95f,size.height*.78f),radius=size.width*1.05f))
         }
-        if(bitmap!=null) Image(bitmap.asImageBitmap(),null,Modifier.fillMaxSize(),contentScale=ContentScale.Crop)
+        if(bitmap!=null && !LocalAdvanced.current.reduceBlur && !LocalAdvanced.current.performance) Image(bitmap.asImageBitmap(),null,Modifier.fillMaxSize(),contentScale=ContentScale.Crop)
         Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(background.copy(alpha=.62f),background.copy(alpha=.72f),background.copy(alpha=.60f)))))
     }
 }
