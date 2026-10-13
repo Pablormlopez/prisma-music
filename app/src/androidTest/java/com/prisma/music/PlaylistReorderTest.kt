@@ -8,6 +8,7 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
@@ -58,7 +59,7 @@ class PlaylistReorderTest {
             compose.waitForIdle()
             val beta = compose.onNodeWithContentDescription("Mantén pulsado y arrastra Beta para ordenar").fetchSemanticsNode().boundsInRoot
             val alpha = compose.onNodeWithContentDescription("Mantén pulsado y arrastra Alpha para ordenar").fetchSemanticsNode().boundsInRoot
-            assert(beta.top < alpha.top)
+            assertTrue(beta.top < alpha.top)
             drag("Alpha", "Beta", cancelGesture = true)
             compose.runOnIdle { assertEquals(listOf("Beta", "Gamma", "Alpha"), prefs.playlists()[name]) }
             drag("Alpha", "Beta")

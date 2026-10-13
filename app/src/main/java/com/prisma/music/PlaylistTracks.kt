@@ -17,6 +17,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.LocalPinnableContainer
+import androidx.compose.ui.layout.PinnableContainer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.customActions
@@ -34,6 +36,8 @@ fun PlaylistTracks(
     onRemove: (String) -> Unit, onMove: (List<String>, String, String) -> Unit
 ) {
     val state = rememberLazyListState()
+    var pinned by remember { mutableStateOf<PinnableContainer.PinnedHandle?>(null) }
+    DisposableEffect(Unit) { onDispose { pinned?.release() } }
     var dragging by remember { mutableStateOf<String?>(null) }
     var offset by remember { mutableFloatStateOf(0f) }
     var center by remember { mutableFloatStateOf(0f) }
@@ -48,7 +52,7 @@ fun PlaylistTracks(
         state.layoutInfo.visibleItemsInfo.minByOrNull { abs(it.offset + it.size / 2f - center) }
             ?.let { target = it.index }
     }
-    fun reset() { dragging = null; offset = 0f; target = -1 }
+    fun reset() { pinned?.release(); pinned = null; dragging = null; offset = 0f; target = -1 }
     // Cancel if the collection or library filters change during a gesture.
     LaunchedEffect(storedIds, songs.map { it.id }) { reset() }
     LaunchedEffect(dragging) {
@@ -67,6 +71,7 @@ fun PlaylistTracks(
     LazyColumn(state = state, modifier = Modifier.fillMaxWidth(), contentPadding = PaddingValues(bottom = 16.dp)) {
         itemsIndexed(songs, key = { _, song -> song.id }) { index, song ->
             val active = dragging == song.id
+            val pinnable = LocalPinnableContainer.current
             Row(
                 Modifier.fillMaxWidth().zIndex(if (active) 1f else 0f)
                     .graphicsLayer { translationY = if (active) offset else 0f }
@@ -77,7 +82,7 @@ fun PlaylistTracks(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Box(
-                    Modifier.size(40.dp, 48.dp).semantics {
+                    Modifier.size(48.dp).semantics {
                         customActions = buildList {
                             if (index > 0) add(CustomAccessibilityAction("Mover hacia arriba") {
                                 latestMove(latestIds, song.id, latestSongs[index - 1].id); true
@@ -91,6 +96,7 @@ fun PlaylistTracks(
                             onDragStart = {
                                 val item = state.layoutInfo.visibleItemsInfo.firstOrNull { it.key == song.id }
                                 if (item != null) {
+                                    pinned = pinnable?.pin()
                                     snapshot = latestIds.toList(); dragging = song.id; offset = 0f
                                     center = item.offset + item.size / 2f; target = item.index
                                 }
