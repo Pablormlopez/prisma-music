@@ -29,9 +29,10 @@ jobs:
           import base64, hashlib, json, re, subprocess
           from pathlib import Path
           request=json.loads(Path('.github/release-request.json').read_text())
-          assert re.fullmatch(r'5\\.0\\.2-beta', request['version'])
+          assert re.fullmatch(r'5\.0\.2-beta', request['version'])
           assert re.fullmatch(r'[0-9a-f]{40}', request['target'])
           assert re.fullmatch(r'[0-9a-f]{64}', request['sha256'])
+          assert request['repository']=='nexlibre/prisma-music'
           apk=Path('Prisma-Music-'+request['version']+'.apk')
           with apk.open('wb') as output:
               for blob in request['blobs']:
@@ -39,7 +40,7 @@ jobs:
                   raw=subprocess.check_output(['gh','api','repos/'+request['repository']+'/git/blobs/'+blob])
                   output.write(base64.b64decode(json.loads(raw)['content']))
           assert hashlib.sha256(apk.read_bytes()).hexdigest()==request['sha256']
-          Path(str(apk)+'.sha256').write_text(request['sha256']+'  '+apk.name+'\\n')
+          Path(str(apk)+'.sha256').write_text(request['sha256']+'  '+apk.name+'\n')
           Path('release-notes.md').write_text(request['notes'])
           PY
           curl --fail --location --retry 3 https://github.com/nexlibre/prisma-music/releases/download/v5.0.1-beta/Prisma-Music-5.0.1-beta.apk -o previous.apk
