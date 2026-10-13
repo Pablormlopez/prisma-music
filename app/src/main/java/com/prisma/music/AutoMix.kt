@@ -7,7 +7,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 
 /** Two decoders overlap only the audible boundary. The session/queue stays owned by the primary. */
-@UnstableApi internal class AutoMix(private val primary:ExoPlayer,private val incoming:ExoPlayer) {
+@UnstableApi internal class AutoMix(private val primary:ExoPlayer,private val incoming:ExoPlayer,private val outputGain:()->Float={1f}) {
     var seconds=0f
     private var target:MediaItem?=null
     private var origin:String?=null
@@ -21,7 +21,7 @@ import androidx.media3.exoplayer.ExoPlayer
         val current=primary.currentMediaItem?.mediaId
         if(target!=null && (target!=item || origin!=current))cancel()
         val remaining=(primary.duration-primary.currentPosition).coerceAtLeast(0)
-        val planned=minOf((seconds*1000).toLong(),primary.duration/2).coerceAtLeast(1)
+        val planned=minOf((seconds*1000*primary.playbackParameters.speed).toLong(),primary.duration/2).coerceAtLeast(1)
         if(remaining<=planned+2000 && target==null) {
             target=item;origin=current
             incoming.setMediaItem(item);incoming.setPlaybackSpeed(primary.playbackParameters.speed)
@@ -32,7 +32,7 @@ import androidx.media3.exoplayer.ExoPlayer
         }
         if(mixing) {
             val progress=(1f-remaining.toFloat()/window.coerceAtLeast(1)).coerceIn(0f,1f)
-            val gains=mixGains(progress);incoming.volume=gains.second
+            val gains=mixGains(progress);incoming.volume=gains.second*outputGain()
             return gains.first
         }
         return 1f

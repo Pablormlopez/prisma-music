@@ -25,6 +25,7 @@ class PlaybackService:MediaSessionService() {
     private var primary:ExoPlayer?=null
     private var incoming:ExoPlayer?=null
     private var mix:AutoMix?=null
+    private var interruptions:AudioInterruptions?=null
     @Volatile private var options=AdvancedSettings()
     @Volatile private var eqConfig=DspEngine.Config.flat()
     private var fadeIn=0f;private var fadeOut=0f
@@ -32,13 +33,13 @@ class PlaybackService:MediaSessionService() {
     private val tick=object:Runnable {override fun run() {
         primary?.let {p->
             val base=if(options.crossfade>0) 1f else songFadeGain(p.currentPosition,p.duration,fadeIn,fadeOut)
-            p.volume=base*(mix?.tick() ?: 1f)
+            p.volume=base*(mix?.tick() ?: 1f)*(interruptions?.gain ?: 1f)
         }
         handler.postDelayed(this,if(primary?.isPlaying==true) 30 else 250)
     }}
     private val sleepCheck=object:Runnable {override fun run() {
         val prefs=Preferences(this@PlaybackService)
-        if(prefs.sleepDeadline>0 && System.currentTimeMillis()>=prefs.sleepDeadline) {primary?.pause();mix?.cancel();prefs.sleepDeadline=0}
+        if(prefs.sleepDeadline>0 && System.currentTimeMillis()>=prefs.sleepDeadline) {interruptions?.explicitCommand();primary?.pause();mix?.cancel();prefs.sleepDeadline=0}
         handler.postDelayed(this,1000)
     }}
     private fun createPlayer(focus:Boolean):ExoPlayer {
@@ -54,7 +55,7 @@ class PlaybackService:MediaSessionService() {
             }
         }
         val p=ExoPlayer.Builder(this,factory).build()
-        p.setAudioAttributes(attributes(),focus)
+        p.setAudioAttributes(attributes(),false)
         p.setHandleAudioBecomingNoisy(true)
         p.setWakeMode(C.WAKE_MODE_LOCAL)
         if(focus) p.addListener(object:Player.Listener {
@@ -63,6 +64,7 @@ class PlaybackService:MediaSessionService() {
             }
             override fun onPositionDiscontinuity(oldPosition:Player.PositionInfo,newPosition:Player.PositionInfo,reason:Int) {if(reason==Player.DISCONTINUITY_REASON_SEEK) mix?.cancel()}
             override fun onTimelineChanged(timeline:androidx.media3.common.Timeline,reason:Int) {if(reason==Player.TIMELINE_CHANGE_REASON_PLAYLIST_CHANGED)mix?.cancel()}
+            override fun onPlayWhenReadyChanged(playWhenReady:Boolean,reason:Int) {interruptions?.playbackIntent(playWhenReady);if(!playWhenReady)mix?.cancel()}
             override fun onIsPlayingChanged(isPlaying:Boolean) {if(!isPlaying)mix?.cancel()}
         }) else p.addListener(object:Player.Listener {override fun onPlayerError(error:androidx.media3.common.PlaybackException) {mix?.cancel()}})
         // The compatible chain receives live EQ updates through the service command.
@@ -76,9 +78,10 @@ class PlaybackService:MediaSessionService() {
         val prefs=Preferences(this)
         options=prefs.advanced;eqConfig=prefs.eq;fadeIn=prefs.fadeInSeconds;fadeOut=prefs.fadeOutSeconds
         compatibleProcessors.forEach {it.settings=eqConfig}
-        primary?.apply {setPlaybackSpeed(prefs.playbackSpeed);skipSilenceEnabled=prefs.skipSilence && !options.floatOutput;setAudioAttributes(attributes(),true)}
+        primary?.apply {setPlaybackSpeed(prefs.playbackSpeed);skipSilenceEnabled=prefs.skipSilence && !options.floatOutput;setAudioAttributes(attributes(),false)}
         incoming?.apply {setPlaybackSpeed(prefs.playbackSpeed);skipSilenceEnabled=false;setAudioAttributes(attributes(),false)}
         mix?.seconds=options.crossfade
+        interruptions?.settingsChanged()
     }
     private fun rebuildOutput() {
         val old=primary ?: return
@@ -95,7 +98,7 @@ class PlaybackService:MediaSessionService() {
         if(ordered.isNotEmpty()) next.setShuffleOrder(androidx.media3.exoplayer.source.ShuffleOrder.DefaultShuffleOrder(ordered.toIntArray(),0L))
         next.repeatMode=repeat;next.shuffleModeEnabled=shuffle
         primary=next;incoming?.release();incoming=second
-        mix=AutoMix(next,second)
+        mix=AutoMix(next,second) {interruptions?.gain ?: 1f}
         readSettings()
         session?.setPlayer(next)
         old.release()
@@ -104,10 +107,18 @@ class PlaybackService:MediaSessionService() {
     override fun onCreate() {
         super.onCreate();readSettings()
         val p=createPlayer(true);val second=createPlayer(false)
-        primary=p;incoming=second;mix=AutoMix(p,second)
+        primary=p;incoming=second
+        interruptions=AudioInterruptions(this,{options},{primary?.playWhenReady==true},
+            {mix?.cancel();primary?.pause()},{primary?.play()})
+        mix=AutoMix(p,second) {interruptions?.gain ?: 1f}
+        interruptions?.start()
         readSettings()
         val activity=PendingIntent.getActivity(this,0,Intent(this,MainActivity::class.java),PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         session=MediaSession.Builder(this,p).setSessionActivity(activity).setCallback(object:MediaSession.Callback {
+            override fun onPlayerCommandRequest(session:MediaSession,controller:MediaSession.ControllerInfo,playerCommand:Int):Int {
+                if(playerCommand==Player.COMMAND_PLAY_PAUSE || playerCommand==Player.COMMAND_STOP) interruptions?.explicitCommand()
+                return SessionResult.RESULT_SUCCESS
+            }
             override fun onConnect(session:MediaSession,controller:MediaSession.ControllerInfo):MediaSession.ConnectionResult {
                 val commands=MediaSession.ConnectionResult.DEFAULT_SESSION_COMMANDS.buildUpon().add(SessionCommand("prisma.eq",Bundle.EMPTY)).add(SessionCommand("prisma.settings",Bundle.EMPTY))
                 if(BuildConfig.DEBUG)commands.add(SessionCommand("prisma.test.audio",Bundle.EMPTY))
@@ -130,6 +141,6 @@ class PlaybackService:MediaSessionService() {
         handler.post(tick);handler.post(sleepCheck)
     }
     override fun onGetSession(controllerInfo:MediaSession.ControllerInfo)=session
-    override fun onDestroy() {handler.removeCallbacksAndMessages(null);mix?.cancel();incoming?.release();session?.release();primary?.release();session=null;primary=null;incoming=null;super.onDestroy()}
-    override fun onTaskRemoved(rootIntent:Intent?) {if(options.stopOnDismiss || primary?.playWhenReady!=true) {primary?.pause();mix?.cancel();stopSelf()}}
+    override fun onDestroy() {handler.removeCallbacksAndMessages(null);interruptions?.close();mix?.cancel();incoming?.release();session?.release();primary?.release();session=null;primary=null;incoming=null;super.onDestroy()}
+    override fun onTaskRemoved(rootIntent:Intent?) {if(options.stopOnDismiss || primary?.playWhenReady!=true) {interruptions?.explicitCommand();primary?.pause();mix?.cancel();stopSelf()}}
 }

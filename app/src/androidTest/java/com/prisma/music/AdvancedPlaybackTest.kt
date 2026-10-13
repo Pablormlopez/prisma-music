@@ -69,6 +69,16 @@ class AdvancedPlaybackTest {
             compose.runOnIdle {controller.setMediaItems(listOf(MediaItem.Builder().setMediaId("mix-a").setUri(a).build(),MediaItem.Builder().setMediaId("mix-b").setUri(b).build()));controller.repeatMode=Player.REPEAT_MODE_OFF;controller.shuffleModeEnabled=false;controller.prepare();controller.play()}
             compose.waitUntil(15000) {status().getBoolean("mixing") && status().getBoolean("incomingPlaying")}
             assertTrue(status().getLong("incomingPosition")>=0)
+            val audio=context.getSystemService(android.media.AudioManager::class.java)
+            val other=android.media.AudioFocusRequest.Builder(android.media.AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
+                .setAudioAttributes(android.media.AudioAttributes.Builder().setUsage(android.media.AudioAttributes.USAGE_MEDIA).build())
+                .setOnAudioFocusChangeListener {}.build()
+            compose.runOnIdle {assertEquals(android.media.AudioManager.AUDIOFOCUS_REQUEST_GRANTED,audio.requestAudioFocus(other))}
+            try {
+                compose.waitUntil(5000) {compose.runOnIdle {!controller.playWhenReady} && !status().getBoolean("incomingPlaying")}
+                compose.runOnIdle {assertEquals(2,controller.mediaItemCount)}
+            } finally {compose.runOnIdle {audio.abandonAudioFocusRequest(other)}}
+
             compose.runOnIdle {controller.pause()}
             compose.waitUntil(5000) {!status().getBoolean("incomingPlaying")}
             compose.runOnIdle {controller.seekTo(0,1000);controller.play()}
@@ -78,7 +88,9 @@ class AdvancedPlaybackTest {
             val before=compose.runOnIdle {controller.currentPosition}
             prefs.setAdvanced("floatOutput",false);prefs.setAdvanced("stereoWidth",1.3f);apply()
             compose.waitUntil(10000) {compose.runOnIdle {controller.currentMediaItem?.mediaId=="mix-b" && controller.isPlaying}}
-            compose.runOnIdle {assertEquals(2,controller.mediaItemCount);assertTrue(controller.currentPosition>=before-300)}
+            // Session.setPlayer updates reach the controller asynchronously, after the command result.
+            compose.waitUntil(10000) {compose.runOnIdle {controller.currentPosition>=before-300}}
+            compose.runOnIdle {assertEquals(2,controller.mediaItemCount)}
             assertFalse(status().getBoolean("floatOutput"))
             compose.runOnIdle {controller.repeatMode=Player.REPEAT_MODE_ONE;controller.seekTo(10500)}
             compose.waitForIdle();assertFalse(status().getBoolean("mixing"))
