@@ -1,4 +1,4 @@
-## Orden manual de listas
+## Beta 3.0.4 · Orden manual de listas
 
 - Cada canción de una lista tiene un tirador ≡: mantenlo pulsado y arrastra hacia arriba o abajo. Los bordes desplazan la lista automáticamente y la posición de destino se resalta.
 - El orden se guarda al soltar y se conserva al reabrir la app. La reproducción iniciada desde la lista sigue ese orden; la cola que ya está sonando no cambia.
@@ -78,7 +78,7 @@
 
 # Prisma Music
 
-Reproductor de música local para Android, gratuito y de código abierto. Beta actual: **3.0.3**. Android 8.0 o posterior.
+Reproductor de música local para Android, gratuito y de código abierto. Beta actual: **3.0.4**. Android 8.0 o posterior.
 
 ## Beta 1.0.2 — experiencia visual
 
@@ -109,13 +109,13 @@ Reproductor de música local para Android, gratuito y de código abierto. Beta a
 
 ## Instalar
 
-**[⬇ Descargar Prisma Music para Android (APK)](https://github.com/nexlibre/prisma-music/releases/download/v3.0.3-beta/Prisma-Music-3.0.3-beta.apk)**
+**[⬇ Descargar Prisma Music para Android (APK)](https://github.com/nexlibre/prisma-music/releases/download/v3.0.4-beta/Prisma-Music-3.0.4-beta.apk)**
 
 Android 8.0 o posterior. Abre el enlace desde el teléfono, espera a que termine la descarga y abre el archivo `.apk`. Android puede pedir permitir instalaciones desde el navegador o gestor de archivos usado. No necesitas descargar el código ni entrar en Actions.
 
 [Ver versiones y notas de publicación](https://github.com/nexlibre/prisma-music/releases).
 
-Desde 0.2.0 se usa una firma privada duradera, conservada fuera del repositorio. Las versiones 0.1.x tenían firmas temporales y no se pueden actualizar directamente con esta nueva firma. Si ya instalaste una beta anterior y la actualización falla por firma, conserva tus archivos de música y ten presente que desinstalar elimina listas y preferencias locales. Las siguientes actualizaciones conservarán esta identidad de firma.
+**Cambio de firma en 3.0.4:** esta beta inicia una nueva identidad de firma. Si tienes 3.0.3 o una versión anterior, debes desinstalarla antes de instalar 3.0.4; esto elimina las listas y ajustes locales, pero conserva los archivos de música. La clave de firma de 3.0.4 cuenta con un respaldo privado para las futuras actualizaciones. Nunca publiques ni compartas la clave privada.
 
 ## Compilar y verificar
 
