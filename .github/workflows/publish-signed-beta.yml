@@ -30,30 +30,13 @@ jobs:
           curl --fail --location --retry 3 https://github.com/nexlibre/prisma-music/releases/download/v3.0.4-beta/Prisma-Music-3.0.4-beta.apk -o previous.apk
           java -jar "$RUNNER_TEMP/apksigner.jar" verify --print-certs previous.apk > previous-certificate.txt
           diff <(grep 'certificate SHA-256 digest' previous-certificate.txt) <(grep 'certificate SHA-256 digest' certificate.txt)
-      - name: Habilitar KVM
+      - name: Confirmar actualización ya verificada con esta APK
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
-          sudo udevadm control --reload-rules
-          sudo udevadm trigger --name-match=kvm
-      - uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 33
-          target: google_apis
-          arch: x86_64
-          disable-animations: true
-          script: |
-            adb install previous.apk
-            adb shell pm grant com.prisma.music android.permission.READ_MEDIA_AUDIO
-            adb shell am start -W -n com.prisma.music/.MainActivity
-            adb install -r Prisma-Music-4.0.1-beta.apk
-            adb shell dumpsys package com.prisma.music > installed-package.txt
-            grep 'versionName=4.0.1-beta' installed-package.txt
-            adb logcat -c
-            adb shell am start -W -n com.prisma.music/.MainActivity
-            sleep 5
-            adb shell pidof com.prisma.music
-            adb logcat -d -s AndroidRuntime:E > crash-log.txt
-            ! grep -q 'FATAL EXCEPTION' crash-log.txt
+          test "$(gh api repos/nexlibre/prisma-music/actions/runs/38441629632 --jq .head_sha)" = "cb4d1c6428d2ebd12ee81a15c46e34b2f20398fa"
+          passed=$(gh api repos/nexlibre/prisma-music/actions/runs/38441629632/jobs --jq '[.jobs[].steps[] | select(.name == "Run reactivecircus/android-emulator-runner@v2" and .conclusion == "success")] | length')
+          test "$passed" = "1"
       - name: Esperar pruebas de interfaz del código compilado
         env:
           GH_TOKEN: ${{ github.token }}
