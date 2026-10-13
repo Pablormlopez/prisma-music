@@ -97,7 +97,7 @@
 
 # Prisma Music
 
-Reproductor de música local para Android, gratuito y de código abierto. Beta actual: **4.0.1**. Android 8.0 o posterior.
+Reproductor de música local para Android, gratuito y de código abierto. Beta actual: **5.0.1**. Android 8.0 o posterior.
 
 ## Beta 1.0.2 — experiencia visual
 
@@ -128,13 +128,13 @@ Reproductor de música local para Android, gratuito y de código abierto. Beta a
 
 ## Instalar
 
-**[⬇ Descargar Prisma Music para Android (APK)](https://github.com/nexlibre/prisma-music/releases/download/v4.0.1-beta/Prisma-Music-4.0.1-beta.apk)**
+**[⬇ Descargar Prisma Music para Android (APK)](https://github.com/nexlibre/prisma-music/releases/download/v5.0.1-beta/Prisma-Music-5.0.1-beta.apk)**
 
 Android 8.0 o posterior. Abre el enlace desde el teléfono, espera a que termine la descarga y abre el archivo `.apk`. Android puede pedir permitir instalaciones desde el navegador o gestor de archivos usado. No necesitas descargar el código ni entrar en Actions.
 
 [Ver versiones y notas de publicación](https://github.com/nexlibre/prisma-music/releases).
 
-**Actualización 4.0.1:** si ya tienes 3.0.4, instala encima para conservar listas y ajustes; ambas usan la misma firma.
+**Actualización 5.0.1:** si ya tienes 4.0.1 o 3.0.4, instala encima para conservar listas y ajustes; se mantiene la misma firma.
 
 **Cambio de firma en 3.0.4:** esta beta inicia una nueva identidad de firma. Si tienes 3.0.3 o una versión anterior, debes desinstalarla antes de instalar 3.0.4; esto elimina las listas y ajustes locales, pero conserva los archivos de música. La clave de firma de 3.0.4 cuenta con un respaldo privado para las futuras actualizaciones. Nunca publiques ni compartas la clave privada.
 
@@ -157,6 +157,8 @@ Salida: `app/build/outputs/apk/debug/app-debug.apk`. GitHub Actions ejecuta prue
 - No se buscan letras en internet. Las etiquetas comprimidas/cifradas, Lyrics3, APE y letras de servicios externos no están cubiertas. SYLT con tiempos expresados en frames se muestra sin sincronización. Metadatos limitados a 16 MB por etiqueta y letra a 1 MB. Un archivo de alta calidad puede no incluir letras ni tiempos.
 - El bitrate estimado usa tamaño/duración y puede incluir metadatos. Profundidad de bits no disponible se omite.
 - Géneros de MediaStore requieren Android 11 o posterior; en versiones anteriores se muestra “Sin género”.
+- La normalización es adaptativa RMS y no un análisis LUFS completo. El tiempo de mezcla sigue la posición del audio; a velocidades distintas de 1× su duración real cambia.
+- Omitir silencios está disponible con salida compatible de 16 bits, no en el camino flotante.
 - No se restaura la cola tras reiniciar el servicio. Listas y preferencias sí persisten. Quitar de la cola no borra archivos; eliminar del teléfono sí requiere confirmación.
 
 ## Próximas versiones
