@@ -7,6 +7,7 @@ import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -31,12 +32,19 @@ internal fun VisualTheme.hasAlbumAtmosphere() = this == VisualTheme.GLASS || thi
 
 /** A single opaque artwork atmosphere; white foreground stays readable in both app modes. */
 @Composable internal fun AlbumAtmosphere(details:Library.Details?) {
+    val advanced=LocalAdvanced.current
     val motion=LocalPersonalization.current
     var loaded by remember {mutableStateOf(details)}
     LaunchedEffect(details) {if(details!=null) loaded=details}
     Crossfade(loaded,animationSpec=if(motion.motion==MotionStyle.NONE) snap() else tween(motion.motionDuration),label="albumAtmosphere",modifier=Modifier.fillMaxSize()) { album ->
         Box(Modifier.fillMaxSize().background(Color(0xff38353a))) {
-            album?.glassBackdrop?.let { Image(it.asImageBitmap(),null,Modifier.fillMaxSize(),contentScale=ContentScale.Crop) }
+            if(!advanced.reduceBlur && !advanced.performance) album?.glassBackdrop?.let { Image(it.asImageBitmap(),null,Modifier.fillMaxSize(),contentScale=ContentScale.Crop) }
+            if(advanced.meshGradient || advanced.reduceBlur || advanced.performance) Canvas(Modifier.fillMaxSize()) {
+                val color=Color(album?.color ?: 0xff786870.toInt())
+                drawRect(color)
+                drawRect(Brush.radialGradient(listOf(androidx.compose.ui.graphics.lerp(color,Color.White,.2f),Color.Transparent),center=Offset(size.width*.1f,size.height*.2f),radius=size.width*1.2f))
+                drawRect(Brush.radialGradient(listOf(androidx.compose.ui.graphics.lerp(color,Color(0xff49314f),.6f),Color.Transparent),center=Offset(size.width*.9f,size.height*.8f),radius=size.width))
+            }
             // Black is composited after the art, limiting peak background luminance under text.
             Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha=.58f)))
             Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent,Color.Black.copy(alpha=.12f),Color.Black.copy(alpha=.30f)))))

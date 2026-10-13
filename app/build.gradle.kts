@@ -2,7 +2,7 @@ plugins { id("com.android.application"); id("org.jetbrains.kotlin.android"); id(
 android {
     namespace = "com.prisma.music"
     compileSdk = 35
-    defaultConfig { applicationId = "com.prisma.music"; minSdk = 26; targetSdk = 35; versionCode = 17; versionName = "4.0.1-beta"; testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner" }
+    defaultConfig { applicationId = "com.prisma.music"; minSdk = 26; targetSdk = 35; versionCode = 18; versionName = "5.0.1-beta"; testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner" }
     buildTypes { getByName("release") { isDebuggable = false; isMinifyEnabled = false } }
     buildFeatures { compose = true; buildConfig = true }
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
@@ -19,6 +19,7 @@ dependencies {
     implementation("androidx.media3:media3-session:1.6.1")
     implementation("androidx.palette:palette-ktx:1.0.0")
     implementation("io.coil-kt:coil-compose:2.7.0")
+    implementation("io.coil-kt:coil-gif:2.7.0")
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation(platform("androidx.compose:compose-bom:2025.04.01"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")

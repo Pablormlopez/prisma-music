@@ -38,7 +38,7 @@ object Library {
         }
         return result
     }
-    data class Details(val text: String, val art: Bitmap?, val color: Int?, val embeddedLyrics: String = "", val glassBackdrop: Bitmap? = null)
+    data class Details(val text: String, val art: Bitmap?, val color: Int?, val embeddedLyrics: String = "", val glassBackdrop: Bitmap? = null,val sampleRate:Int?=null,val channels:Int?=null,val sourceBits:Int?=null)
     fun details(context: Context, song: Song): Details {
         var art: Bitmap? = null
         var rate:Int? = null; var channels:Int? = null; var bitrate:Int? = null; var bits:Int? = null; var codec:String? = null
@@ -69,9 +69,18 @@ object Library {
         } catch(_:Exception) {} finally { extractor.release() }
         val estimate=if(song.duration>0) song.size*8/song.duration else null
         val parts=listOfNotNull(song.name.substringAfterLast('.',song.mime).uppercase(),codec,bitrate?.let { "${it/1000} kbps" } ?: estimate?.let { "≈ $it kbps (estimado)" },rate?.let { "${it/1000.0} kHz" },bits?.let { "$it bits" },channels?.let { if(it==2) "Estéreo" else "$it canal(es)" },"%.1f MB".format(song.size/1000000.0))
+        Preferences(context).animatedArtwork(song.id)?.let {uri->
+            runCatching {
+                val u=Uri.parse(uri)
+                val bounds=BitmapFactory.Options().apply {inJustDecodeBounds=true}
+                context.contentResolver.openInputStream(u)?.use {BitmapFactory.decodeStream(it,null,bounds)}
+                val sampled=BitmapFactory.Options().apply {inSampleSize=(maxOf(bounds.outWidth,bounds.outHeight)/800).coerceAtLeast(1)}
+                context.contentResolver.openInputStream(u)?.use {BitmapFactory.decodeStream(it,null,sampled)}
+            }.getOrNull()?.let {art=it}
+        }
         val color=art?.let { Palette.from(it).generate().getVibrantColor(0xffb0a2ff.toInt()) }
         val lyrics=runCatching { context.contentResolver.openInputStream(song.uri)?.use { EmbeddedLyrics.read(it) } ?: "" }.getOrDefault("")
-        return Details(parts.joinToString(" · "),art,color,lyrics,art?.let { FrostedArtwork.create(it) })
+        return Details(parts.joinToString(" · "),art,color,lyrics,art?.let { FrostedArtwork.create(it) },rate,channels,bits)
     }
 }
 

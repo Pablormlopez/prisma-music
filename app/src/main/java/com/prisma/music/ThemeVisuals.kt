@@ -30,10 +30,13 @@ import androidx.compose.ui.unit.sp
 
 val LocalVisualTheme=staticCompositionLocalOf { VisualTheme.CHROMATIC }
 @Composable fun ActualArtwork(song:Song,details:Library.Details?,modifier:Modifier) {
-    if(details?.art!=null) Image(details.art.asImageBitmap(),"Carátula de ${song.album}",contentScale=ContentScale.Crop,modifier=modifier) else Cover(song,modifier)
+    val uri=LocalAnimatedArtwork.current
+    val movement=coverMovement()
+    if(uri!=null) ImportedArtwork(uri,modifier.then(movement))
+    else if(details?.art!=null) Image(details.art.asImageBitmap(),"Carátula de ${song.album}",contentScale=ContentScale.Crop,modifier=modifier.then(movement)) else Cover(song,modifier.then(movement))
 }
 @Composable fun ThemeArtwork(song:Song,details:Library.Details?,theme:VisualTheme) {
-    if(theme.hasAlbumAtmosphere()) {
+    if(theme.hasAlbumAtmosphere() && LocalAdvanced.current.fullCover) {
         IntegratedArtwork(song,details,Modifier.fillMaxSize().semantics {contentDescription="Diseño ${theme.title}"})
         return
     }

@@ -47,20 +47,24 @@ import kotlin.math.roundToInt
 val LocalGlassScene=staticCompositionLocalOf<GlassScene?> {null}
 val LocalCollectionBottomPadding=staticCompositionLocalOf {24.dp}
 
-fun Modifier.captureGlassScene(scene:GlassScene)=onGloballyPositioned {scene.origin=it.positionInRoot()}.drawWithContent {
-    scene.layer.record {this@drawWithContent.drawContent()}
-    drawLayer(scene.layer)
+fun Modifier.captureGlassScene(scene:GlassScene)=composed {
+    val advanced=LocalAdvanced.current
+    if(advanced.performance || advanced.reduceBlur) this else this.onGloballyPositioned {scene.origin=it.positionInRoot()}.drawWithContent {
+        scene.layer.record {this@drawWithContent.drawContent()}
+        drawLayer(scene.layer)
+    }
 }
 
 /** Sample only the content layer, never the glass itself, avoiding recursive captures. */
 fun Modifier.sampleGlassBackdrop(radius:Float)=composed {
     val scene=LocalGlassScene.current
+    val advanced=LocalAdvanced.current
     val sample=rememberGraphicsLayer()
     var origin by remember {mutableStateOf(Offset.Zero)}
     val blur=with(LocalDensity.current) {7.dp.toPx()}
     val backdrop=MaterialTheme.colorScheme.background
     if(scene==null) this else this.onGloballyPositioned {origin=it.positionInRoot()}.clip(RoundedCornerShape(radius.dp)).drawWithContent {
-        if(android.os.Build.VERSION.SDK_INT>=31) {
+        if(android.os.Build.VERSION.SDK_INT>=31 && !advanced.reduceBlur && !advanced.performance) {
             sample.renderEffect=BlurEffect(blur,blur,TileMode.Clamp)
             sample.record {
                 // Composite an opaque scene before blurring, so original sharp text

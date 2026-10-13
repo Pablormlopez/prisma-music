@@ -56,7 +56,7 @@ fun accentColor(hex:String):Color? = hex.takeIf {it.matches(Regex("#[0-9a-fA-F]{
     }},confirmButton={PrismaTextButton(onClick={onSave("#%06X".format(color and 0xffffff))}){Text("Usar este color")}},dismissButton={PrismaTextButton(onClick=onDismiss){Text("Cancelar")}})
 }
 
-@Composable fun PersonalizationScreen(value:Personalization,mode:LightMode,onMode:(LightMode)->Unit,onChange:(Personalization)->Unit,onThemes:()->Unit) {
+@Composable fun PersonalizationScreen(value:Personalization,mode:LightMode,onMode:(LightMode)->Unit,onChange:(Personalization)->Unit,onThemes:()->Unit,prefs:Preferences?=null) {
     var preview by remember {mutableStateOf(false)}
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
         SectionTitle("TEMAS","Elige tu ambiente")
@@ -81,6 +81,7 @@ fun accentColor(hex:String):Color? = hex.takeIf {it.matches(Regex("#[0-9a-fA-F]{
             }
         }
         Text("Se aplica a las pantallas, las portadas y el gesto de cambio de canción. Sin animaciones reduce el movimiento visual.",style=MaterialTheme.typography.bodySmall)
+        prefs?.let {AdvancedAppearanceSettings(it)}
         PersonalizationSettings(value,onChange)
         Spacer(Modifier.height(24.dp))
     }
