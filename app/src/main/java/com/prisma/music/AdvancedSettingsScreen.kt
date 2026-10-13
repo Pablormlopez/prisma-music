@@ -89,7 +89,8 @@ private fun spatialStatus(context:Context,details:Library.Details?):String {
     }
     Text("Se muestran solo los modos compatibles. Android puede reducir la frecuencia por batería, temperatura o sus propios ajustes.",style=MaterialTheme.typography.bodySmall)
     SettingSwitch("Reducir desenfoque", "Sustituye el fondo de carátula difuminado por colores suaves del álbum.",options.reduceBlur) {prefs.setAdvanced("reduceBlur",it)}
-    SettingSwitch("Portada a pantalla completa", "Integra la portada en el fondo de Liquid Glass y Chromatic Flow. Desactivado usa una carátula centrada.",options.fullCover) {prefs.setAdvanced("fullCover",it)}
+    SettingSwitch("Ambiente del álbum en todos los temas", "Comparte el fondo, las transiciones y la portada inmersiva de Liquid Glass. Desactívalo para recuperar la composición original de los demás temas.",options.immersiveAllThemes) {prefs.setAdvanced("immersiveAllThemes",it)}
+    SettingSwitch("Portada a pantalla completa", "Integra la portada en el fondo de todos los temas con ambiente del álbum. Desactivado usa una carátula centrada.",options.fullCover) {prefs.setAdvanced("fullCover",it)}
     SettingSwitch("Gradiente de malla", "Un ambiente de luces suaves con el color del álbum.",options.meshGradient) {prefs.setAdvanced("meshGradient",it)}
     SettingSwitch("Portada animada", "Movimiento sutil al reproducir, o una imagen GIF/WebP que importes. Se detiene al pausar, salir de la app o reducir animaciones.",options.animatedCover) {prefs.setAdvanced("animatedCover",it)}
     if(options.animatedCover) Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(6.dp)) {

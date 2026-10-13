@@ -67,6 +67,7 @@ object FrostedArtwork {
 fun Modifier.crystal() = liquidSurface()
 
 @Composable fun ThemeTimeline(theme:VisualTheme,value:Float,end:Float,enabled:Boolean,onChange:(Float)->Unit,onFinished:()->Unit) {
+    val ambient=theme.hasAlbumAtmosphere(LocalAdvanced.current)
     val colors=MaterialTheme.colorScheme
     val primary=colors.primary
     val inactive=colors.onSurface.copy(alpha=.22f)
@@ -79,14 +80,14 @@ fun Modifier.crystal() = liquidSurface()
         thumb={
             val shape=if(theme==VisualTheme.NIGHT) RoundedCornerShape(3.dp) else CircleShape
             val width=if(theme==VisualTheme.MINIMAL) 6.dp else if(theme==VisualTheme.GLASS) 24.dp else 16.dp
-            if(theme.hasAlbumAtmosphere()) Box(Modifier.size(8.dp,8.dp).clip(CircleShape).background(Color.White))
+            if(ambient) Box(Modifier.size(8.dp,8.dp).clip(CircleShape).background(Color.White))
             else if(theme==VisualTheme.GLASS) Box(Modifier.size(32.dp,24.dp).graphicsLayer {scaleX=1f+pressure*.22f;scaleY=1f+pressure*.12f}.liquidSurface(16f,colors.surface.copy(alpha=.35f),pressure))
             else Box(Modifier.size(width,if(theme==VisualTheme.MINIMAL) 18.dp else 24.dp).clip(shape).background(if(theme==VisualTheme.GLASS) colors.surface.copy(alpha=.9f) else primary).border(1.dp,if(theme==VisualTheme.GLASS) primary.copy(alpha=.65f) else primary,shape))
         },
         track={state->Canvas(Modifier.fillMaxWidth().height(28.dp)) {
             val progress=((state.value-state.valueRange.start)/(state.valueRange.endInclusive-state.valueRange.start)).coerceIn(0f,1f)
             val mid=size.height/2
-            if(theme.hasAlbumAtmosphere()) {
+            if(ambient) {
                 drawLine(inactive,Offset(0f,mid),Offset(size.width,mid),3.dp.toPx(),StrokeCap.Round)
                 drawLine(Color.White,Offset(0f,mid),Offset(size.width*progress,mid),3.dp.toPx(),StrokeCap.Round)
             } else when(theme) {
