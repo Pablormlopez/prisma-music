@@ -9,7 +9,7 @@ internal data class AdvancedSettings(
     val refreshHz:Float=0f,val performance:Boolean=false,val reduceBlur:Boolean=false,
     val animatedCover:Boolean=false,val coverMotion:String="Respirar",val fullCover:Boolean=true,
     val meshGradient:Boolean=false,val syncLyrics:Boolean=true,val blurLyrics:Boolean=false,
-    val showVolume:Boolean=true,val stopOnDismiss:Boolean=false,val artworkRevision:Int=0
+    val showVolume:Boolean=true,val stopOnDismiss:Boolean=false,val artworkRevision:Int=0,val immersiveAllThemes:Boolean=true
 )
 internal val LocalAdvanced=staticCompositionLocalOf {AdvancedSettings()}
 internal val LocalArtworkPlaying=staticCompositionLocalOf {false}

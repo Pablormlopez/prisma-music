@@ -36,7 +36,7 @@ val LocalVisualTheme=staticCompositionLocalOf { VisualTheme.CHROMATIC }
     else if(details?.art!=null) Image(details.art.asImageBitmap(),"Carátula de ${song.album}",contentScale=ContentScale.Crop,modifier=modifier.then(movement)) else Cover(song,modifier.then(movement))
 }
 @Composable fun ThemeArtwork(song:Song,details:Library.Details?,theme:VisualTheme) {
-    if(theme.hasAlbumAtmosphere() && LocalAdvanced.current.fullCover) {
+    if(theme.hasAlbumAtmosphere(LocalAdvanced.current) && LocalAdvanced.current.fullCover) {
         IntegratedArtwork(song,details,Modifier.fillMaxSize().semantics {contentDescription="Diseño ${theme.title}"})
         return
     }

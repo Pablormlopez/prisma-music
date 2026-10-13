@@ -186,7 +186,7 @@ import kotlinx.coroutines.withContext
 @Composable fun SoundSlider(label:String,value:Double,unit:String,enabled:Boolean,onChange:(Double)->Unit) {Column {Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) {Text(label,style=MaterialTheme.typography.bodyMedium);Text("%+.1f %s".format(value,unit),style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.primary)};Slider(value=value.toFloat(),onValueChange={onChange(it.toDouble())},valueRange=-12f..12f,enabled=enabled,modifier=Modifier.height(38.dp))}}
 
 @Composable fun PlayerScreen(song:Song,details:Library.Details?,theme:VisualTheme,prefs:Preferences,position:Long,duration:Long,playing:Boolean,shuffle:Boolean,repeat:Int,controller:MediaController?,onDismiss:()->Unit,onArtist:(Song)->Unit,onAlbum:(Song)->Unit) {
-    val ambient=theme.hasAlbumAtmosphere()
+    val ambient=theme.hasAlbumAtmosphere(LocalAdvanced.current)
     val colors=if(ambient) darkColorScheme(primary=Color.White,onPrimary=Color.Black,onSurface=Color.White,onBackground=Color.White,onSurfaceVariant=Color.White.copy(alpha=.72f),background=Color(0xff38353a),surface=Color(0xff38353a),surfaceContainerHigh=Color(0xff454248)) else MaterialTheme.colorScheme
     MaterialTheme(colorScheme=colors) {
         CompositionLocalProvider(LocalContentColor provides colors.onSurface,LocalArtworkPlaying provides playing,LocalAnimatedArtwork provides prefs.animatedArtwork(song.id)) {
@@ -202,7 +202,7 @@ import kotlinx.coroutines.withContext
         view.keepScreenOn=prefs.keepScreenOn
         onDispose {view.keepScreenOn=previous}
     }
-    val immersive=theme.hasAlbumAtmosphere()
+    val immersive=theme.hasAlbumAtmosphere(LocalAdvanced.current)
     val motion=LocalPersonalization.current
     var swipeDirection by remember {mutableIntStateOf(1)}
     var isDragging by remember {mutableStateOf(false)}

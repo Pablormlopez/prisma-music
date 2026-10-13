@@ -103,7 +103,11 @@ fun Modifier.liquidSurface(radius:Float=28f, tint:Color=Color.Transparent, press
     animationSpec=if(LocalPersonalization.current.motion==MotionStyle.NONE) snap() else spring(dampingRatio=.66f,stiffness=420f),label="glassPressure")
 
 @Composable fun PrismaIconButton(onClick:()->Unit,modifier:Modifier=Modifier,enabled:Boolean=true,content:@Composable ()->Unit) {
-    if(LocalVisualTheme.current!=VisualTheme.GLASS) {IconButton(onClick,modifier,enabled,content=content);return}
+    val touch=remember {MutableInteractionSource()}
+    val down by touch.collectIsPressedAsState()
+    val response by liquidResponse(down)
+    val animated=modifier.graphicsLayer {scaleX=1f+response*.05f;scaleY=1f-response*.04f}
+    if(LocalVisualTheme.current!=VisualTheme.GLASS) {IconButton(onClick,animated,enabled,interactionSource=touch,content=content);return}
     val interactions=remember {MutableInteractionSource()}
     val pressed by interactions.collectIsPressedAsState()
     val pressure by liquidResponse(pressed && enabled)
@@ -112,7 +116,11 @@ fun Modifier.liquidSurface(radius:Float=28f, tint:Color=Color.Transparent, press
 }
 
 @Composable fun PrismaPlayButton(onClick:()->Unit,modifier:Modifier=Modifier,shape:Shape=CircleShape,content:@Composable ()->Unit) {
-    if(LocalVisualTheme.current!=VisualTheme.GLASS) {FilledIconButton(onClick,modifier,shape=shape,content=content);return}
+    val touch=remember {MutableInteractionSource()}
+    val down by touch.collectIsPressedAsState()
+    val response by liquidResponse(down)
+    val animated=modifier.graphicsLayer {scaleX=1f+response*.05f;scaleY=1f-response*.04f}
+    if(LocalVisualTheme.current!=VisualTheme.GLASS) {FilledIconButton(onClick,animated,shape=shape,interactionSource=touch,content=content);return}
     val interactions=remember {MutableInteractionSource()}
     val pressed by interactions.collectIsPressedAsState()
     val pressure by liquidResponse(pressed)
@@ -161,15 +169,27 @@ internal fun glassDragIndex(position:Float) = position.roundToInt().coerceIn(0,m
 }
 
 @Composable fun PrismaButton(onClick:()->Unit,modifier:Modifier=Modifier,enabled:Boolean=true,shape:Shape=ButtonDefaults.shape,content:@Composable RowScope.()->Unit) {
-    if(LocalVisualTheme.current!=VisualTheme.GLASS) {Button(onClick,modifier,enabled,shape=shape,content=content);return}
+    val touch=remember {MutableInteractionSource()}
+    val down by touch.collectIsPressedAsState()
+    val response by liquidResponse(down)
+    val animated=modifier.graphicsLayer {scaleX=1f+response*.05f;scaleY=1f-response*.04f}
+    if(LocalVisualTheme.current!=VisualTheme.GLASS) {Button(onClick,animated,enabled,shape=shape,interactionSource=touch,content=content);return}
     GlassAction(onClick,modifier,enabled,shape,true,content)
 }
 @Composable fun PrismaOutlinedButton(onClick:()->Unit,modifier:Modifier=Modifier,enabled:Boolean=true,shape:Shape=ButtonDefaults.outlinedShape,content:@Composable RowScope.()->Unit) {
-    if(LocalVisualTheme.current!=VisualTheme.GLASS) {OutlinedButton(onClick,modifier,enabled,shape=shape,content=content);return}
+    val touch=remember {MutableInteractionSource()}
+    val down by touch.collectIsPressedAsState()
+    val response by liquidResponse(down)
+    val animated=modifier.graphicsLayer {scaleX=1f+response*.05f;scaleY=1f-response*.04f}
+    if(LocalVisualTheme.current!=VisualTheme.GLASS) {OutlinedButton(onClick,animated,enabled,shape=shape,interactionSource=touch,content=content);return}
     GlassAction(onClick,modifier,enabled,shape,false,content)
 }
 @Composable fun PrismaTextButton(onClick:()->Unit,modifier:Modifier=Modifier,enabled:Boolean=true,content:@Composable RowScope.()->Unit) {
-    if(LocalVisualTheme.current!=VisualTheme.GLASS) {TextButton(onClick,modifier,enabled,content=content);return}
+    val touch=remember {MutableInteractionSource()}
+    val down by touch.collectIsPressedAsState()
+    val response by liquidResponse(down)
+    val animated=modifier.graphicsLayer {scaleX=1f+response*.05f;scaleY=1f-response*.04f}
+    if(LocalVisualTheme.current!=VisualTheme.GLASS) {TextButton(onClick,animated,enabled,interactionSource=touch,content=content);return}
     GlassAction(onClick,modifier,enabled,ButtonDefaults.textShape,false,content)
 }
 @Composable private fun GlassAction(onClick:()->Unit,modifier:Modifier,enabled:Boolean,shape:Shape,emphasized:Boolean,content:@Composable RowScope.()->Unit) {
@@ -181,7 +201,11 @@ internal fun glassDragIndex(position:Float) = position.roundToInt().coerceIn(0,m
         modifier=modifier.graphicsLayer {scaleX=1f+pressure*.035f;scaleY=1f-pressure*.05f}.liquidSurface(28f,(if(emphasized) colors.primary else colors.surface).copy(alpha=if(emphasized) .18f else .10f),pressure),content=content)
 }
 @Composable fun PrismaFilterChip(selected:Boolean,onClick:()->Unit,label:@Composable ()->Unit,modifier:Modifier=Modifier,leadingIcon:(@Composable ()->Unit)?=null) {
-    if(LocalVisualTheme.current!=VisualTheme.GLASS) {FilterChip(selected,onClick,label,modifier=modifier,leadingIcon=leadingIcon);return}
+    val touch=remember {MutableInteractionSource()}
+    val down by touch.collectIsPressedAsState()
+    val response by liquidResponse(down)
+    val animated=modifier.graphicsLayer {scaleX=1f+response*.05f;scaleY=1f-response*.04f}
+    if(LocalVisualTheme.current!=VisualTheme.GLASS) {FilterChip(selected,onClick,label,modifier=animated,leadingIcon=leadingIcon,interactionSource=touch);return}
     val interactions=remember {MutableInteractionSource()}
     val pressed by interactions.collectIsPressedAsState()
     val pressure by liquidResponse(pressed)

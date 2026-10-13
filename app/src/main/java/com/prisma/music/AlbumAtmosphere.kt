@@ -28,7 +28,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 
-internal fun VisualTheme.hasAlbumAtmosphere() = this == VisualTheme.GLASS || this == VisualTheme.CHROMATIC
+internal fun VisualTheme.hasAlbumAtmosphere(options:AdvancedSettings?=null) = this == VisualTheme.GLASS || this == VisualTheme.CHROMATIC || options?.immersiveAllThemes == true
 
 /** A single opaque artwork atmosphere; white foreground stays readable in both app modes. */
 @Composable internal fun AlbumAtmosphere(details:Library.Details?) {
