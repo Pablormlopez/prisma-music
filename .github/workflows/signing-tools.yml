@@ -1,0 +1,26 @@
+name: Herramientas de firma APK
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/signing-tools.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  tools:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: 'build-tools;35.0.0'
+          log-accepted-android-sdk-licenses: false
+      - run: |
+          mkdir signing-tools
+          cp "$ANDROID_HOME/build-tools/35.0.0/lib/apksigner.jar" signing-tools/
+          cp "$ANDROID_HOME/build-tools/35.0.0/zipalign" signing-tools/
+          cp -r "$ANDROID_HOME/build-tools/35.0.0/lib64" signing-tools/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Android-signing-tools
+          path: signing-tools/
+          retention-days: 3
