@@ -209,7 +209,7 @@ fun PrismaApp() {
                         "Personalización"->PersonalizationScreen(personal,mode,{mode=it;prefs.mode=it},{personal=it;prefs.personalization=it},{page="Temas"})
                         "Temas"->ThemesScreen(theme,mode,{theme=it;prefs.theme=it},{mode=it;prefs.mode=it})
                         "Biblioteca"->if(!granted) PermissionCard { requestPermission.launch(permission) } else LibraryScreen(visible,busy,currentId,onPlay=::play,onAdd={addToList=it},onOptions={actionSong=it},initialCategory=libraryCategory)
-                        "Listas"->PlaylistScreen(lists,visible,currentId,onCreate={newListDialog=true},onDelete={key->lists=lists-key; prefs.savePlaylists(lists)},onRemove={key,id->lists=lists+(key to lists.getValue(key).filterNot { it==id }); prefs.savePlaylists(lists)},onPlay=::play,onOptions={actionSong=it},onAddSongs={name,selection->lists=lists+(name to (lists[name].orEmpty()+selection.map {it.id}).distinct());prefs.savePlaylists(lists)})
+                        "Listas"->PlaylistScreen(lists,visible,currentId,onCreate={newListDialog=true},onDelete={key->lists=lists-key; prefs.savePlaylists(lists)},onRemove={key,id->lists=lists+(key to lists.getValue(key).filterNot { it==id }); prefs.savePlaylists(lists)},onPlay=::play,onOptions={actionSong=it},onReorder={name,expected,id,target->lists[name]?.let {current->if(current==expected) {lists=lists+(name to movePlaylistSong(current,id,target));prefs.savePlaylists(lists)}}},onAddSongs={name,selection->lists=lists+(name to (lists[name].orEmpty()+selection.map {it.id}).distinct());prefs.savePlaylists(lists)})
                         "Artista"->ArtistScreen(artistName,artistAlbum,visible,currentId,onPlay=::play,onAdd={addToList=it},onOptions={actionSong=it})
                         "Sonido"->EqScreen(prefs) { config->prefs.eq=config; controller?.sendCustomCommand(SessionCommand("prisma.eq",Bundle.EMPTY),Bundle.EMPTY) }
                         "Ajustes"->SettingsScreen(prefs,songs,{libraryVersion++}, { controller?.sendCustomCommand(SessionCommand("prisma.settings",Bundle.EMPTY),Bundle.EMPTY) },onThemes={page="Personalización"})
@@ -342,7 +342,7 @@ fun PrismaApp() {
     var name by remember { mutableStateOf("") }
     AlertDialog(onDismissRequest=onDismiss,title={Text("Nueva lista")},text={OutlinedTextField(name,{name=it},label={Text("Nombre")},singleLine=true,isError=exists(name.trim()),supportingText={if(exists(name.trim())) Text("Ya existe una lista con ese nombre.")})},confirmButton={PrismaTextButton(onClick={onSave(name.trim())},enabled=name.isNotBlank() && !exists(name.trim())) {Text("Crear")}},dismissButton={PrismaTextButton(onClick=onDismiss){Text("Cancelar")}})
 }
-@Composable fun PlaylistScreen(lists:Map<String,List<String>>,songs:List<Song>,currentId:String,onCreate:()->Unit,onDelete:(String)->Unit,onRemove:(String,String)->Unit,onPlay:(List<Song>,Song)->Unit,onOptions:(Song)->Unit,onAddSongs:(String,List<Song>)->Unit) {
+@Composable fun PlaylistScreen(lists:Map<String,List<String>>,songs:List<Song>,currentId:String,onCreate:()->Unit,onDelete:(String)->Unit,onRemove:(String,String)->Unit,onPlay:(List<Song>,Song)->Unit,onOptions:(Song)->Unit,onAddSongs:(String,List<Song>)->Unit,onReorder:(String,List<String>,String,String)->Unit) {
     var selected by rememberSaveable { mutableStateOf<String?>(null) }; var delete by remember { mutableStateOf<String?>(null) }
     var adding by remember {mutableStateOf(false)}
     androidx.activity.compose.BackHandler(selected!=null && !adding) {selected=null}
@@ -357,7 +357,7 @@ fun PrismaApp() {
             PrismaOutlinedButton(onClick={adding=true},modifier=Modifier.fillMaxWidth()) {Icon(Icons.Rounded.PlaylistAdd,null);Text("Añadir canciones",Modifier.padding(start=8.dp))}
             val queue=lists[selected].orEmpty().mapNotNull { id->songs.find {it.id==id} }
             if(queue.isEmpty()) EmptyCard("Esta lista está vacía","Pulsa Añadir canciones para empezar. Las canciones de carpetas excluidas no se muestran.",Icons.Rounded.PlaylistAdd)
-            else LazyColumn { items(queue,key={it.id}) {song-> Row(verticalAlignment=Alignment.CenterVertically) { Box(Modifier.weight(1f)){SongRow(song,currentId,{onPlay(queue,song)},onOptions={onOptions(song)})}; PrismaIconButton(onClick={onRemove(selected!!,song.id)}){Icon(Icons.Rounded.RemoveCircleOutline,"Quitar de la lista")} } } }
+            else key(selected) { PlaylistTracks(queue,lists[selected].orEmpty(),currentId,onPlay,onOptions,onRemove={onRemove(selected!!,it)},onMove={expected,id,target->onReorder(selected!!,expected,id,target)}) }
         }
     }
     delete?.let { name->AlertDialog(onDismissRequest={delete=null},title={Text("Eliminar lista")},text={Text("Se eliminará «$name». Los archivos de música se conservarán.")},confirmButton={PrismaTextButton(onClick={onDelete(name);delete=null}){Text("Eliminar")}},dismissButton={PrismaTextButton(onClick={delete=null}){Text("Cancelar")}}) }

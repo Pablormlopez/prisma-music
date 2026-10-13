@@ -1,3 +1,9 @@
+## Orden manual de listas
+
+- Cada canción de una lista tiene un tirador ≡: mantenlo pulsado y arrastra hacia arriba o abajo. Los bordes desplazan la lista automáticamente y la posición de destino se resalta.
+- El orden se guarda al soltar y se conserva al reabrir la app. La reproducción iniciada desde la lista sigue ese orden; la cola que ya está sonando no cambia.
+- Cancelar el gesto conserva el orden anterior. Las canciones ocultas por filtros se mantienen en la lista. TalkBack ofrece acciones para mover hacia arriba o abajo desde el tirador.
+
 ## Beta 3.0.3 · Biblioteca y reproductor pulidos
 
 - Selección y total de canciones ocultos en la vista habitual. Mantén presionada una canción o toca sus tres puntos para seleccionar una o varias.
