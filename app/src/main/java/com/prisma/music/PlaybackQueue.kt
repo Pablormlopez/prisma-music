@@ -2,6 +2,11 @@
 package com.prisma.music
 
 import androidx.compose.foundation.background
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.foundation.shape.RoundedCornerShape
+import coil.compose.AsyncImage
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.ui.input.pointer.pointerInput
@@ -27,7 +32,7 @@ import androidx.media3.common.Timeline
 import androidx.media3.session.MediaController
 
 // Use playlist positions: remote timeline UIDs are not stable across session updates.
-internal data class QueueEntry(val index:Int,val mediaId:String,val title:String,val artist:String,val current:Boolean)
+internal data class QueueEntry(val index:Int,val mediaId:String,val title:String,val artist:String,val current:Boolean,val artwork:android.net.Uri?=null)
 internal fun queueEntries(player:Player):List<QueueEntry> {
     val timeline=player.currentTimeline
     val window=Timeline.Window()
@@ -36,7 +41,7 @@ internal fun queueEntries(player:Player):List<QueueEntry> {
     while(index!=androidx.media3.common.C.INDEX_UNSET && result.size<timeline.windowCount) {
         timeline.getWindow(index,window)
         val metadata=window.mediaItem.mediaMetadata
-        result+=QueueEntry(index,window.mediaItem.mediaId,metadata.title?.toString() ?: "Canción",metadata.artist?.toString().orEmpty(),index==player.currentMediaItemIndex)
+        result+=QueueEntry(index,window.mediaItem.mediaId,metadata.title?.toString() ?: "Canción",metadata.artist?.toString().orEmpty(),index==player.currentMediaItemIndex,metadata.artworkUri)
         index=timeline.getNextWindowIndex(index,Player.REPEAT_MODE_OFF,player.shuffleModeEnabled)
     }
     return result
@@ -60,6 +65,7 @@ internal fun moveQueueEntryTo(player:Player,index:Int,to:Int) {
 }
 
 @Composable fun PlaybackQueue(controller:MediaController,onDismiss:()->Unit) {
+    val glass=LocalVisualTheme.current==VisualTheme.GLASS
     var entries by remember(controller) {mutableStateOf(queueEntries(controller))}
     var shuffled by remember(controller) {mutableStateOf(controller.shuffleModeEnabled)}
     var repeat by remember(controller) {mutableIntStateOf(controller.repeatMode)}
@@ -90,7 +96,7 @@ internal fun moveQueueEntryTo(player:Player,index:Int,to:Int) {
         }
     }
     LaunchedEffect(controller) {val current=entries.indexOfFirst {it.current};if(current>=0) state.scrollToItem(current)}
-    ModalBottomSheet(onDismissRequest=onDismiss,sheetState=rememberModalBottomSheetState(skipPartiallyExpanded=true)) {
+    ModalBottomSheet(onDismissRequest=onDismiss,containerColor=if(glass) MaterialTheme.colorScheme.surface.copy(alpha=.86f) else MaterialTheme.colorScheme.surfaceContainerLow,sheetState=rememberModalBottomSheetState(skipPartiallyExpanded=true)) {
         Column(Modifier.fillMaxWidth().padding(horizontal=16.dp)) {
             Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
@@ -106,11 +112,20 @@ internal fun moveQueueEntryTo(player:Player,index:Int,to:Int) {
             val next=if(repeat==Player.REPEAT_MODE_ONE) current else if(current+1<entries.size) current+1 else if(repeat==Player.REPEAT_MODE_ALL && entries.isNotEmpty()) 0 else -1
             LazyColumn(state=state,modifier=Modifier.fillMaxWidth().heightIn(max=520.dp),contentPadding=PaddingValues(bottom=24.dp)) {
                 itemsIndexed(entries,key={_,entry->entry.index}) {index,entry ->
-                    Column(Modifier.fillMaxWidth().zIndex(if(dragging==entry.index) 1f else 0f).graphicsLayer {translationY=if(dragging==entry.index) dragOffset else 0f;scaleX=if(dragging==entry.index) 1.02f else 1f;scaleY=scaleX}.background(if(dragging==entry.index || (dragging!=null && index==target)) MaterialTheme.colorScheme.secondaryContainer else if(entry.current) MaterialTheme.colorScheme.primaryContainer.copy(alpha=.5f) else MaterialTheme.colorScheme.surface,MaterialTheme.shapes.medium).padding(start=12.dp,top=8.dp,end=4.dp,bottom=4.dp)) {
+                    Column(Modifier.fillMaxWidth().zIndex(if(dragging==entry.index) 1f else 0f).graphicsLayer {translationY=if(dragging==entry.index) dragOffset else 0f;scaleX=if(dragging==entry.index) 1.02f else 1f;scaleY=scaleX}.background(if(dragging==entry.index || (dragging!=null && index==target)) MaterialTheme.colorScheme.secondaryContainer else if(entry.current) MaterialTheme.colorScheme.primaryContainer.copy(alpha=.5f) else if(glass) Color.Transparent else MaterialTheme.colorScheme.surface,MaterialTheme.shapes.medium).padding(start=12.dp,top=8.dp,end=4.dp,bottom=4.dp)) {
                         Text(if(entry.current) "Sonando ahora" else if(index==next) "A continuación" else "${index+1}",style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.primary)
-                        Text(entry.title,maxLines=1,overflow=TextOverflow.Ellipsis,fontWeight=FontWeight.SemiBold)
-                        Text(entry.artist,maxLines=1,overflow=TextOverflow.Ellipsis,style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
-                        Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.End,verticalAlignment=Alignment.CenterVertically) {
+                        Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {
+                            if(glass) {
+                                Box(Modifier.size(44.dp).clip(RoundedCornerShape(8.dp)).background(MaterialTheme.colorScheme.surfaceContainerHigh),contentAlignment=Alignment.Center) {
+                                    Icon(Icons.Rounded.MusicNote,null)
+                                    AsyncImage(entry.artwork,null,Modifier.fillMaxSize(),contentScale=ContentScale.Crop)
+                                }
+                                Spacer(Modifier.width(12.dp))
+                            }
+                            Column(Modifier.weight(1f)) {
+                                Text(entry.title,maxLines=1,overflow=TextOverflow.Ellipsis,fontWeight=FontWeight.SemiBold)
+                                Text(entry.artist,maxLines=1,overflow=TextOverflow.Ellipsis,style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
                             Icon(Icons.Rounded.DragHandle,"Mantén pulsado para arrastrar ${entry.title}",Modifier.size(48.dp).pointerInput(entry.index,index) {
                                 detectDragGesturesAfterLongPress(onDragStart={
                                     val item=state.layoutInfo.visibleItemsInfo.firstOrNull {it.index==index}

@@ -31,7 +31,9 @@ internal fun VisualTheme.hasAlbumAtmosphere() = this == VisualTheme.GLASS || thi
 /** A single opaque artwork atmosphere; white foreground stays readable in both app modes. */
 @Composable internal fun AlbumAtmosphere(details:Library.Details?) {
     val motion=LocalPersonalization.current
-    Crossfade(details,animationSpec=if(motion.motion==MotionStyle.NONE) snap() else tween(motion.motionDuration),label="albumAtmosphere",modifier=Modifier.fillMaxSize()) { album ->
+    var loaded by remember {mutableStateOf(details)}
+    LaunchedEffect(details) {if(details!=null) loaded=details}
+    Crossfade(loaded,animationSpec=if(motion.motion==MotionStyle.NONE) snap() else tween(motion.motionDuration),label="albumAtmosphere",modifier=Modifier.fillMaxSize()) { album ->
         Box(Modifier.fillMaxSize().background(Color(0xff38353a))) {
             album?.glassBackdrop?.let { Image(it.asImageBitmap(),null,Modifier.fillMaxSize(),contentScale=ContentScale.Crop) }
             // Black is composited after the art, limiting peak background luminance under text.
