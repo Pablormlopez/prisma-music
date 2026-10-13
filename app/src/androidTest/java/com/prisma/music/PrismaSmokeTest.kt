@@ -35,7 +35,7 @@ class PrismaSmokeTest {
     private fun nav(text:String) {compose.onNode(hasText(text) and hasClickAction()).performClick();compose.waitForIdle()}
     private fun closePlayer() {
         val button=compose.onNodeWithContentDescription("Cerrar reproductor")
-        if(Preferences(compose.activity).theme.hasAlbumAtmosphere()) button.performScrollTo()
+        if(Preferences(compose.activity).let {it.theme.hasAlbumAtmosphere(it.advanced)}) button.performScrollTo()
         button.performClick()
     }
     private fun shot(name:String) {
