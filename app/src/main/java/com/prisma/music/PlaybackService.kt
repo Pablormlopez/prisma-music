@@ -108,9 +108,16 @@ class PlaybackService:MediaSessionService() {
         readSettings()
         val activity=PendingIntent.getActivity(this,0,Intent(this,MainActivity::class.java),PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         session=MediaSession.Builder(this,p).setSessionActivity(activity).setCallback(object:MediaSession.Callback {
-            override fun onConnect(session:MediaSession,controller:MediaSession.ControllerInfo)=MediaSession.ConnectionResult.AcceptedResultBuilder(session)
-                .setAvailableSessionCommands(MediaSession.ConnectionResult.DEFAULT_SESSION_COMMANDS.buildUpon().add(SessionCommand("prisma.eq",Bundle.EMPTY)).add(SessionCommand("prisma.settings",Bundle.EMPTY)).build()).build()
+            override fun onConnect(session:MediaSession,controller:MediaSession.ControllerInfo):MediaSession.ConnectionResult {
+                val commands=MediaSession.ConnectionResult.DEFAULT_SESSION_COMMANDS.buildUpon().add(SessionCommand("prisma.eq",Bundle.EMPTY)).add(SessionCommand("prisma.settings",Bundle.EMPTY))
+                if(BuildConfig.DEBUG)commands.add(SessionCommand("prisma.test.audio",Bundle.EMPTY))
+                return MediaSession.ConnectionResult.AcceptedResultBuilder(session).setAvailableSessionCommands(commands.build()).build()
+            }
             override fun onCustomCommand(session:MediaSession,controller:MediaSession.ControllerInfo,command:SessionCommand,args:Bundle):ListenableFuture<SessionResult> {
+                if(BuildConfig.DEBUG && command.customAction=="prisma.test.audio") return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS,Bundle().apply {
+                    putBoolean("mixing",mix?.mixing==true);putBoolean("incomingPlaying",incoming?.isPlaying==true)
+                    putLong("incomingPosition",incoming?.currentPosition ?: 0);putBoolean("floatOutput",options.floatOutput)
+                }))
                 if(command.customAction=="prisma.eq") {eqConfig=Preferences(this@PlaybackService).eq;compatibleProcessors.forEach {it.settings=eqConfig};return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))}
                 if(command.customAction=="prisma.settings") {
                     val wasFloat=options.floatOutput;mix?.cancel();readSettings()

@@ -92,7 +92,7 @@ import kotlinx.coroutines.withContext
         SettingSwitch("Mostrar nombre del álbum", "Debajo del artista en la pantalla de reproducción", showAlbum) { showAlbum=it; prefs.showPlayerAlbum=it }
         SettingSwitch("Mostrar información del archivo", "Calidad técnica: formato, bitrate, frecuencia y canales", metadata) { metadata=it; prefs.showMetadata=it }
         SettingSwitch("Mantener pantalla encendida", "Solo mientras el reproductor completo esté abierto", screenOn) { screenOn=it; prefs.keepScreenOn=it }
-        SettingSwitch("Omitir silencios", "Disponible con salida compatible de 16 bits; puede alterar pausas musicales", silence,enabled=!LocalAdvanced.current.floatOutput) { silence=it; prefs.skipSilence=it; onPlaybackChanged() }
+        SettingSwitch("Omitir silencios", "Disponible con salida compatible de 16 bits; puede alterar pausas musicales", silence && !LocalAdvanced.current.floatOutput,enabled=!LocalAdvanced.current.floatOutput) { silence=it; prefs.skipSilence=it; onPlaybackChanged() }
         Text("Velocidad · %.2f×".format(speed),fontWeight=FontWeight.SemiBold)
         Slider(value=speed,onValueChange={speed=it},onValueChangeFinished={prefs.playbackSpeed=speed;onPlaybackChanged()},valueRange=.5f..2f,steps=5)
         PrismaTextButton(onClick={speed=1f;prefs.playbackSpeed=1f;onPlaybackChanged()}) {Text("Velocidad normal")}
@@ -241,16 +241,7 @@ import kotlinx.coroutines.withContext
     var lyricError by remember(song.id) {mutableStateOf<String?>(null)}
     var importId by remember {mutableStateOf(song.id)}
     val context=LocalContext.current; val scope=rememberCoroutineScope()
-    var coverMenu by remember {mutableStateOf(false)}
     var coverError by remember {mutableStateOf<String?>(null)}
-    var coverImportId by remember {mutableStateOf(song.id)}
-    val coverImport=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) {uri->if(uri!=null) {
-        runCatching {
-            context.contentResolver.takePersistableUriPermission(uri,android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            prefs.saveAnimatedArtwork(coverImportId,uri.toString())
-            prefs.setAdvanced("animatedCover",true)
-        }.onFailure {coverError="No se pudo conservar el acceso a esa imagen."}
-    }}
     val import=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) {uri->if(uri!=null) scope.launch {
         runCatching {withContext(Dispatchers.IO) {context.contentResolver.openInputStream(uri)?.use {stream->val out=java.io.ByteArrayOutputStream();val buffer=ByteArray(8192);var total=0;while(true) {val n=stream.read(buffer);if(n<0) break;total+=n;require(total<=1_048_576) {"Archivo demasiado grande (máximo 1 MB)."};out.write(buffer,0,n)};out.toByteArray().toString(Charsets.UTF_8)} ?: error("No se pudo abrir el archivo.")}}.onSuccess {text->prefs.saveLyrics(importId,text);if(importId==song.id) importedText=text;lyricError=null}.onFailure {lyricError=it.message ?: "No se pudo leer la letra."}
     }}
@@ -270,7 +261,7 @@ import kotlinx.coroutines.withContext
         Box(Modifier.fillMaxWidth().height(20.dp).semantics {contentDescription="Deslizar hacia abajo para cerrar"}.pointerInput(Unit) {
             detectVerticalDragGestures(onDragStart={isDragging=true;verticalDrag=0f},onDragCancel={isDragging=false;verticalDrag=0f},onDragEnd={isDragging=false;if(verticalDrag>closeThreshold) closing=true;verticalDrag=0f}) {change,amount->change.consume();verticalDrag=(verticalDrag+amount).coerceAtLeast(0f)}
         },contentAlignment=Alignment.Center) {Box(Modifier.width(40.dp).height(4.dp).clip(RoundedCornerShape(8.dp)).background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha=.45f)))}
-        if(!immersive) Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.Center,verticalAlignment=Alignment.CenterVertically) {PrismaFilterChip(!lyricsVisible,{lyricsVisible=false},label={Text("Carátula")});Spacer(Modifier.width(8.dp));PrismaFilterChip(lyricsVisible,{lyricsVisible=true},label={Text("Letra")});PrismaIconButton(onClick={metadataVisible=!metadataVisible;prefs.showMetadata=metadataVisible}) {Icon(Icons.Rounded.Info,if(metadataVisible) "Ocultar metadatos" else "Mostrar metadatos",tint=if(metadataVisible) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)};PrismaIconButton(enabled=controller!=null,onClick={queueVisible=true}) {Icon(Icons.Rounded.QueueMusic,"Ver cola de reproducción")}}
+        if(!immersive) Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.Center,verticalAlignment=Alignment.CenterVertically) {PrismaFilterChip(!lyricsVisible,{lyricsVisible=false},label={Text("Carátula")});Spacer(Modifier.width(8.dp));PrismaFilterChip(lyricsVisible,{lyricsVisible=true},label={Text("Letra")});PrismaIconButton(onClick={metadataVisible=!metadataVisible;prefs.showMetadata=metadataVisible}) {Icon(Icons.Rounded.Info,if(metadataVisible) "Ocultar metadatos" else "Mostrar metadatos",tint=if(metadataVisible) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)};PrismaIconButton(enabled=controller!=null,onClick={queueVisible=true}) {Icon(Icons.Rounded.QueueMusic,"Ver cola de reproducción")};CoverOptions(prefs,song) {coverError=it}}
         Box(Modifier.height(coverHeight).fillMaxWidth().then(if(lyricsVisible) Modifier.clip(RoundedCornerShape(24.dp)).then(if(immersive) Modifier else Modifier.background(MaterialTheme.colorScheme.background.copy(alpha=.96f))).padding(start=24.dp,end=24.dp,top=if(immersive) 48.dp else 8.dp,bottom=8.dp) else swipe),contentAlignment=Alignment.Center) {
             AnimatedContent(targetState=lyricsVisible,transitionSpec={fadeIn(tween(motionMs)) togetherWith fadeOut(tween(motionMs))},label="artworkLyrics",modifier=Modifier.fillMaxSize()) {showLyrics ->
             if(showLyrics) {
@@ -312,13 +303,7 @@ import kotlinx.coroutines.withContext
         if(immersive) Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=Alignment.CenterVertically) {
             Text(if(lyricsVisible) "Letra" else parsedLyrics.lastOrNull {it.time!=null && it.time<=position}?.text ?: "Letra",maxLines=1,overflow=TextOverflow.Ellipsis,style=MaterialTheme.typography.labelSmall,modifier=Modifier.weight(1f).clickable {lyricsVisible=!lyricsVisible})
             IconButton(onClick={metadataVisible=!metadataVisible;prefs.showMetadata=metadataVisible}) {Icon(Icons.Rounded.Info,if(metadataVisible) "Ocultar metadatos" else "Mostrar metadatos")}
-            Box {
-                IconButton(onClick={coverMenu=true}) {Icon(Icons.Rounded.MoreHoriz,"Opciones de portada")}
-                DropdownMenu(expanded=coverMenu,onDismissRequest={coverMenu=false}) {
-                    DropdownMenuItem(text={Text("Importar portada GIF/WebP")},onClick={coverMenu=false;coverImportId=song.id;coverImport.launch(arrayOf("image/gif","image/webp"))})
-                    DropdownMenuItem(text={Text("Restaurar portada original")},onClick={coverMenu=false;prefs.saveAnimatedArtwork(song.id,null)})
-                }
-            }
+            CoverOptions(prefs,song) {coverError=it}
         }
         coverError?.let {Text(it,color=MaterialTheme.colorScheme.error)}
         AnimatedVisibility(metadataVisible,enter=fadeIn(tween(220))+expandVertically(tween(280)),exit=fadeOut(tween(150))+shrinkVertically(tween(280))) {

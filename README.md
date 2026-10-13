@@ -1,3 +1,14 @@
+## Beta 5.0.1 · Audio y apariencia
+
+- Salida PCM flotante: el DSP opera sobre muestras float y conserva muestras PCM de 24 bits antes de la salida. Sigue disponible el modo compatible de 16 bits. Android, el DAC y Bluetooth determinan la salida final; los efectos modifican la señal y no se promete bit-perfect.
+- Normalización adaptativa RMS, con ganancia acotada y limitador de picos. No analiza LUFS de la canción completa ni usa un proveedor de ReplayGain.
+- Mezcla automática real de 0 a 12 s: dos decodificadores superponen final e inicio y transfieren la posición de la canción entrante a la sesión principal. Conserva cola, controles y notificación; pausa, búsqueda manual y cambios de cola cancelan la mezcla. Repetición de una pista y duración desconocida no se mezclan.
+- Audio espacial: permite la espacialización de Android cuando el formato y la salida lo admiten; muestra su disponibilidad real. FLAC estéreo no equivale a Dolby Atmos. Amplitud estéreo ajustable por separado.
+- Apariencia: frecuencias de refresco compatibles, modo de rendimiento, menos desenfoque, portada completa o centrada, gradiente de malla, letras sincronizadas y difuminado de versos inactivos.
+- Portada animada: respirar, desplazar o girar la carátula. También admite importar GIF/WebP locales desde Opciones de portada; no requiere Spotify Canvas. Se pausa al detener la música, dejar la app o reducir animaciones. Se conserva una imagen estática del álbum para el ambiente.
+- Volumen visible u oculto y opción para detener al quitar Prisma de recientes. La reproducción en segundo plano permanece activa por defecto.
+- Omitir silencios está disponible con salida compatible de 16 bits; velocidad usa el control nativo de AudioTrack cuando la salida es flotante.
+
 ## Beta 4.0.1 · Liquid Glass y portada inmersiva
 
 - Liquid Glass y Chromatic Flow: portada a todo el ancho, fundida en un fondo difuminado de la propia carátula; transición al cambiar de canción y controles blancos con contraste estable.

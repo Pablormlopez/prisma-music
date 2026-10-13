@@ -7,6 +7,7 @@ import android.content.Intent
 import android.media.AudioFormat
 import android.media.AudioManager
 import android.os.Build
+import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.horizontalScroll
@@ -31,7 +32,7 @@ import kotlinx.coroutines.withContext
     return display.supportedModes.filter {it.physicalWidth==mode.physicalWidth && it.physicalHeight==mode.physicalHeight}.map {it.refreshRate}.distinct().sorted()
 }
 @Composable internal fun AdvancedWindowOptions(options:AdvancedSettings) {
-    val activity=LocalContext.current as? Activity ?: return
+    val activity=LocalActivity.current ?: return
     DisposableEffect(activity,options.refreshHz,options.performance) {
         val window=activity.window;val previous=window.attributes.preferredRefreshRate
         val supported=refreshRates(activity)
@@ -80,7 +81,8 @@ private fun spatialStatus(context:Context,details:Library.Details?):String {
     SectionTitle("APARIENCIA AVANZADA","Portada y fluidez")
     SettingSwitch("Modo de alto rendimiento", "Reduce el movimiento, usa un fondo sencillo y solicita la menor frecuencia compatible para ahorrar recursos.",options.performance) {prefs.setAdvanced("performance",it)}
     Text("Frecuencia de actualización")
-    val rates=remember(context) {(context as? Activity)?.let {refreshRates(it)} ?: emptyList()}
+    val activity=LocalActivity.current
+    val rates=remember(activity) {activity?.let {refreshRates(it)} ?: emptyList()}
     Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(6.dp)) {
         PrismaFilterChip(options.refreshHz==0f,{prefs.setAdvanced("refreshHz",0f)},label={Text("Automática")})
         rates.forEach {rate->PrismaFilterChip(kotlin.math.abs(options.refreshHz-rate)<.1f,{prefs.setAdvanced("refreshHz",rate)},label={Text("${rate.toInt()} Hz")})}
