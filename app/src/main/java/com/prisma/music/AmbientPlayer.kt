@@ -39,9 +39,10 @@ import androidx.media3.session.MediaController
         BoxWithConstraints(Modifier.fillMaxSize().background(Color.Black)) {
             AlbumAtmosphere(details)
             val landscape=maxWidth>maxHeight
+            val artworkSize=if(landscape) (maxHeight*.35f).coerceIn(64.dp,210.dp) else (maxHeight*.25f).coerceIn(64.dp,190.dp)
             val cover:@Composable ()->Unit={
                 Column(horizontalAlignment=Alignment.CenterHorizontally) {
-                    ActualArtwork(song,details,Modifier.size(if(landscape) (maxHeight*.35f).coerceIn(64.dp,210.dp) else (maxHeight*.25f).coerceIn(64.dp,190.dp)).clip(RoundedCornerShape(24.dp)))
+                    ActualArtwork(song,details,Modifier.size(artworkSize).clip(RoundedCornerShape(24.dp)))
                     Text(song.title,color=Color.White,fontWeight=FontWeight.Bold,maxLines=2,modifier=Modifier.padding(top=12.dp))
                     Text(song.artist,color=Color.White.copy(alpha=.7f),maxLines=1)
                 }
