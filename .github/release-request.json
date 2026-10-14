@@ -1,12 +1,39 @@
 {
+  "version": "6.0.1-beta",
   "repository": "nexlibre/prisma-music",
-  "version": "5.0.2-beta",
-  "target": "c23b3fcf24ace806e9a638fe4bd8b86ee0dd2a64",
-  "sha256": "beae47e9da92f5c60060f584ce1b116241fbb194b6fb05cf250e670ebf302ccb",
+  "target": "6d6477f03e93c744a011e66832679aad3e5bff91",
+  "sha256": "c30829767062fad8d7ce021f36ed32192c734bfb8f952b01e5dee3732d04a7fa",
   "blobs": [
-    "d28bd65f884c4914d00060bc3477991096f9f54c",
-    "793f2ab8aeabc10b7904e9d1147284df67271a20",
-    "8302d1cd40b17b35e41c90ce47cd919e0543b284"
+    "6ace9ce19e3d8ff12785eebb5035e7658749055c",
+    "fb61050fe14f167e0c8c88dc8b165b1bc67433f8",
+    "a6072b66062347c34812c119177e4779ce84767a",
+    "00827909c7c17eff46110b58e83b41d3162df1ce",
+    "90a5a7ac49d902bfdaea64f6cafa32aaabac6024",
+    "6ba2aa5d3eed70f49585df4e28c9f17e2ed83667",
+    "a6bc404ce3d62d2b0be85215ca6dfb23cde42fa3",
+    "7fa343679f243e366eeb4292447dd9988627b7af",
+    "c97b6cb058f5859fe45b69f1466c6f3c38f667c1",
+    "baf41327b3f0a5ae18b4f16d91f3c4f2b5d906f0",
+    "aa53fb1bf775c80222a03a2b15813d46581a10ec",
+    "1ae09bc7577276a5804e130e03512c72439e182c",
+    "f76850dd5b8971d3fbb813b6350448dd5717bc26",
+    "0326f8ee731422f5613527fbeff2da5e5bf4b311",
+    "c29ba5a74068d6cdb844170c15503d8d55b488a9",
+    "b14f0fd52c0442e7a0c105ed77672167223d3a4a",
+    "b4deef75d8ec70896d2ec2a434add176524b2329",
+    "c7e8ac73880cb430e54877ae21ec07ae7b0dd4a3",
+    "5c5b9fd63a6463c910dddec8ae680d2b58e2722e",
+    "e50d0bad5a3b2405a3dab42709751b109c51d48b",
+    "2f960277d090d7c29f1305c3a9ea3d33d3bb9a45",
+    "bbaa69bdb08c59e88b0929fad2a5a1bb45b3ef41",
+    "8b062b5a5ffa74fa3f2a72f72c30081d1c9aa4d9",
+    "999f63c3f65b3e08e87473bd4f1b3692bc3610c0",
+    "70019689293789f2aa31993fd5bbf1c4040cb0a8"
   ],
-  "notes": "## Beta 5.0.2 · Animaciones para todos los temas\n\n- Ambiente del álbum y portada inmersiva en los siete temas, conservando el acabado de Liquid Glass.\n- Nuevo ajuste «Ambiente del álbum en todos los temas» en Personalización → Apariencia avanzada. Desactivarlo recupera las composiciones originales de los otros temas.\n- Respuesta táctil con muelle en botones y selectores de todos los temas.\n- Conserva portada animada, importación GIF/WebP, normalización, mezcla entre canciones y ajustes de fluidez de 5.0.1.\n- Descarga del APK al principio del repositorio.\n\nInstala encima de 5.0.1, 4.0.1 o 3.0.4 para conservar listas y ajustes. Versiones 3.0.3 o anteriores usan otra firma.\n\nValidación: pruebas de código e interfaz en Android sobre la implementación integrada; compilación de distribución 5.0.2 con pruebas unitarias y lint; firma y checksum verificados; instalación y actualización desde 5.0.1 verificadas antes de publicar."
+  "validation_runs": [
+    38482599842,
+    38482599982,
+    38482600006
+  ],
+  "notes": "## Beta 6.0.1 · Interrupciones y estabilidad\n\nPrimera etapa del plan de consolidación. No incorpora todavía todas las mejoras previstas.\n\n- Pausa ambas pistas de la mezcla ante pérdidas temporales o permanentes de foco.\n- Pausa al grabar cuando Android informa una grabación activa, sin usar el micrófono ni leer mensajes.\n- Preferencia para pausar o bajar volumen con notificaciones que soliciten foco. Los mensajes silenciosos no se detectan.\n- Reanudación tras interrupciones opcional y desactivada inicialmente. Pausa manual, temporizador, pérdida permanente y desconexión de auriculares cancelan la reanudación pendiente.\n- Mezcla ajustada a la velocidad de reproducción, Modo ligero y README con descarga visible e historial separado.\n\nValidación: compilación debug y release, pruebas unitarias, lint y 14/14 pruebas Android 15 satisfactorias. Firma comparada con 5.0.2 e instalación como actualización comprobadas por el proceso de publicación en Android 13.\n\nAndroid 8.0 o posterior. Instala encima de 5.0.2 para conservar listas y ajustes; misma firma desde 3.0.4. WhatsApp, grabadora y cámara en dispositivos físicos, incluido Infinix Android 13, siguen pendientes. La detección de grabación depende de los eventos que Android y el fabricante permitan observar.\n\nPendientes para etapas siguientes: recuperación persistente de cola, migración de listas, SAF y álbumes, respaldo, ReplayGain, accesibilidad y nuevas funciones. Consulta docs/BETA-6.0.1.md."
 }
