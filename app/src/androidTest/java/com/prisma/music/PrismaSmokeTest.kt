@@ -32,7 +32,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 class PrismaSmokeTest {
     private fun openSettingsCategory(title:String) {
         if(compose.onAllNodesWithContentDescription("Volver a configuración").fetchSemanticsNodes().isNotEmpty())
-            compose.onNodeWithContentDescription("Volver a configuración").performClick()
+            compose.onNodeWithContentDescription("Volver a configuración").performScrollTo().performClick()
         compose.onNodeWithText(title,substring=false).performScrollTo().performClick()
     }
     @get:Rule(order=0) val permissions:GrantPermissionRule = GrantPermissionRule.grant(Manifest.permission.READ_MEDIA_AUDIO,Manifest.permission.POST_NOTIFICATIONS)

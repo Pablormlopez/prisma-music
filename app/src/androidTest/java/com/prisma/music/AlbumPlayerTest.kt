@@ -46,7 +46,7 @@ class AlbumPlayerTest {
             PlayerScreen(song,details,VisualTheme.GLASS,prefs,1000,180000,false,false,0,null,{},{},{})
         }}
         compose.onNodeWithContentDescription("Modo ambiente").performScrollTo().performClick()
-        compose.onNodeWithText("Ambiente de prueba").assertIsDisplayed()
+        compose.onNode(hasText("Ambiente de prueba") and hasAnyAncestor(hasTestTag("ambientLyrics"))).assertIsDisplayed()
         compose.onNodeWithContentDescription("Cerrar modo ambiente").performClick()
         compose.onNodeWithContentDescription("Modo ambiente").assertExists()
     }

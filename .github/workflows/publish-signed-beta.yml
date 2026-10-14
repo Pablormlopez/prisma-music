@@ -30,7 +30,7 @@ jobs:
           import base64, hashlib, json, re, subprocess
           from pathlib import Path
           request=json.loads(Path('.github/release-request.json').read_text())
-          assert re.fullmatch(r'6\.0\.1-beta', request['version'])
+          assert re.fullmatch(r'6\.1\.0-beta', request['version'])
           assert re.fullmatch(r'[0-9a-f]{40}', request['target'])
           assert re.fullmatch(r'[0-9a-f]{64}', request['sha256'])
           assert request['repository']=='nexlibre/prisma-music'
@@ -52,11 +52,11 @@ jobs:
           Path(str(apk)+'.sha256').write_text(request['sha256']+'  '+apk.name+'\n')
           Path('release-notes.md').write_text(request['notes'])
           PY
-          curl --fail --location --retry 3 https://github.com/nexlibre/prisma-music/releases/download/v5.0.2-beta/Prisma-Music-5.0.2-beta.apk -o previous.apk
+          curl --fail --location --retry 3 https://github.com/nexlibre/prisma-music/releases/download/v6.0.1-beta/Prisma-Music-6.0.1-beta.apk -o previous.apk
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs previous.apk > previous-cert.txt
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs Prisma-Music-6.0.1-beta.apk > current-cert.txt
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs Prisma-Music-6.1.0-beta.apk > current-cert.txt
           diff <(grep 'certificate SHA-256 digest' previous-cert.txt) <(grep 'certificate SHA-256 digest' current-cert.txt)
-          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging Prisma-Music-6.0.1-beta.apk | grep "versionCode='20'.*versionName='6.0.1-beta'"
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging Prisma-Music-6.1.0-beta.apk | grep "versionCode='21'.*versionName='6.1.0-beta'"
       - name: Habilitar KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -70,8 +70,8 @@ jobs:
           disable-animations: true
           script: |
             adb install previous.apk
-            adb install -r Prisma-Music-6.0.1-beta.apk
-            adb shell dumpsys package com.prisma.music | grep 'versionName=6.0.1-beta'
+            adb install -r Prisma-Music-6.1.0-beta.apk
+            adb shell dumpsys package com.prisma.music | grep 'versionName=6.1.0-beta'
             adb logcat -c
             adb shell am start -W -n com.prisma.music/.MainActivity
             adb shell pidof com.prisma.music
@@ -82,7 +82,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           target=$(jq -r .target .github/release-request.json)
-          gh release create v6.0.1-beta Prisma-Music-6.0.1-beta.apk Prisma-Music-6.0.1-beta.apk.sha256 --target "$target" --prerelease --title "Prisma Music 6.0.1 beta" --notes-file release-notes.md
+          gh release create v6.1.0-beta Prisma-Music-6.1.0-beta.apk Prisma-Music-6.1.0-beta.apk.sha256 --target "$target" --prerelease --title "Prisma Music 6.1.0 beta" --notes-file release-notes.md
       - uses: actions/upload-artifact@v4
         if: always()
         with:
