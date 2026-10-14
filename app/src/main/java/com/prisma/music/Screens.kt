@@ -65,6 +65,12 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @Composable fun SettingsScreen(prefs:Preferences,songs:List<Song>,onLibraryChanged:()->Unit,onPlaybackChanged:()->Unit,onThemes:()->Unit,details:Library.Details?=null) {
+    var category by rememberSaveable { mutableStateOf("") }
+    if(category.isEmpty()) {
+        SettingsHub(onCategory={category=it})
+        return
+    }
+    androidx.activity.compose.BackHandler {category=""}
     var hide by remember { mutableStateOf(prefs.hideWhatsApp) }
     var excluded by remember { mutableStateOf(prefs.excluded) }
     var metadata by remember { mutableStateOf(prefs.showMetadata) }
@@ -79,6 +85,11 @@ import kotlinx.coroutines.withContext
     LaunchedEffect(Unit) { while(true) { deadline=prefs.sleepDeadline; kotlinx.coroutines.delay(1000) } }
     var foldersDialog by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal=20.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
+        Row(verticalAlignment=Alignment.CenterVertically) {
+            IconButton(onClick={category=""}) {Icon(Icons.Rounded.ArrowBack,"Volver a configuración")}
+            Text(category,style=MaterialTheme.typography.headlineSmall)
+        }
+        if(category=="Apariencia") {
         SectionTitle("APARIENCIA","Diseña tu Prisma")
         Surface(onClick=onThemes,shape=RoundedCornerShape(24.dp),color=MaterialTheme.colorScheme.surfaceContainerHigh,modifier=Modifier.fillMaxWidth()) {
             Row(Modifier.padding(18.dp),verticalAlignment=Alignment.CenterVertically) {
@@ -87,6 +98,9 @@ import kotlinx.coroutines.withContext
                 Icon(Icons.Rounded.ChevronRight,null)
             }
         }
+        AdvancedAppearanceSettings(prefs)
+        }
+        if(category=="Reproductor y audio") {
         AdvancedAudioSettings(prefs,details,onPlaybackChanged)
         SectionTitle("REPRODUCTOR","Personaliza la escucha")
         SettingSwitch("Mostrar nombre del álbum", "Debajo del artista en la pantalla de reproducción", showAlbum) { showAlbum=it; prefs.showPlayerAlbum=it }
@@ -108,6 +122,8 @@ import kotlinx.coroutines.withContext
             listOf(15,30,60,90).forEach { minutes -> PrismaOutlinedButton(onClick={deadline=System.currentTimeMillis()+minutes*60000L;prefs.sleepDeadline=deadline;onPlaybackChanged()}) {Text("$minutes min")} }
         }
         if(deadline>0) PrismaTextButton(onClick={deadline=0;prefs.sleepDeadline=0;onPlaybackChanged()}) {Text("Cancelar temporizador")}
+        }
+        if(category=="Biblioteca") {
         SectionTitle("BIBLIOTECA","Solo lo que quieres escuchar")
         Text("Duración mínima · $minimum s",fontWeight=FontWeight.SemiBold)
         Slider(value=minimum.toFloat(),onValueChange={minimum=it.toInt()},onValueChangeFinished={prefs.minimumDuration=minimum;onLibraryChanged()},valueRange=0f..120f,steps=7)
@@ -115,8 +131,11 @@ import kotlinx.coroutines.withContext
         Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {Column(Modifier.weight(1f)) {Text("Excluir audios de WhatsApp",fontWeight=FontWeight.SemiBold);Text("También notas de voz y WhatsApp Business",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)};Switch(checked=hide,onCheckedChange={hide=it;prefs.hideWhatsApp=it;onLibraryChanged()})}
         PrismaOutlinedButton(onClick={foldersDialog=true},modifier=Modifier.fillMaxWidth(),shape=RoundedCornerShape(16.dp)) {Icon(Icons.Rounded.FolderOpen,null);Text("Elegir carpetas · ${excluded.size} excluidas",Modifier.padding(8.dp))}
         Text("Se muestran las carpetas que Android ha registrado con archivos de audio. Las carpetas privadas de otras apps pueden no ser accesibles.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        if(category=="Acerca de Prisma") {
         SectionTitle("PRISMA MUSIC","${BuildConfig.VERSION_NAME} · Código abierto")
         Text("Sin anuncios, sin cuenta y sin subir tu música. Las letras incrustadas se leen automáticamente. Puedes importar LRC o TXT si el archivo no contiene letra. El motor permite PCM flotante y salida compatible de 16 bits; los datos mostrados describen el archivo original.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+        }
         Spacer(Modifier.height(24.dp))
     }
     if(foldersDialog) AlertDialog(onDismissRequest={foldersDialog=false},title={Text("Carpetas de música")},text={Column {
@@ -125,9 +144,11 @@ import kotlinx.coroutines.withContext
     }},confirmButton={PrismaTextButton(onClick={foldersDialog=false}){Text("Listo")}})
 }
 @Composable fun SettingSwitch(title:String,description:String,checked:Boolean,enabled:Boolean=true,onChange:(Boolean)->Unit) {
-    Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {
+    Surface(shape=RoundedCornerShape(20.dp),color=MaterialTheme.colorScheme.surfaceContainerHigh) {
+    Row(Modifier.fillMaxWidth().padding(16.dp),verticalAlignment=Alignment.CenterVertically) {
         Column(Modifier.weight(1f).padding(end=12.dp)) {Text(title,fontWeight=FontWeight.SemiBold);Text(description,style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)}
         Switch(checked=checked,onCheckedChange=onChange,enabled=enabled,modifier=Modifier.semantics {contentDescription=title})
+    }
     }
 }
 @Composable fun SectionTitle(label:String,title:String) {Column(Modifier.padding(top=12.dp,bottom=4.dp)) {Text(label,fontSize=10.sp,letterSpacing=2.sp,color=MaterialTheme.colorScheme.primary,fontWeight=FontWeight.Bold);Text(title,style=MaterialTheme.typography.titleMedium,fontWeight=FontWeight.SemiBold,modifier=Modifier.padding(top=5.dp))}}
@@ -206,6 +227,8 @@ import kotlinx.coroutines.withContext
     val motion=LocalPersonalization.current
     var swipeDirection by remember {mutableIntStateOf(1)}
     var isDragging by remember {mutableStateOf(false)}
+    var ambientVisible by rememberSaveable {mutableStateOf(false)}
+    if(ambientVisible) AmbientPlayer(song,details,prefs,position,playing,controller) {ambientVisible=false}
     var queueVisible by rememberSaveable {mutableStateOf(false)}
     if(queueVisible && controller!=null) PlaybackQueue(controller,onDismiss={queueVisible=false})
     var metadataVisible by remember { mutableStateOf(prefs.showMetadata) }
@@ -226,11 +249,12 @@ import kotlinx.coroutines.withContext
     val latestDismiss by rememberUpdatedState(onDismiss)
     LaunchedEffect(closing) {if(closing) {kotlinx.coroutines.delay(motionMs.toLong());latestDismiss()}}
     val latestController by rememberUpdatedState(controller)
-    val swipe=Modifier.pointerInput(song.id,lyricsVisible,motion.motion,motion.motionDuration) {
+    val swipeEnabled=LocalAdvanced.current.swipeTracks
+    val swipe=Modifier.pointerInput(song.id,lyricsVisible,motion.motion,motion.motionDuration,swipeEnabled) {
         var axis=0
         detectDragGestures(onDragStart={axis=0;isDragging=true;drag=0f;verticalDrag=0f},onDragCancel={isDragging=false;drag=0f;verticalDrag=0f},onDragEnd={
             if(axis==2 && verticalDrag>closeThreshold) closing=true
-            else if(axis==1) {if(drag < -swipeThreshold) {swipeDirection=1;latestController?.seekToNextMediaItem()} else if(drag > swipeThreshold) {swipeDirection=-1;latestController?.seekToPreviousMediaItem()}}
+            else if(axis==1 && swipeEnabled) {if(drag < -swipeThreshold) {swipeDirection=1;latestController?.seekToNextMediaItem()} else if(drag > swipeThreshold) {swipeDirection=-1;latestController?.seekToPreviousMediaItem()}}
             isDragging=false;drag=0f;verticalDrag=0f
         }) {change,amount->
             if(axis==0) axis=if(abs(amount.x)>abs(amount.y)) 1 else 2
@@ -275,7 +299,7 @@ import kotlinx.coroutines.withContext
                     Column {Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=Alignment.CenterVertically) {PrismaFilterChip(follow,{follow=!follow},label={Text(if(follow) "Seguir canción" else "Leer libremente")});Text(if(embedded) "Del archivo" else "Importada",color=MaterialTheme.colorScheme.onSurfaceVariant,fontSize=11.sp)}
                         LazyColumn(state=state,modifier=Modifier.fillMaxSize(),contentPadding=PaddingValues(top=16.dp,bottom=130.dp),verticalArrangement=Arrangement.spacedBy(22.dp)) {itemsIndexed(lines) {index,line ->
                             val color by animateColorAsState(if(active==index || line.time==null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha=.65f),label="lyricColor")
-                            Text(line.text.ifBlank {"♪"},color=color,fontSize=if(theme==VisualTheme.MINIMAL) 22.sp else 26.sp,fontWeight=if(active==index) FontWeight.Bold else FontWeight.Medium,modifier=Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).then(if(LocalAdvanced.current.blurLyrics && active>=0 && active!=index && !LocalAdvanced.current.performance) Modifier.blur(1.5.dp) else Modifier).then(if(!immersive && active==index) Modifier.background(MaterialTheme.colorScheme.primary.copy(alpha=.08f)) else Modifier).clickable(enabled=line.time!=null) {line.time?.let {controller?.seekTo(it)}}.padding(8.dp))
+                            Text(line.text.ifBlank {"♪"},color=color,textAlign=if(LocalAdvanced.current.centerLyrics) androidx.compose.ui.text.style.TextAlign.Center else androidx.compose.ui.text.style.TextAlign.Start,fontSize=LocalAdvanced.current.lyricSize.sp,fontWeight=if(active==index) FontWeight.Bold else FontWeight.Medium,modifier=Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).then(if(LocalAdvanced.current.blurLyrics && active>=0 && active!=index && !LocalAdvanced.current.performance) Modifier.blur(1.5.dp) else Modifier).then(if(!immersive && active==index) Modifier.background(MaterialTheme.colorScheme.primary.copy(alpha=.08f)) else Modifier).clickable(enabled=line.time!=null) {line.time?.let {controller?.seekTo(it)}}.padding(8.dp))
                         }}
                     }
                 }
@@ -304,6 +328,9 @@ import kotlinx.coroutines.withContext
             Text(if(lyricsVisible) "Letra" else parsedLyrics.lastOrNull {it.time!=null && it.time<=position}?.text ?: "Letra",maxLines=1,overflow=TextOverflow.Ellipsis,style=MaterialTheme.typography.labelSmall,modifier=Modifier.weight(1f).clickable {lyricsVisible=!lyricsVisible})
             IconButton(onClick={metadataVisible=!metadataVisible;prefs.showMetadata=metadataVisible}) {Icon(Icons.Rounded.Info,if(metadataVisible) "Ocultar metadatos" else "Mostrar metadatos")}
             CoverOptions(prefs,song) {coverError=it}
+        }
+        Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.End) {
+            IconButton(onClick={ambientVisible=true}) {Icon(Icons.Rounded.Fullscreen,"Modo ambiente")}
         }
         coverError?.let {Text(it,color=MaterialTheme.colorScheme.error)}
         AnimatedVisibility(metadataVisible,enter=fadeIn(tween(220))+expandVertically(tween(280)),exit=fadeOut(tween(150))+shrinkVertically(tween(280))) {
