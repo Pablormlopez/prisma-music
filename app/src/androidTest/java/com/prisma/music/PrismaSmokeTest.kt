@@ -30,6 +30,11 @@ import androidx.test.platform.app.InstrumentationRegistry
 /** Real app smoke test on Android 35. Uses an original generated tone, no user music. */
 @RunWith(AndroidJUnit4::class)
 class PrismaSmokeTest {
+    private fun openSettingsCategory(title:String) {
+        if(compose.onAllNodesWithContentDescription("Volver a configuración").fetchSemanticsNodes().isNotEmpty())
+            compose.onNodeWithContentDescription("Volver a configuración").performClick()
+        compose.onNodeWithText(title,substring=false).performScrollTo().performClick()
+    }
     @get:Rule(order=0) val permissions:GrantPermissionRule = GrantPermissionRule.grant(Manifest.permission.READ_MEDIA_AUDIO,Manifest.permission.POST_NOTIFICATIONS)
     @get:Rule(order=1) val compose = createAndroidComposeRule<MainActivity>()
     private fun nav(text:String) {compose.onNode(hasText(text) and hasClickAction()).performClick();compose.waitForIdle()}
@@ -191,6 +196,7 @@ class PrismaSmokeTest {
             compose.onNodeWithContentDescription("Ver álbum ${fixture.album}").assertDoesNotExist()
             closePlayer()
             nav("Ajustes")
+            openSettingsCategory("Reproductor y audio")
             compose.onNodeWithContentDescription("Mostrar nombre del álbum").performScrollTo().performClick()
             assertTrue(Preferences(context).showPlayerAlbum)
             compose.onNodeWithContentDescription("Abrir reproductor").performClick()
@@ -199,6 +205,7 @@ class PrismaSmokeTest {
             compose.onNodeWithContentDescription("Volver al reproductor").performClick()
             closePlayer()
             nav("Ajustes")
+            openSettingsCategory("Reproductor y audio")
             compose.onNodeWithContentDescription("Mostrar nombre del álbum").performScrollTo().performClick()
             assertFalse(Preferences(context).showPlayerAlbum)
             nav("Biblioteca")
@@ -258,6 +265,7 @@ class PrismaSmokeTest {
             compose.onNodeWithContentDescription("Diseño Chromatic Flow").performTouchInput {swipeDown()}
             compose.waitUntil(5000) {compose.onAllNodesWithContentDescription("Abrir reproductor").fetchSemanticsNodes().isNotEmpty()}
             nav("Ajustes")
+            openSettingsCategory("Apariencia")
             compose.onNode(hasText("Personalización",substring=false) and hasClickAction()).performScrollTo().performClick()
             compose.onNodeWithText("MODO DE COLOR",substring=false).performScrollTo().assertExists()
             compose.onNodeWithText("Oscuro",substring=false).performScrollTo().performClick()
@@ -331,6 +339,7 @@ class PrismaSmokeTest {
             compose.onNode(hasText("Prisma prueba") and SemanticsMatcher.keyIsDefined(SemanticsActions.OnLongClick)).assertExists()
             shot("11-lista-compacta")
             nav("Ajustes")
+            openSettingsCategory("Apariencia")
             compose.onNode(hasText("Personalización",substring=false) and hasClickAction()).performScrollTo().performClick()
             compose.onNodeWithText("Cuadrícula",substring=false).performScrollTo().performClick()
             nav("Biblioteca")
@@ -338,6 +347,7 @@ class PrismaSmokeTest {
             compose.onNodeWithText("Más opciones de canción").performClick()
             compose.onNodeWithText("Añadir al final de la cola").performClick()
             nav("Ajustes")
+            openSettingsCategory("Apariencia")
             compose.onNode(hasText("Personalización",substring=false) and hasClickAction()).performScrollTo().performClick()
             compose.onNodeWithText("Restablecer personalización").performScrollTo().performClick()
             assertEquals(Personalization(),Preferences(context).personalization)
@@ -361,6 +371,7 @@ class PrismaSmokeTest {
             compose.onNodeWithText("Vuelve a escuchar").assertExists()
             shot("14-inicio-chromatic")
             nav("Ajustes")
+            openSettingsCategory("Apariencia")
             compose.onNode(hasText("Personalización",substring=false) and hasClickAction()).performScrollTo().performClick()
             compose.onNode(hasText("Temas") and hasClickAction()).performScrollTo().performClick()
                 compose.onNode(hasScrollToIndexAction()).performScrollToIndex(0)
@@ -380,6 +391,7 @@ class PrismaSmokeTest {
                 nav("Biblioteca")
                 shot("08-biblioteca-$index-oscuro")
                 nav("Ajustes")
+            openSettingsCategory("Apariencia")
             compose.onNode(hasText("Personalización",substring=false) and hasClickAction()).performScrollTo().performClick()
                 compose.onNode(hasText("Temas") and hasClickAction()).performScrollTo().performClick()
                 compose.onNode(hasScrollToIndexAction()).performScrollToIndex(0)
@@ -392,6 +404,7 @@ class PrismaSmokeTest {
                 nav("Inicio")
                 shot("16-inicio-$index-claro")
                 nav("Ajustes")
+            openSettingsCategory("Apariencia")
             compose.onNode(hasText("Personalización",substring=false) and hasClickAction()).performScrollTo().performClick()
                 compose.onNode(hasText("Temas") and hasClickAction()).performScrollTo().performClick()
                 compose.onNode(hasScrollToIndexAction()).performScrollToIndex(0)
