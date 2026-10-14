@@ -12,6 +12,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -48,7 +49,7 @@ import androidx.media3.session.MediaController
                 }
             }
             val lyrics:@Composable ()->Unit={
-                LazyColumn(state=state,modifier=Modifier.fillMaxSize(),contentPadding=PaddingValues(vertical=32.dp),verticalArrangement=Arrangement.spacedBy(24.dp)) {
+                LazyColumn(state=state,modifier=Modifier.fillMaxSize().testTag("ambientLyrics"),contentPadding=PaddingValues(vertical=32.dp),verticalArrangement=Arrangement.spacedBy(24.dp)) {
                     if(lines.isEmpty()) item {Text("Importa una letra LRC o TXT desde el reproductor para verla aquí.",color=Color.White.copy(alpha=.7f))}
                     itemsIndexed(lines) {index,line->Text(line.text.ifBlank {"♪"},fontSize=options.lyricSize.sp,fontWeight=if(index==active) FontWeight.Bold else FontWeight.Medium,color=Color.White.copy(alpha=if(active<0 || index==active) 1f else .45f),textAlign=if(options.centerLyrics) TextAlign.Center else TextAlign.Start,modifier=Modifier.fillMaxWidth())}
                 }

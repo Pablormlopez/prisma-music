@@ -32,7 +32,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 class PrismaSmokeTest {
     private fun openSettingsCategory(title:String) {
         if(compose.onAllNodesWithContentDescription("Volver a configuración").fetchSemanticsNodes().isNotEmpty())
-            compose.onNodeWithContentDescription("Volver a configuración").performClick()
+            compose.onNodeWithContentDescription("Volver a configuración").performScrollTo().performClick()
         compose.onNodeWithText(title,substring=false).performScrollTo().performClick()
     }
     @get:Rule(order=0) val permissions:GrantPermissionRule = GrantPermissionRule.grant(Manifest.permission.READ_MEDIA_AUDIO,Manifest.permission.POST_NOTIFICATIONS)
@@ -285,6 +285,7 @@ class PrismaSmokeTest {
             compose.onNodeWithText("Probar animación").performScrollTo().performClick()
             shot("10-personalizacion")
             compose.onNodeWithContentDescription("Volver a ajustes").performClick()
+            openSettingsCategory("Reproductor y audio")
             compose.onNodeWithContentDescription("Duración de entrada").performScrollTo().performSemanticsAction(SemanticsActions.SetProgress) {it(4f)}
             compose.onNodeWithContentDescription("Duración de salida").performScrollTo().performSemanticsAction(SemanticsActions.SetProgress) {it(3f)}
             assertEquals(4f,Preferences(context).fadeInSeconds,0f)

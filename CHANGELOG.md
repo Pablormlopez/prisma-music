@@ -1,3 +1,10 @@
+## 6.1.0 beta — Modo ambiente y configuración
+
+- Modo ambiente a pantalla completa con carátula, letras locales sincronizadas y controles; adaptable a vertical y horizontal.
+- Configuración organizada en categorías con búsqueda y tarjetas redondeadas.
+- Tamaño y alineación de letras ajustables, y gesto de cambio de canción opcional.
+- Conserva ajustes de audio y preferencias existentes.
+
 # Historial de Prisma Music
 
 ## Beta 6.0.1 · Interrupciones y estabilidad
