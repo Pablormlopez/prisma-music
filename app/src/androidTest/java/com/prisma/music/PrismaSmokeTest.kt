@@ -285,6 +285,7 @@ class PrismaSmokeTest {
             compose.onNodeWithText("Probar animación").performScrollTo().performClick()
             shot("10-personalizacion")
             compose.onNodeWithContentDescription("Volver a ajustes").performClick()
+            openSettingsCategory("Reproductor y audio")
             compose.onNodeWithContentDescription("Duración de entrada").performScrollTo().performSemanticsAction(SemanticsActions.SetProgress) {it(4f)}
             compose.onNodeWithContentDescription("Duración de salida").performScrollTo().performSemanticsAction(SemanticsActions.SetProgress) {it(3f)}
             assertEquals(4f,Preferences(context).fadeInSeconds,0f)
