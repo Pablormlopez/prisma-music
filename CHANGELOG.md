@@ -1,5 +1,14 @@
 # Historial de Prisma Music
 
+## Beta 6.0.1 · Interrupciones y estabilidad
+
+- Pausa ambas pistas al perder foco y ante grabaciones observables por Android.
+- Ajustes para pausar o atenuar con notificaciones y reanudación optativa.
+- Cancelación de reanudación con pausa manual, temporizador, pérdida permanente o desconexión de auriculares incluso durante una pausa.
+- Mezcla ajustada a velocidad, Modo ligero e historial separado del README.
+- Pruebas unitarias, lint y 14 pruebas Android 15 satisfactorias. Firma y actualización desde 5.0.2 verificadas en Android 13.
+- Primera etapa del plan: la matriz de casos físicos y las demás mejoras pendientes se detallan en docs/BETA-6.0.1.md.
+
 ## Beta 5.0.2 · Animaciones en todos los temas
 
 - Ambiente del álbum, portada inmersiva y transiciones compartidas entre los siete temas, con opción para recuperar las composiciones originales.

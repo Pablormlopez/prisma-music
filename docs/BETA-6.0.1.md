@@ -18,13 +18,14 @@ La duración del crossfade se ajusta a la velocidad de reproducción. Modo de al
 
 | Caso | Android y salida | Estado |
 | --- | --- | --- |
-| Política de interrupciones simultáneas y cancelación manual | JVM, independiente de salida | Pruebas unitarias añadidas; consultar CI |
-| Mezcla real, pausa y cambio de salida PCM | Emulador Android 15 | Prueba existente, pendiente nueva ejecución |
-| Foco temporal, permanente y atenuación durante mezcla | Emulador Android 15 | Pruebas de integración por incorporar |
+| Política de interrupciones simultáneas y cancelación manual | JVM, independiente de salida | Pruebas unitarias satisfactorias en CI |
+| Mezcla real, pausa y cambio de salida PCM | Emulador Android 15 | Verificado, prueba de mezcla, pausa, transferencia y cambio de salida satisfactoria |
+| Pérdida temporal de foco durante mezcla | Emulador Android 15, salida virtual | Verificado: ambas pistas se detienen y se conserva la cola |
+| Foco permanente y atenuación real | Aplicaciones externas y salidas físicas | Política cubierta por pruebas unitarias; integración física pendiente |
 | WhatsApp al grabar y escuchar notas | Infinix Android 13, altavoz y Bluetooth | No verificado, no hay dispositivo disponible |
 | Grabadora y cámara externas | Android 8–15, altavoz y auriculares | No verificado en aplicaciones externas |
 | Llamada, asistente, notificación sonora y silenciosa | Dispositivo físico | Pendiente |
-| Firma e instalación encima de 5.0.2 | Android 13 | Obligatorio antes de publicar APK |
+| Firma e instalación encima de 5.0.2 | Android 13 | Verificado en emulador Android 13 durante publicación |
 
 ## Investigación del fallo anterior
 
@@ -39,3 +40,12 @@ La ejecución 38478771970 terminó con 13 de 14 pruebas satisfactorias. El infor
 5. Historial local y listas inteligentes, widget, desfase LRC, temporizador al terminar canción y balance.
 
 Una compilación no demuestra compatibilidad con WhatsApp ni ausencia de problemas en dispositivos físicos. No publicar un APK con firma distinta ni declarar concluidas estas etapas pendientes.
+
+## Ejecuciones verificadas
+
+- Compilación, pruebas unitarias y lint debug: https://github.com/nexlibre/prisma-music/actions/runs/38482599842
+- Compilación y lint release: https://github.com/nexlibre/prisma-music/actions/runs/38482599982
+- Android 15, 14 pruebas y cero fallos: https://github.com/nexlibre/prisma-music/actions/runs/38482600006
+- Firma, checksum, versión e instalación sobre 5.0.2 en Android 13: https://github.com/nexlibre/prisma-music/actions/runs/38491816618
+
+SHA-256 del APK publicado: c30829767062fad8d7ce021f36ed32192c734bfb8f952b01e5dee3732d04a7fa.
