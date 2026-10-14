@@ -20,6 +20,7 @@ class Preferences(context: Context) {
         prefs.getBoolean("animatedCover",false),prefs.getString("coverMotion","Respirar")!!,prefs.getBoolean("fullCover",true),
         prefs.getBoolean("meshGradient",false),prefs.getBoolean("syncLyrics",true),prefs.getBoolean("blurLyrics",false),
         prefs.getBoolean("showVolume",true),prefs.getBoolean("stopOnDismiss",false),prefs.getInt("artworkRevision",0),prefs.getBoolean("immersiveAllThemes",true),
+        prefs.getFloat("lyricSize",26f).coerceIn(18f,36f),prefs.getBoolean("centerLyrics",false),prefs.getBoolean("swipeTracks",true),
         prefs.getBoolean("pauseNotifications",true),prefs.getBoolean("pauseRecording",true),prefs.getBoolean("resumeInterruptions",false))
     internal fun setAdvanced(key:String,value:Boolean) {prefs.edit().putBoolean(key,value).apply()}
     internal fun setAdvanced(key:String,value:Float) {prefs.edit().putFloat(key,value).apply()}

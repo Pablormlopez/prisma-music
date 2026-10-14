@@ -99,6 +99,10 @@ private fun spatialStatus(context:Context,details:Library.Details?):String {
     if(options.animatedCover) Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(6.dp)) {
         listOf("Respirar","Deslizar","Girar").forEach {mode->PrismaFilterChip(options.coverMotion==mode,{prefs.setAdvanced("coverMotion",mode)},label={Text(mode)})}
     }
+    SectionTitle("LETRAS Y GESTOS","Lectura a tu medida")
+    AdvancedSlider("Tamaño de las letras",options.lyricSize,18f..36f,"sp") {prefs.setAdvanced("lyricSize",it)}
+    SettingSwitch("Centrar letras", "Alinea los versos al centro en el reproductor y el modo ambiente.",options.centerLyrics) {prefs.setAdvanced("centerLyrics",it)}
+    SettingSwitch("Deslizar para cambiar canción", "Desliza la carátula a izquierda o derecha. Los botones siguen disponibles.",options.swipeTracks) {prefs.setAdvanced("swipeTracks",it)}
     SettingSwitch("Letras sincronizadas", "Sigue los tiempos de las letras LRC o incrustadas que ya los contienen.",options.syncLyrics) {prefs.setAdvanced("syncLyrics",it)}
     SettingSwitch("Difuminar versos inactivos", "Resalta el verso actual con un desenfoque suave en los demás.",options.blurLyrics) {prefs.setAdvanced("blurLyrics",it)}
     SettingSwitch("Mostrar volumen en el reproductor", "Conserva los botones físicos de volumen aunque ocultes la barra.",options.showVolume) {prefs.setAdvanced("showVolume",it)}
