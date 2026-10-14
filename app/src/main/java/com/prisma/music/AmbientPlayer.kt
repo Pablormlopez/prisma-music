@@ -30,6 +30,12 @@ import androidx.media3.session.MediaController
     val state=rememberLazyListState()
     LaunchedEffect(song.id,active) {if(active>=0) state.animateScrollToItem(active)}
     Dialog(onDismissRequest=onDismiss,properties=DialogProperties(usePlatformDefaultWidth=false,decorFitsSystemWindows=false)) {
+        val view=androidx.compose.ui.platform.LocalView.current
+        DisposableEffect(view,prefs.keepScreenOn) {
+            val previous=view.keepScreenOn
+            view.keepScreenOn=prefs.keepScreenOn
+            onDispose {view.keepScreenOn=previous}
+        }
         BoxWithConstraints(Modifier.fillMaxSize().background(Color.Black)) {
             AlbumAtmosphere(details)
             val landscape=maxWidth>maxHeight
@@ -54,9 +60,9 @@ import androidx.media3.session.MediaController
                 if(landscape) Row(Modifier.weight(1f),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(32.dp)) {Box(Modifier.weight(1f),contentAlignment=Alignment.Center) {cover()};Box(Modifier.weight(1.5f)) {lyrics()}}
                 else {cover();Box(Modifier.weight(1f)) {lyrics()}}
                 Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.Center) {
-                    IconButton(onClick={controller?.seekToPrevious()}) {Icon(Icons.Rounded.SkipPrevious,"Anterior",tint=Color.White)}
-                    IconButton(onClick={controller?.let {if(it.isPlaying) it.pause() else it.play()}}) {Icon(if(playing) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,if(playing) "Pausar" else "Reproducir",tint=Color.White)}
-                    IconButton(onClick={controller?.seekToNextMediaItem()}) {Icon(Icons.Rounded.SkipNext,"Siguiente",tint=Color.White)}
+                    IconButton(enabled=controller!=null,onClick={controller?.seekToPrevious()}) {Icon(Icons.Rounded.SkipPrevious,"Anterior",tint=Color.White)}
+                    IconButton(enabled=controller!=null,onClick={controller?.let {if(it.isPlaying) it.pause() else it.play()}}) {Icon(if(playing) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,if(playing) "Pausar" else "Reproducir",tint=Color.White)}
+                    IconButton(enabled=controller!=null,onClick={controller?.seekToNextMediaItem()}) {Icon(Icons.Rounded.SkipNext,"Siguiente",tint=Color.White)}
                 }
             }
         }

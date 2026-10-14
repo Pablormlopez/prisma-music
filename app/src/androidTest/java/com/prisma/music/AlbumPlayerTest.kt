@@ -38,6 +38,18 @@ class AlbumPlayerTest {
         resolver.openOutputStream(uri)!!.use {compose.onRoot().captureToImage().asAndroidBitmap().compress(Bitmap.CompressFormat.PNG,100,it)}
         resolver.update(uri,ContentValues().apply {put(MediaStore.Downloads.IS_PENDING,0)},null,null)
     }
+    @Test fun ambientOpensWithLocalLyricsAndClosesBackToPlayer() {
+        val prefs=Preferences(context)
+        val art=cover()
+        val details=Library.Details("FLAC",art,0xffe7b476.toInt(),"[00:00.00]Ambiente de prueba",FrostedArtwork.create(art))
+        compose.setContent {MaterialTheme {
+            PlayerScreen(song,details,VisualTheme.GLASS,prefs,1000,180000,false,false,0,null,{},{},{})
+        }}
+        compose.onNodeWithContentDescription("Modo ambiente").performScrollTo().performClick()
+        compose.onNodeWithText("Ambiente de prueba").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Cerrar modo ambiente").performClick()
+        compose.onNodeWithContentDescription("Modo ambiente").assertExists()
+    }
     @Test fun allThemesShareAtmosphereAndRestoreTheirOwnLayout() {
         val prefs=Preferences(context)
         var selected by mutableStateOf(VisualTheme.GLASS)
